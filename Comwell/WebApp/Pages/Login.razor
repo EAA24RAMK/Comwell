@@ -2,6 +2,7 @@
 @using WebApp.Services
 @inject ILoginService LoginService
 @inject NavigationManager NavManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <h3>Login</h3>
 
@@ -34,7 +35,7 @@
         var user = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
         if (user != null)
         {
-            // gør det: Gem brugerinfo i session/local state og naviger videre
+            await LocalStorage.SetItemAsync("loggedInUser", user);
             NavManager.NavigateTo("/"); 
         }
         else
