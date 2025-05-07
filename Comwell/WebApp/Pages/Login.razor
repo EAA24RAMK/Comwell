@@ -1,0 +1,51 @@
+@page "/login"
+@using WebApp.Services
+@inject ILoginService LoginService
+@inject NavigationManager NavManager
+
+<h3>Login</h3>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <p style="color: red">@ErrorMessage</p>
+}
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Email:</label>
+        <InputText @bind-Value="loginModel.Email" />
+    </div>
+    <div>
+        <label>Password:</label>
+        <InputText @bind-Value="loginModel.Password" type="password" />
+    </div>
+    <button type="submit">Login</button>
+</EditForm>
+
+@code {
+    private LoginModel loginModel = new();
+    private string ErrorMessage = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        var user = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
+        if (user != null)
+        {
+            // gør det: Gem brugerinfo i session/local state og naviger videre
+            NavManager.NavigateTo("/"); 
+        }
+        else
+        {
+            ErrorMessage = "Forkert email eller kodeord.";
+        }
+    }
+
+    public class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}
