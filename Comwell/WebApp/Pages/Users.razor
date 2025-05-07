@@ -1,0 +1,81 @@
+@page "/users"
+@using Core.Models
+@using WebApp.Services
+@inject IUserService UserService
+
+<h3>Brugere</h3>
+
+<div class="filters">
+    <input type="text" @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter bruger..." />
+    <select @bind="selectedRole">
+        <option value="">Alle roller</option>
+        @foreach (var role in roles)
+        {
+            <option value="@role">@role</option>
+        }
+    </select>
+    <select @bind="selectedHotel">
+        <option value="">Alle lokationer</option>
+        @foreach (var hotel in hotels)
+        {
+            <option value="@hotel">@hotel</option>
+        }
+    </select>
+    <button @onclick="CreateUser">+ Tilføj bruger</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Bruger</th>
+            <th>Lokation</th>
+            <th>Status</th>
+            <th>Fremskridt</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in FilteredUsers)
+        {
+            <tr>
+                <td>@user.Name (@user.Role)</td>
+                <td>@user.Hotel</td>
+                <td>@user.Status</td>
+                <td>-</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<User> users = new();
+    private string searchTerm = "";
+    private string selectedRole = "";
+    private string selectedHotel = "";
+
+    private List<string> roles = new() { "Elev", "Køkkenchef", "HR", "Afdelingsleder" };
+    private List<string> hotels = new();
+
+    private IEnumerable<User> FilteredUsers =>
+        users
+            .Where(u =>
+                (string.IsNullOrEmpty(searchTerm) || u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrEmpty(selectedRole) || u.Role == selectedRole) &&
+                (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel)
+            );
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await UserService.GetAllUsersAsync();
+
+        hotels = users
+            .Select(u => u.Hotel)
+            .Distinct()
+            .OrderBy(h => h)
+            .ToList();
+    }
+
+    private void CreateUser()
+    {
+        // Senere: Naviger til brugeroprettelsesside eller vis modal
+    }
+}

@@ -19,4 +19,25 @@ public class UserRepository : IUserRepository
     {
         return await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
     }
+
+    public async Task<List<User>> GetAllAsync()
+    {
+        return await _users.Find(_ => true).ToListAsync();
+    }
+
+    public async Task<User?> CreateAsync(User user)
+    {
+        await _users.InsertOneAsync(user);
+        return user;
+    }
+
+    public async Task<List<User>> GetByRoleAsync(string role)
+    {
+        return await _users.Find(u => u.Role == role).ToListAsync();
+    }
+
+    public async Task<List<User>> GetByHotelAsync(string hotel)
+    {
+        return await _users.Find(u => u.Hotel == hotel).ToListAsync();
+    }
 }
