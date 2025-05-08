@@ -1,0 +1,61 @@
+@page "/opret-plan"
+@using Core.Models
+@using WebApp.Services
+@inject IStudentPlanService StudentPlanService
+@inject NavigationManager NavigationManager
+
+<h3>Opret plan</h3>
+
+@if (!string.IsNullOrEmpty(feedbackMessage))
+{
+    <p>@feedbackMessage</p>
+}
+
+<EditForm Model="planModel" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Titel:</label>
+        <InputText @bind-Value="planModel.Title" />
+    </div>
+
+    <div>
+        <label>Elevens ID:</label>
+        <InputText @bind-Value="planModel.StudentId" />
+    </div>
+
+    <div>
+        <label>Skabelon ID:</label>
+        <InputText @bind-Value="planModel.TemplateId" />
+    </div>
+
+    <div>
+        <label>Oprettet af (bruger-id):</label>
+        <InputText @bind-Value="planModel.CreatedBy" />
+    </div>
+
+    <div>
+        <label>Startdato:</label>
+        <InputDate @bind-Value="planModel.PeriodStart" />
+    </div>
+
+    <div>
+        <label>Slutdato:</label>
+        <InputDate @bind-Value="planModel.PeriodEnd" />
+    </div>
+
+    <button type="submit">Gem plan</button>
+</EditForm>
+
+@code {
+    private StudentPlan planModel = new StudentPlan();
+    private string feedbackMessage = "";
+
+    private async Task HandleSubmit()
+    {
+        await StudentPlanService.CreateStudentPlanAsync(planModel);
+        feedbackMessage = "Planen er gemt!";
+        NavigationManager.NavigateTo("/elevplaner"); // Eller hvor I vil navigere hen bagefter
+    }
+}
