@@ -1,6 +1,7 @@
 using Core.Models;
 using ServerAPI.Repositories;
 using MongoDB.Driver;
+using ServerAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
