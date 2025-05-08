@@ -6,4 +6,5 @@ namespace WebApp.Services;
 public interface IStudentPlanService
 {
     Task CreateStudentPlanAsync(StudentPlan plan);
+    Task<List<StudentPlan>> GetAllPlansAsync();
 }

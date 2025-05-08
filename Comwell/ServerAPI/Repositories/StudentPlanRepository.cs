@@ -19,4 +19,9 @@ public class StudentPlanRepository : IStudentPlanRepository
     {
         await _studentPlan.InsertOneAsync(createPlan);
     }
+    
+    public async Task<List<StudentPlan>> GetAllPlansAsync()
+    {
+        return await _studentPlan.Find(_ => true).ToListAsync();
+    }
 }

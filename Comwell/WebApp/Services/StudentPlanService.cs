@@ -17,4 +17,9 @@ public class StudentPlanService : IStudentPlanService
     {
         await _http.PostAsJsonAsync("api/studentplan", plan);
     }
+
+    public async Task<List<StudentPlan>> GetAllPlansAsync()
+    {
+        return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
+    }
 }

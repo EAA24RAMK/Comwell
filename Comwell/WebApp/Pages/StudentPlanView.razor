@@ -1,0 +1,44 @@
+@page "/elevplaner"
+@using WebApp.Services
+@inject IStudentPlanService StudentPlanService
+@using Core.Models
+
+<h3>Elevplan</h3>
+
+@if (plan == null)
+{
+    <p>Indlæser...</p>
+}
+else
+{
+    <h4>@plan.Title</h4>
+    <p>Oprettet af: @plan.CreatedBy</p>
+    <p>Periode: @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
+
+    <h5>Mål</h5>
+    @foreach (var goal in plan.Goals)
+    {
+        <div>
+            <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+        </div>
+    }
+
+    <h5>Noter</h5>
+    @foreach (var note in plan.Notes)
+    {
+        <div>
+            <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+        </div>
+    }
+}
+
+@code {
+    private StudentPlan? plan;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Til demo: Hent første plan fra backend (udvid evt. metoder til det rigtige ID senere)
+        var allPlans = await StudentPlanService.GetAllPlansAsync();
+        plan = allPlans.FirstOrDefault();
+    }
+}
