@@ -26,31 +26,66 @@
 
 <table>
     <thead>
-        <tr>
-            <th>Bruger</th>
-            <th>Lokation</th>
-            <th>Status</th>
-            <th>Fremskridt</th>
-        </tr>
+    <tr>
+        <th>Bruger</th>
+        <th>Lokation</th>
+        <th>Status</th>
+        <th>Fremskridt</th>
+    </tr>
     </thead>
     <tbody>
-        @foreach (var user in FilteredUsers)
-        {
-            <tr>
-                <td>@user.Name (@user.Role)</td>
-                <td>@user.Hotel</td>
-                <td>@user.Status</td>
-                <td>-</td>
-            </tr>
-        }
+    @foreach (var user in FilteredUsers)
+    {
+        <tr>
+            <td>@user.Name (@user.Role)</td>
+            <td>@user.Hotel</td>
+            <td>@user.Status</td>
+            <td>-</td>
+        </tr>
+    }
     </tbody>
 </table>
+
+@if (showCreateModal)
+{
+    <div class="modal-background">
+        <div class="modal-box">
+            <h3>Opret ny bruger</h3>
+            <input @bind="newUser.Name" placeholder="Navn" />
+            <input @bind="newUser.Email" placeholder="Email" />
+            <input @bind="newUser.Password" placeholder="Adgangskode" type="password" />
+            <input @bind="newUser.Hotel" placeholder="Hotel" />
+
+            <select @bind="newUser.Role">
+                <option disabled selected>Vælg rolle</option>
+                <option value="Elev">Elev</option>
+                <option value="HR">HR</option>
+                <option value="Køkkenchef">Køkkenchef</option>
+                <option value="Afdelingsleder">Afdelingsleder</option>
+            </select>
+
+            <select @bind="newUser.Status">
+                <option disabled selected value="">Vælg status</option>
+                <option value="Aktiv">Aktiv</option>
+                <option value="Inaktiv">Inaktiv</option>
+            </select>
+
+            <button @onclick="SaveUserAsync">Gem</button>
+            <button @onclick="CloseCreateModal">Luk</button>
+
+            <p>@createMessage</p>
+        </div>
+    </div>
+}
 
 @code {
     private List<User> users = new();
     private string searchTerm = "";
     private string selectedRole = "";
     private string selectedHotel = "";
+    private bool showCreateModal = false;
+    private User newUser = new();
+    private string createMessage = "";
 
     private List<string> roles = new() { "Elev", "Køkkenchef", "HR", "Afdelingsleder" };
     private List<string> hotels = new();
@@ -76,6 +111,29 @@
 
     private void CreateUser()
     {
-        // Senere: Naviger til brugeroprettelsesside eller vis modal
+        showCreateModal = true;
+        newUser = new();
+        createMessage = "";
+    }
+
+    private void CloseCreateModal()
+    {
+        showCreateModal = false;
+    }
+
+    private async Task SaveUserAsync()
+    {
+        var result = await UserService.CreateUserAsync(newUser);
+        Console.WriteLine($"Navn: {newUser.Name}, Email: {newUser.Email}, Rolle: {newUser.Role}, Hotel: {newUser.Hotel}, Status: {newUser.Status}, Password: {newUser.Password}");
+        if (result != null)
+        {
+            createMessage = "Bruger oprettet!";
+            users = await UserService.GetAllUsersAsync(); // Opdaterer listen med users
+            showCreateModal = false;
+        }
+        else
+        {
+            createMessage = "Noget gik galt under oprettelsen";
+        }
     }
 }

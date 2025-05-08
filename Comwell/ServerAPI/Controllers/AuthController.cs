@@ -19,11 +19,6 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userRepo.GetUserByEmailAsync(request.Email);
-        
-        Console.WriteLine($"Bruger fundet? {user != null}");
-        Console.WriteLine($"Indtastet: {request.Password}");
-        Console.WriteLine($"Gemte: {user?.Password}");
-        
         if (user == null || user.Password != request.Password)
             return Unauthorized("Forkert loginoplysninger");
         return Ok(new { user.Id, user.Name, user.Email, user.Role });
