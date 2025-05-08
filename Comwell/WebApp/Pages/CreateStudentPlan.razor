@@ -2,6 +2,7 @@
 @using Core.Models
 @using WebApp.Services
 @inject IStudentPlanService StudentPlanService
+@inject IUserService UserService
 @inject NavigationManager NavigationManager
 
 <h3>Opret plan</h3>
@@ -21,8 +22,14 @@
     </div>
 
     <div>
-        <label>Elevens ID:</label>
-        <InputText @bind-Value="planModel.StudentId" />
+        <label>Vælg elev:</label>
+        <select @bind="selectedUserId">
+            <option value="">-- Vælg en elev --</option>
+            @foreach (var user in users)
+            {
+                <option value="@user.Id">@user.Name</option>
+            }
+        </select>
     </div>
 
     <div>
@@ -51,9 +58,19 @@
 @code {
     private StudentPlan planModel = new StudentPlan();
     private string feedbackMessage = "";
+    private List<User> users = new ();
+    private string selectedUserId = "";
+    
+    protected override async Task OnInitializedAsync()
+    {
+        var allUsers = await UserService.GetAllUsersAsync();
+        users = allUsers.Where(u => u.Role == "Elev").ToList();
+    }
 
     private async Task HandleSubmit()
     {
+        planModel.UserId = selectedUserId;
+        
         await StudentPlanService.CreateStudentPlanAsync(planModel);
         feedbackMessage = "Planen er gemt!";
         NavigationManager.NavigateTo("/elevplaner"); // Eller hvor I vil navigere hen bagefter
