@@ -12,5 +12,5 @@ public interface IUserService
     
     // Henter den aktuelle bruger fra localstorage
     Task<User?> GetCurrentUserAsync();
-    Task<bool> DeleteUserAsync(string userId);
+    Task<bool> DeleteUserAsync(int userId);
 }
