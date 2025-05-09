@@ -9,4 +9,8 @@ public interface IUserService
     Task<User> CreateUserAsync(User user);
     Task<List<User>> GetUsersByRoleAsync(string role);
     Task<List<User>> GetUsersByHotelAsync(string hotel);
+    
+    // Henter den aktuelle bruger fra localstorage
+    Task<User?> GetCurrentUserAsync();
+
 }
