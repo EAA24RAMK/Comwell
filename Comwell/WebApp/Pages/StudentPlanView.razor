@@ -2,43 +2,54 @@
 @using WebApp.Services
 @inject IStudentPlanService StudentPlanService
 @using Core.Models
+@inject IUserService UserService
 
 <h3>Elevplan</h3>
 
-@if (plan == null)
+@if (plans == null || !plans.Any())
 {
-    <p>Indlæser...</p>
+    <p>Ingen planer fundet.</p>
 }
 else
 {
-    <h4>@plan.Title</h4>
-    <p>Oprettet af: @plan.CreatedBy</p>
-    <p>Periode: @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
-
-    <h5>Mål</h5>
-    @foreach (var goal in plan.Goals)
+    @foreach (var plan in plans)
     {
-        <div>
-            <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
-        </div>
-    }
+        <div class="plan-box">
+            <h4>@plan.Title</h4>
+            <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
+            <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
-    <h5>Noter</h5>
-    @foreach (var note in plan.Notes)
-    {
-        <div>
-            <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+            <h5>Mål</h5>
+            @foreach (var goal in plan.Goals)
+            {
+                <div>
+                    <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+                </div>
+            }
+
+            <h5>Noter</h5>
+            @foreach (var note in plan.Notes)
+            {
+                <div>
+                    <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                </div>
+            }
+
+            <hr />
         </div>
     }
 }
 
+
 @code {
-    private StudentPlan? plan;
+    private List<StudentPlan> plans = new();
+    private User? currentUser;
 
     protected override async Task OnInitializedAsync()
     {
-        // Til demo: Hent første plan fra backend (udvid evt. metoder til det rigtige ID senere)
-        var allPlans = await StudentPlanService.GetAllPlansAsync();
-        plan = allPlans.FirstOrDefault();
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser is null) return;
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
     }
 }

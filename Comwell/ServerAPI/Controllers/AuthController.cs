@@ -21,8 +21,18 @@ public class AuthController : ControllerBase
         var user = await _userRepo.GetUserByEmailAsync(request.Email);
         if (user == null || user.Password != request.Password)
             return Unauthorized("Forkert loginoplysninger");
-        return Ok(new { user.Id, user.Name, user.Email, user.Role });
+
+        return Ok(new {
+            user.Id,
+            user.Name,
+            user.Email,
+            user.Role,
+            user.Hotel,
+            user.Status,
+            user.CreatedAt
+        });
     }
+
 
     public class LoginRequest
     {
