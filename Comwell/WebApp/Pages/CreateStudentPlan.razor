@@ -3,6 +3,7 @@
 @using WebApp.Services
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
+@inject ITemplateService TemplateService
 @inject NavigationManager NavigationManager
 
 <h3>Opret plan</h3>
@@ -33,8 +34,14 @@
     </div>
 
     <div>
-        <label>Skabelon ID:</label>
-        <InputText @bind-Value="planModel.TemplateId" />
+        <label>Vælg skabelon:</label>
+        <select @bind="selectedTemplateId">
+            <option value="">-- Vælg en skabelon --</option>
+            @foreach (var template in templates)
+            {
+                <option value="@template.Id">@template.Title</option>
+            }
+        </select>
     </div>
 
     <div>
@@ -60,16 +67,22 @@
     private string feedbackMessage = "";
     private List<User> users = new ();
     private string selectedUserId = "";
+    private List<Template> templates = new();
+    private string selectedTemplateId = "";
+
     
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await UserService.GetAllUsersAsync();
         users = allUsers.Where(u => u.Role == "Elev").ToList();
+        
+        templates = await TemplateService.GetAllTemplatesAsync();
     }
 
     private async Task HandleSubmit()
     {
         planModel.UserId = selectedUserId;
+        planModel.TemplateId = selectedTemplateId;
         
         await StudentPlanService.CreateStudentPlanAsync(planModel);
         feedbackMessage = "Planen er gemt!";
