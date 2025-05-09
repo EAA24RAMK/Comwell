@@ -51,7 +51,7 @@ public class UserController : ControllerBase
     }
     
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(string id)
+    public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _repo.DeleteAsync(id);
         if (!deleted) return NotFound();

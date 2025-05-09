@@ -141,7 +141,7 @@
         }
     }
 
-    private async Task DeleteUserAsync(string userId)
+    private async Task DeleteUserAsync(int userId)
     {
         var success = await UserService.DeleteUserAsync(userId);
         if (success)
