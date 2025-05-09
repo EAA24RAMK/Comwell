@@ -1,0 +1,55 @@
+@page "/elevplaner"
+@using WebApp.Services
+@inject IStudentPlanService StudentPlanService
+@using Core.Models
+@inject IUserService UserService
+
+<h3>Elevplan</h3>
+
+@if (plans == null || !plans.Any())
+{
+    <p>Ingen planer fundet.</p>
+}
+else
+{
+    @foreach (var plan in plans)
+    {
+        <div class="plan-box">
+            <h4>@plan.Title</h4>
+            <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
+            <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
+
+            <h5>Mål</h5>
+            @foreach (var goal in plan.Goals)
+            {
+                <div>
+                    <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+                </div>
+            }
+
+            <h5>Noter</h5>
+            @foreach (var note in plan.Notes)
+            {
+                <div>
+                    <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                </div>
+            }
+
+            <hr />
+        </div>
+    }
+}
+
+
+@code {
+    private List<StudentPlan> plans = new();
+    private User? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser is null) return;
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+    }
+}

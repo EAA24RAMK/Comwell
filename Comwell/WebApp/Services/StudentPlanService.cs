@@ -17,4 +17,31 @@ public class StudentPlanService : IStudentPlanService
     {
         await _http.PostAsJsonAsync("api/studentplan", plan);
     }
+
+    public async Task<List<StudentPlan>> GetAllPlansAsync()
+    {
+        return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
+    }
+    
+    public async Task<List<StudentPlan>> GetPlansByUserAsync(User user)
+    {
+        if (user.Role == "HR")
+        {
+            return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
+        }
+        else if (user.Role == "Køkkenchef")
+        {
+            return await _http.GetFromJsonAsync<List<StudentPlan>>($"api/studentplan/hotel/{user.Hotel}") ?? new();
+        }
+        else if (user.Role == "Elev")
+        {
+            return await _http.GetFromJsonAsync<List<StudentPlan>>($"api/studentplan/student/{user.Id}") ?? new();
+        }
+        else if (user.Role == "Afdelingsleder")
+        {
+            return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
+        }
+        return new();
+    }
+
 }

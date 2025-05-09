@@ -23,4 +23,23 @@ public class StudentPlanController : ControllerBase
         await _studentPlanRepo.CreateStudentPlanAsync(createPlan);
         return Ok("Planen er oprettet");
     }
+    
+    [HttpGet]
+    public async Task<ActionResult<List<StudentPlan>>> GetAll()
+    {
+        return Ok(await _studentPlanRepo.GetAllPlansAsync());
+    }
+    
+    [HttpGet("student/{studentId}")]
+    public async Task<ActionResult<List<StudentPlan>>> GetByStudent(string studentId)
+    {
+        return Ok(await _studentPlanRepo.GetPlansByStudentAsync(studentId));
+    }
+
+    [HttpGet("hotel/{hotel}")]
+    public async Task<ActionResult<List<StudentPlan>>> GetByHotel(string hotel)
+    {
+        return Ok(await _studentPlanRepo.GetPlansByHotelAsync(hotel));
+    }
+
 }

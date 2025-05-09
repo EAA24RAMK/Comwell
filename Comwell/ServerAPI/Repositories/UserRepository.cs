@@ -27,6 +27,7 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> CreateAsync(User user)
     {
+        user.CreatedAt = DateTime.Now;
         await _users.InsertOneAsync(user);
         return user;
     }
