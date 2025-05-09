@@ -2,6 +2,8 @@
 @using Core.Models
 @using WebApp.Services
 @inject IUserService UserService
+@inject IJSRuntime JS
+
 
 <h3>Brugere</h3>
 
@@ -21,7 +23,10 @@
             <option value="@hotel">@hotel</option>
         }
     </select>
-    <button @onclick="CreateUser">+ Tilføj bruger</button>
+    @if (currentUser?.Role == "HR")
+    {
+        <button @onclick="CreateUser">+ Tilføj bruger</button>
+    }
 </div>
 
 <table>
@@ -43,7 +48,14 @@
                 <td>@user.Status</td>
                 <td>-</td>
                 <td>
-                    <button @onclick="() => DeleteUserAsync(user.Id)">🗑️ Slet</button>
+                    @if (currentUser != null && currentUser.Role != "Elev")
+                    {
+                        <button @onclick="() => DeleteUserAsync(user.Id)">🗑️ Slet</button>
+                    }
+                    else if (currentUser == null)
+                    {
+                        <span style="color: gray;">🔒 Login påkrævet</span>
+                    }
                 </td>
             </tr>
         }
@@ -90,6 +102,7 @@
     private bool showCreateModal = false;
     private User newUser = new();
     private string createMessage = "";
+    private User? currentUser;
 
     private List<string> roles = new() { "Elev", "Køkkenchef", "HR", "Afdelingsleder" };
     private List<string> hotels = new();
@@ -111,6 +124,8 @@
             .Distinct()
             .OrderBy(h => h)
             .ToList();
+
+        currentUser = await UserService.GetCurrentUserAsync();
     }
 
     private void CreateUser()
@@ -143,10 +158,17 @@
 
     private async Task DeleteUserAsync(int userId)
     {
+        if (currentUser == null || currentUser.Role == "Elev")
+        {
+            Console.WriteLine("Adgang nægtet: Du har ikke rettigheder til at slette brugere.");
+            return;
+        }
+
         var success = await UserService.DeleteUserAsync(userId);
+
         if (success)
         {
-            users = await UserService.GetAllUsersAsync(); // Opdater listen
+            users = await UserService.GetAllUsersAsync(); 
         }
         else
         {
