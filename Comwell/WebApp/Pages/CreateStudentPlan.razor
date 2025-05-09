@@ -81,7 +81,7 @@
 
     private async Task HandleSubmit()
     {
-        planModel.UserId = selectedUserId;
+        planModel.StudentId = selectedUserId;
         planModel.TemplateId = selectedTemplateId;
         
         await StudentPlanService.CreateStudentPlanAsync(planModel);
