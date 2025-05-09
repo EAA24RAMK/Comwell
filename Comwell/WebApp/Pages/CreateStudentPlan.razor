@@ -66,9 +66,9 @@
     private StudentPlan planModel = new StudentPlan();
     private string feedbackMessage = "";
     private List<User> users = new ();
-    private string selectedUserId = "";
+    private int selectedUserId;
     private List<Template> templates = new();
-    private string selectedTemplateId = "";
+    private int selectedTemplateId;
 
     
     protected override async Task OnInitializedAsync()

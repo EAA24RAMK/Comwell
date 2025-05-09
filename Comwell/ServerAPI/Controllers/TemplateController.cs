@@ -33,7 +33,7 @@ public class TemplateController : ControllerBase
     }
     
     [HttpGet("{id}")]
-    public async Task<ActionResult<Template>> GetTemplateById(string id)
+    public async Task<ActionResult<Template>> GetTemplateById(int id)
     {
         var template = await _templateRepo.GetByIdAsync(id);
         if (template == null) return NotFound("Skabelon ikke fundet");

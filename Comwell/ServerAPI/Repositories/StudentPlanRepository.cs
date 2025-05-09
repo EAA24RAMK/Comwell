@@ -17,6 +17,15 @@ public class StudentPlanRepository : IStudentPlanRepository
     
     public async Task CreateStudentPlanAsync(StudentPlan createPlan)
     {
+        int maxId = 0;
+        var allPlans = await _studentPlan.Find(_ => true).ToListAsync();
+        if (allPlans.Any())
+        {
+            maxId = allPlans.Max(t => t.Id);
+        }
+
+        createPlan.Id = maxId + 1;
+
         await _studentPlan.InsertOneAsync(createPlan);
     }
     
@@ -25,7 +34,7 @@ public class StudentPlanRepository : IStudentPlanRepository
         return await _studentPlan.Find(_ => true).ToListAsync();
     }
 
-    public async Task<List<StudentPlan>> GetPlansByStudentAsync(string studentId)
+    public async Task<List<StudentPlan>> GetPlansByStudentAsync(int studentId)
     {
         return await _studentPlan.Find(p => p.StudentId == studentId).ToListAsync();
     }
@@ -47,3 +56,5 @@ public class StudentPlanRepository : IStudentPlanRepository
     }
     
 }
+
+    

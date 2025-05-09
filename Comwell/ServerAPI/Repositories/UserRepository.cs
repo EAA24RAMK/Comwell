@@ -27,6 +27,15 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> CreateAsync(User user)
     {
+        int maxId = 0;
+        var allUsers = await _users.Find(_ => true).ToListAsync();
+        if (allUsers.Any())
+        {
+            maxId = allUsers.Max(t => t.Id);
+        }
+
+        user.Id = maxId + 1;
+        
         user.CreatedAt = DateTime.Now;
         await _users.InsertOneAsync(user);
         return user;
