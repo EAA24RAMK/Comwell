@@ -41,4 +41,10 @@ public class UserRepository : IUserRepository
     {
         return await _users.Find(u => u.Hotel == hotel).ToListAsync();
     }
+
+    public async Task<bool> DeleteAsync(string id)
+    {
+        var result = await _users.DeleteOneAsync(u => u.Id == id);
+        return result.DeletedCount > 0;
+    }
 }

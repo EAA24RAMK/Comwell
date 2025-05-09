@@ -26,23 +26,27 @@
 
 <table>
     <thead>
-    <tr>
-        <th>Bruger</th>
-        <th>Lokation</th>
-        <th>Status</th>
-        <th>Fremskridt</th>
-    </tr>
+        <tr>
+            <th>Bruger</th>
+            <th>Lokation</th>
+            <th>Status</th>
+            <th>Fremskridt</th>
+            <th>Handling</th> @* Ny kolonne *@
+        </tr>
     </thead>
     <tbody>
-    @foreach (var user in FilteredUsers)
-    {
-        <tr>
-            <td>@user.Name (@user.Role)</td>
-            <td>@user.Hotel</td>
-            <td>@user.Status</td>
-            <td>-</td>
-        </tr>
-    }
+        @foreach (var user in FilteredUsers)
+        {
+            <tr>
+                <td>@user.Name (@user.Role)</td>
+                <td>@user.Hotel</td>
+                <td>@user.Status</td>
+                <td>-</td>
+                <td>
+                    <button @onclick="() => DeleteUserAsync(user.Id)">🗑️ Slet</button>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>
 
@@ -128,12 +132,25 @@
         if (result != null)
         {
             createMessage = "Bruger oprettet!";
-            users = await UserService.GetAllUsersAsync(); // Opdaterer listen med users
+            users = await UserService.GetAllUsersAsync(); // Opdaterer listen
             showCreateModal = false;
         }
         else
         {
             createMessage = "Noget gik galt under oprettelsen";
+        }
+    }
+
+    private async Task DeleteUserAsync(string userId)
+    {
+        var success = await UserService.DeleteUserAsync(userId);
+        if (success)
+        {
+            users = await UserService.GetAllUsersAsync(); // Opdater listen
+        }
+        else
+        {
+            Console.WriteLine("Kunne ikke slette bruger");
         }
     }
 }

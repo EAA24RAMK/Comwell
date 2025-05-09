@@ -57,5 +57,9 @@ public class UserService : IUserService
             });
     }
 
-    
+    public async Task<bool> DeleteUserAsync(string userId)
+    {
+        var response = await _http.DeleteAsync($"api/user/{userId}");
+        return response.IsSuccessStatusCode;
+    }
 }

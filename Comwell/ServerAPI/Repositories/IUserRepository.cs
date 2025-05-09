@@ -9,4 +9,5 @@ public interface IUserRepository
     Task<User?> CreateAsync(User user);
     Task<List<User>> GetByRoleAsync(string role);
     Task<List<User>> GetByHotelAsync(string hotel);
+    Task<bool> DeleteAsync(string id);
 }

@@ -49,4 +49,12 @@ public class UserController : ControllerBase
         var created = await _repo.CreateAsync(user);
         return Ok(created);
     }
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var deleted = await _repo.DeleteAsync(id);
+        if (!deleted) return NotFound();
+        return Ok();
+    }
 }
