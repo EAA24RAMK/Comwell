@@ -15,16 +15,25 @@ public class TemplateRepository : ITemplateRepository
     
     public async Task CreateAsync(Template template)
     {
+        int maxId = 0;
+        var allTemplates = await _templates.Find(_ => true).ToListAsync();
+        if (allTemplates.Any())
+        {
+            maxId = allTemplates.Max(t => t.Id);
+        }
+
+        template.Id = maxId + 1;
+        
         await _templates.InsertOneAsync(template);
+    }
+
+    public async Task<Template?> GetByIdAsync(int id)
+    {
+        return await _templates.Find(t => t.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task<List<Template>> GetAllAsync()
     {
         return await _templates.Find(_ => true).ToListAsync();
-    }
-
-    public async Task<Template?> GetByIdAsync(string id)
-    {
-        return await _templates.Find(t => t.Id == id).FirstOrDefaultAsync();
     }
 }

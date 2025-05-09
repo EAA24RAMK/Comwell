@@ -31,7 +31,7 @@ public class StudentPlanController : ControllerBase
     }
     
     [HttpGet("student/{studentId}")]
-    public async Task<ActionResult<List<StudentPlan>>> GetByStudent(string studentId)
+    public async Task<ActionResult<List<StudentPlan>>> GetByStudent(int studentId)
     {
         return Ok(await _studentPlanRepo.GetPlansByStudentAsync(studentId));
     }
