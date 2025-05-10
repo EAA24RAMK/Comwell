@@ -14,29 +14,28 @@ public class TemplateController : ControllerBase
     {
         _templateRepo = templateRepo;
     }
-    
-    [HttpPost]
-    public async Task<ActionResult<Template>> CreateTemplate(Template createTemplate)
+
+    [HttpGet("create")]
+    public async Task<ActionResult> CreateStandardTemplate()
     {
-        if (createTemplate == null || string.IsNullOrWhiteSpace(createTemplate.Title))
-            return BadRequest("Ugyldig skabelon");
-        
-        await _templateRepo.CreateAsync(createTemplate);
-        return Ok("Skabelon oprettet");
+        await _templateRepo.CreateStandardTemplateAsync();
+        return Ok("Standardtemplate oprettet.");
     }
 
-    
     [HttpGet]
-    public async Task<ActionResult<List<Template>>> GetAllTemplates()
+    public async Task<ActionResult<List<Template>>> GetAllTemplatesAsync()
     {
-        return Ok(await _templateRepo.GetAllAsync());
-    }
+        var templates = await _templateRepo.GetAllTemplatesAsync();
+        return Ok(templates);
+    } 
     
     [HttpGet("{id}")]
     public async Task<ActionResult<Template>> GetTemplateById(int id)
     {
-        var template = await _templateRepo.GetByIdAsync(id);
-        if (template == null) return NotFound("Skabelon ikke fundet");
+        var template = await _templateRepo.GetTemplateByIdAsync(id);
+        if (template == null)
+            return NotFound($"Ingen template med id = {id} blev fundet.");
+
         return Ok(template);
     }
 }

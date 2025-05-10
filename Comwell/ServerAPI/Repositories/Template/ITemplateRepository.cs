@@ -4,7 +4,10 @@ namespace ServerAPI.Repositories;
 
 public interface ITemplateRepository
 {
-    Task CreateAsync(Template template);
-    Task<List<Template>> GetAllAsync();
-    Task<Template?> GetByIdAsync(int id);
+    Task CreateStandardTemplateAsync();
+    Task<List<Template>> GetAllTemplatesAsync();
+    Task<Template?> GetTemplateByIdAsync(int id);
+    Task AddTemplateAsync(Template template);
+    Task UpdateTemplateAsync(Template template);
+    Task DeleteTemplateAsync(int id);
 }

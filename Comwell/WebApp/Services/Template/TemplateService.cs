@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.Http.Json;
 using Core.Models;
 
@@ -17,14 +16,8 @@ public class TemplateService : ITemplateService
         return await _http.GetFromJsonAsync<List<Template>>("api/template") ?? new();
     }
 
-    public async Task<Template?> GetTemplateByIdAsync(string id)
+    public async Task<Template?> GetTemplateByIdAsync(int id)
     {
-        return await _http.GetFromJsonAsync<Template>($"api/template/{id}");
-    }
-
-    public async Task<bool> CreateTemplateAsync(Template newTemplate)
-    {
-        var response = await _http.PostAsJsonAsync("api/template", newTemplate);
-        return response.IsSuccessStatusCode;
+        return await _http.GetFromJsonAsync<Template?>($"api/template/{id}");
     }
 }

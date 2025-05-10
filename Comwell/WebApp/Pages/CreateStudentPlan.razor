@@ -26,7 +26,7 @@
         <label>Vælg elev:</label>
         <select @bind="selectedUserId">
             <option value="">-- Vælg en elev --</option>
-            @foreach (var user in users)
+            @foreach (var user in students)
             {
                 <option value="@user.Id">@user.Name</option>
             }
@@ -35,7 +35,7 @@
 
     <div>
         <label>Vælg skabelon:</label>
-        <select @bind="selectedTemplateId">
+        <select @onchange="OnTemplateChanged">
             <option value="">-- Vælg en skabelon --</option>
             @foreach (var template in templates)
             {
@@ -43,6 +43,39 @@
             }
         </select>
     </div>
+
+    @if (selectedTemplate != null)
+    {
+        <h4>Rediger perioder i skabelonen:</h4>
+        @foreach (var goal in selectedTemplate.Goals)
+        {
+            <div class="goal-section" style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ccc;">
+                <h5>@goal.Title</h5>
+                <p>@goal.Description</p>
+
+                <div>
+                    <label>Lokation:</label>
+                    <select @bind="goal.Location">
+                        <option value="">-- Vælg lokation --</option>
+                        <option value="Comwell Aarhus">Comwell Aarhus</option>
+                        <option value="Comwell Kolding">Comwell Kolding</option>
+                        <option value="Comwell Roskilde">Comwell Roskilde</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Ansvarlig:</label>
+                    <select @bind="goal.Responsible">
+                        <option value="">-- Vælg ansvarlig --</option>
+                        @foreach (var user in kitchenChefs.Where(u => u.Role == "Køkkenchef"))
+                        {
+                            <option value="@user.Name">@user.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+    }
 
     <div>
         <label>Oprettet af (bruger-id):</label>
@@ -54,38 +87,89 @@
         <InputDate @bind-Value="planModel.PeriodStart" />
     </div>
 
-    <div>
-        <label>Slutdato:</label>
-        <InputDate @bind-Value="planModel.PeriodEnd" />
-    </div>
-
     <button type="submit">Gem plan</button>
 </EditForm>
 
 @code {
     private StudentPlan planModel = new StudentPlan();
     private string feedbackMessage = "";
-    private List<User> users = new ();
+    private List<User> students = new ();
+    private List<User> kitchenChefs = new();
     private int selectedUserId;
     private List<Template> templates = new();
     private int selectedTemplateId;
+    private Template? selectedTemplate;
+    private string selectedResponsible = "";
+    private string selectedLocation = "";
+
 
     
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await UserService.GetAllUsersAsync();
-        users = allUsers.Where(u => u.Role == "Elev").ToList();
-        
+        kitchenChefs = allUsers.Where(u => u.Role == "Køkkenchef").ToList();
+        students = allUsers.Where(u => u.Role == "Elev").ToList();
         templates = await TemplateService.GetAllTemplatesAsync();
     }
 
     private async Task HandleSubmit()
     {
+        if (selectedTemplate is null)
+        {
+            feedbackMessage = "Du skal vælge en skabelon.";
+            return;
+        }
+
         planModel.StudentId = selectedUserId;
         planModel.TemplateId = selectedTemplateId;
         
+        DateTime start = planModel.PeriodStart;
+        // Bruger første mål som referencepunkt
+        var referenceDate = selectedTemplate.Goals.First().Deadline;
+        
+        var adjustedGoals = new List<Goal>();
+
+        foreach (var goal in selectedTemplate.Goals)
+        {
+            var dayOffset = (goal.Deadline - referenceDate).Days;
+            
+            var adjustedGoal = new Goal
+            {
+                Id = goal.Id,
+                Title = goal.Title,
+                Description = goal.Description,
+                Category = goal.Category,
+                Deadline = start.AddDays(dayOffset),
+                Status = "Ikke startet",
+                Responsible = goal.Responsible, 
+                InitiatedBy = goal.InitiatedBy,
+                CheckedOff = false,
+                Location = selectedLocation,
+                Subtasks = goal.Subtasks.ToList(),
+                Comments = new(),
+                StudentNotes = new(),
+                Attachments = new()
+            };
+
+            adjustedGoals.Add(adjustedGoal);
+        }
+
+        planModel.Goals = adjustedGoals;
+        planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
+
         await StudentPlanService.CreateStudentPlanAsync(planModel);
         feedbackMessage = "Planen er gemt!";
-        NavigationManager.NavigateTo("/elevplaner"); // Eller hvor I vil navigere hen bagefter
+        NavigationManager.NavigateTo("/elevplaner");
     }
+
+    
+    private async Task OnTemplateChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int templateId))
+        {
+            selectedTemplateId = templateId;
+            selectedTemplate = await TemplateService.GetTemplateByIdAsync(templateId);
+        }
+    }
+
 }
