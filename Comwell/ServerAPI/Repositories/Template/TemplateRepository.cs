@@ -167,17 +167,7 @@ public class TemplateRepository : ITemplateRepository
         return await _templates.Find(template => template.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task AddTemplateAsync(Template template)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task UpdateTemplateAsync(Template template)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task DeleteTemplateAsync(int id)
     {
         throw new NotImplementedException();
     }
