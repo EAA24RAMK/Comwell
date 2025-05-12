@@ -1,6 +1,6 @@
 namespace Core.Models;
 
-public class User
+public class User // Referencing, bruges på tværs af hele systemet
 {
     public int Id { get; set; }
     public string Name { get; set; }

@@ -15,6 +15,8 @@ public class StudentPlanRepository : IStudentPlanRepository
         _studentPlan = db.GetCollection<StudentPlan>("studentplan");
     }
     
+    // Finder højeste ID og plusser med en, og giver den ID til ny plan
+    // Opretter og indsætter ny plan i database
     public async Task CreateStudentPlanAsync(StudentPlan createPlan)
     {
         int maxId = 0;
@@ -29,17 +31,20 @@ public class StudentPlanRepository : IStudentPlanRepository
         await _studentPlan.InsertOneAsync(createPlan);
     }
     
+    // Henter alle elevplaner og returnerer dem i en liste
     public async Task<List<StudentPlan>> GetAllPlansAsync()
     {
         return await _studentPlan.Find(_ => true).ToListAsync();
     }
 
+    // Henter en elevs planer ud fra Student ID returner i en liste
     public async Task<List<StudentPlan>> GetPlansByStudentAsync(int studentId)
     {
         return await _studentPlan.Find(p => p.StudentId == studentId).ToListAsync();
     }
 
     // Henter alle elevplaner fra et hotel, så køkkenchefen kan se sine elevers planer
+    // Til at elever kun kan se deres egen plan
     public async Task<List<StudentPlan>> GetPlansByHotelAsync(string hotel)
     {
         var client = new MongoClient(_studentPlan.Database.Client.Settings);

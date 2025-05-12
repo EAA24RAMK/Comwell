@@ -15,16 +15,19 @@ public class UserRepository : IUserRepository
         _users = db.GetCollection<User>("user");
     }
 
+    // Find brugere ved at søge på email
     public async Task<User?> GetUserByEmailAsync(string email)
     {
         return await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
     }
 
+    // Finder alle brugere og returnerer dem i en liste
     public async Task<List<User>> GetAllAsync()
     {
         return await _users.Find(_ => true).ToListAsync();
     }
 
+    // Opret bruger: Finder højeste ID der er, lægger en til
     public async Task<User?> CreateAsync(User user)
     {
         int maxId = 0;
@@ -41,16 +44,19 @@ public class UserRepository : IUserRepository
         return user;
     }
 
+    // Returnerer en liste med alle brugernes roller
     public async Task<List<User>> GetByRoleAsync(string role)
     {
         return await _users.Find(u => u.Role == role).ToListAsync();
     }
 
+    // Returnerer en liste med alle brugernes hoteller
     public async Task<List<User>> GetByHotelAsync(string hotel)
     {
         return await _users.Find(u => u.Hotel == hotel).ToListAsync();
     }
 
+    // Sletter en bruger baseret på ID
     public async Task<bool> DeleteAsync(int id)
     {
         var result = await _users.DeleteOneAsync(u => u.Id == id);
