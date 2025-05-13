@@ -1,9 +1,5 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Core.Models;
 
-[BsonIgnoreExtraElements]
 public class StudentPlan
 {
     public int Id { get; set; }

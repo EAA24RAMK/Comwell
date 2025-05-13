@@ -16,7 +16,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userRepo.GetUserByEmailAsync(request.Email);
         if (user == null || user.Password != request.Password)
