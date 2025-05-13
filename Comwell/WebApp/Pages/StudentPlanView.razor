@@ -33,14 +33,34 @@ else
                             @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
                         </button>
 
-                        @if (openGoalIds.Contains(goal.Id) && goal.Subtasks != null && goal.Subtasks.Any())
+                        @if (openGoalIds.Contains(goal.Id))
                         {
-                            <ul>
-                                @foreach (var subtask in goal.Subtasks)
-                                {
-                                    <li>@subtask</li>
-                                }
-                            </ul>
+                            @if (editingGoalId == goal.Id)
+                            {
+                                <ul>
+                                    @for (int i = 0; i < editableSubtasks.Count; i++)
+                                    {
+                                        var index = i;
+                                        <li @key="index">
+                                            <input value="@editableSubtasks[index]" 
+                                                   @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
+                                            <button @onclick="() => RemoveSubtask(index)">❌</button>
+                                        </li>
+                                    }
+                                </ul>
+                                <button @onclick="() => SaveSubtasks(plan, goal)">📃 Gem ændringer</button>
+                                <button @onclick="CancelEditing">Annuller</button>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var subtask in goal.Subtasks)
+                                    {
+                                        <li>@subtask</li>
+                                    }
+                                </ul>
+                                <button @onclick="() => StartEditing(goal)">✏️ Rediger</button>
+                            }
                         }
                     </div>
                 }
@@ -62,9 +82,10 @@ else
 @code {
     private List<StudentPlan> plans = new();
     private User? currentUser;
-
     private HashSet<int> openPlanIds = new();
     private HashSet<int> openGoalIds = new();
+    private int editingGoalId = -1;
+    private List<string> editableSubtasks = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,4 +107,43 @@ else
         if (!openGoalIds.Add(goalId))
             openGoalIds.Remove(goalId);
     }
+
+    private void StartEditing(Goal goal)
+    {
+        editingGoalId = goal.Id;
+        editableSubtasks = new(goal.Subtasks);
+    }
+
+    private void CancelEditing()
+    {
+        editingGoalId = -1;
+        editableSubtasks.Clear();
+    }
+
+    private void RemoveSubtask(int index)
+    {
+        if (index >= 0 && index < editableSubtasks.Count)
+        {
+            editableSubtasks.RemoveAt(index);
+        }
+    }
+
+    private async Task SaveSubtasks(StudentPlan plan, Goal goal)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        var goalToUpdate = planToUpdate.Goals.FirstOrDefault(g => g.Id == goal.Id);
+        if (goalToUpdate == null) return;
+
+        goalToUpdate.Subtasks = editableSubtasks.ToList();
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        editingGoalId = -1;
+        editableSubtasks.Clear();
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
 }
+
