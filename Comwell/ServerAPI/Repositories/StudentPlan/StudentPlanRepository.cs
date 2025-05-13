@@ -60,6 +60,16 @@ public class StudentPlanRepository : IStudentPlanRepository
         return await _studentPlan.Find(p => students.Contains(p.StudentId)).ToListAsync();
     }
     
+    public async Task<StudentPlan?> GetPlanByIdAsync(int id)
+    {
+        return await _studentPlan.Find(p => p.Id == id).FirstOrDefaultAsync();
+    }
+
+    public async Task UpdateStudentPlanAsync(StudentPlan updatedPlan)
+    {
+        await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan);
+    }
+    
 }
 
     

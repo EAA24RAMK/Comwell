@@ -12,4 +12,8 @@ public interface IStudentPlanRepository
     
     // metode: henter planer efter hotel (køkkenchef)
     Task<List<StudentPlan>> GetPlansByHotelAsync(string hotel);
+    
+    Task<StudentPlan?> GetPlanByIdAsync(int id);
+    Task UpdateStudentPlanAsync(StudentPlan updatedPlan);
+
 }

@@ -45,5 +45,18 @@ public class StudentPlanController : ControllerBase
     {
         return Ok(await _studentPlanRepo.GetPlansByHotelAsync(hotel));
     }
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] StudentPlan updatedPlan)
+    {
+        var existing = await _studentPlanRepo.GetPlanByIdAsync(id);
+        if (existing == null)
+            return NotFound("Planen blev ikke fundet");
+
+        updatedPlan.Id = id; // bevar ID
+        await _studentPlanRepo.UpdateStudentPlanAsync(updatedPlan);
+
+        return NoContent();
+    }
 
 }
