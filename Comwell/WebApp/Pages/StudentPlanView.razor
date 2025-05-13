@@ -14,29 +14,37 @@ else
 {
     @foreach (var plan in plans)
     {
-        <div class="plan-box">
+        <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
             <h4>@plan.Title</h4>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
-            <h5>Mål</h5>
-            @foreach (var goal in plan.Goals)
+            <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
+                Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+            </button>
+
+            @if (openPlanIds.Contains(plan.Id))
             {
-                <div>
-                    <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+                @foreach (var goal in plan.Goals)
+                {
+                    <div style="margin-left: 1rem; margin-bottom: 1rem;">
+                        <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
+                            <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+                            @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+                        </button>
 
-                    @if (goal.Subtasks != null && goal.Subtasks.Any())
-                    {
-                        <ul>
-                            @foreach (var subtask in goal.Subtasks)
-                            {
-                                <li>@subtask</li>
-                            }
-                        </ul>
-                    }
-                </div>
+                        @if (openGoalIds.Contains(goal.Id) && goal.Subtasks != null && goal.Subtasks.Any())
+                        {
+                            <ul>
+                                @foreach (var subtask in goal.Subtasks)
+                                {
+                                    <li>@subtask</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
             }
-
 
             <h5>Noter</h5>
             @foreach (var note in plan.Notes)
@@ -51,10 +59,12 @@ else
     }
 }
 
-
 @code {
     private List<StudentPlan> plans = new();
     private User? currentUser;
+
+    private HashSet<int> openPlanIds = new();
+    private HashSet<int> openGoalIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,5 +72,17 @@ else
         if (currentUser is null) return;
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+    }
+
+    private void TogglePlan(int planId)
+    {
+        if (!openPlanIds.Add(planId))
+            openPlanIds.Remove(planId);
+    }
+
+    private void ToggleGoal(int goalId)
+    {
+        if (!openGoalIds.Add(goalId))
+            openGoalIds.Remove(goalId);
     }
 }
