@@ -47,6 +47,9 @@ else
                                             <button @onclick="() => RemoveSubtask(index)">❌</button>
                                         </li>
                                     }
+                                    <li>
+                                        <button @onclick="AddSubtask">Tilføj ny subtask</button>
+                                    </li>
                                 </ul>
                                 <button @onclick="() => SaveSubtasks(plan, goal)">📃 Gem ændringer</button>
                                 <button @onclick="CancelEditing">Annuller</button>
@@ -144,6 +147,11 @@ else
         editableSubtasks.Clear();
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+
+    private void AddSubtask()
+    {
+        editableSubtasks.Add(string.Empty);
     }
 }
 
