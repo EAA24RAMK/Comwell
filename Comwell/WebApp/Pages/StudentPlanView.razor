@@ -24,8 +24,19 @@ else
             {
                 <div>
                     <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+
+                    @if (goal.Subtasks != null && goal.Subtasks.Any())
+                    {
+                        <ul>
+                            @foreach (var subtask in goal.Subtasks)
+                            {
+                                <li>@subtask</li>
+                            }
+                        </ul>
+                    }
                 </div>
             }
+
 
             <h5>Noter</h5>
             @foreach (var note in plan.Notes)

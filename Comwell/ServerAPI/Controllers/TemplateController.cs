@@ -16,14 +16,6 @@ public class TemplateController : ControllerBase
         _templateRepo = templateRepo;
     }
 
-    // Opretter standardtemplate i databasen
-    [HttpGet("create")]
-    public async Task<ActionResult> CreateStandardTemplate()
-    {
-        await _templateRepo.CreateStandardTemplateAsync();
-        return Ok("Standardtemplate oprettet.");
-    }
-
     // Returner alle templates fra databasen
     [HttpGet]
     public async Task<ActionResult<List<Template>>> GetAllTemplatesAsync()
