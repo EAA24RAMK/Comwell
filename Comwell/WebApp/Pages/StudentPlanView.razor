@@ -72,6 +72,7 @@ else
         if (currentUser is null) return;
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        
     }
 
     private void TogglePlan(int planId)

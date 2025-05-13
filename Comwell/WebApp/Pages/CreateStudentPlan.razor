@@ -78,11 +78,6 @@
     }
 
     <div>
-        <label>Oprettet af (bruger-id):</label>
-        <InputText @bind-Value="planModel.CreatedBy" />
-    </div>
-
-    <div>
         <label>Startdato:</label>
         <InputDate @bind-Value="planModel.PeriodStart" />
     </div>
@@ -167,6 +162,10 @@
 
             adjustedGoals.Add(adjustedGoal);
         }
+        
+        var currentUser = await UserService.GetCurrentUserAsync(); // 👈 hent brugeren
+        planModel.CreatedBy = currentUser.Name;
+    
 
         planModel.Goals = adjustedGoals;
         planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
