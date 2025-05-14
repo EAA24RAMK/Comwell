@@ -42,10 +42,17 @@ else
                                     <InputText @bind-Value="editableGoalTitle" />
 
                                     <label>Status:</label>
-                                    <InputText @bind-Value="editableGoalStatus" />
+                                    <select @bind="editableGoalStatus">
+                                        <option value="Ikke startet">Ikke startet</option>
+                                        <option value="I gang">I gang</option>
+                                        <option value="Fuldført">Fuldført</option>
+                                    </select>
 
                                     <label>Kategori:</label>
-                                    <InputText @bind-Value="editableGoalCategory" />
+                                    <select @bind="editableGoalCategory">
+                                        <option value="Skole">Skole</option>
+                                        <option value="Praktik">Praktik</option>
+                                    </select>
                                 </div>
 
                                 <ul>
@@ -91,10 +98,17 @@ else
                         <InputText @bind-Value="newGoalTitle" />
 
                         <label>Status:</label>
-                        <InputText @bind-Value="newGoalStatus" />
+                        <select @bind="editableGoalStatus">
+                            <option value="Ikke startet">Ikke startet</option>
+                            <option value="I gang">I gang</option>
+                            <option value="Fuldført">Fuldført</option>
+                        </select>
 
                         <label>Kategori:</label>
-                        <InputText @bind-Value="newGoalCategory" />
+                        <select @bind="editableGoalCategory">
+                            <option value="Skole">Skole</option>
+                            <option value="Praktik">Praktik</option>
+                        </select>
 
                         <button @onclick="() => ConfirmAddGoal(plan)">💾 Tilføj</button>
                         <button @onclick="CancelAddGoal">Annuller</button>
