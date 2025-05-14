@@ -158,6 +158,7 @@ else
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         templates = await TemplateService.GetAllTemplatesAsync();
         
+        // Henter elev navn til elevplan
         foreach (var plan in plans)
         {
             if (!userNamesById.ContainsKey(plan.StudentId))
