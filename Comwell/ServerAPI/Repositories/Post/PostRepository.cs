@@ -7,9 +7,11 @@ public class PostRepository : IPostRepository
 {
     private readonly IMongoCollection<Post> _collection;
     
-    public PostRepository(IMongoDatabase database)
+    public PostRepository(IConfiguration config)
     {
-        _collection = database.GetCollection<Post>("Posts");
+        var client = new MongoClient(config["MongoDB:ConnectionString"]);
+        var db = client.GetDatabase(config["MongoDB:DatabaseName"]);
+        _collection = db.GetCollection<Post>("post");
     }
     
     // Opret nyt opslag med nyt ID
@@ -32,13 +34,9 @@ public class PostRepository : IPostRepository
         return _collection.Find(_ => true).ToList();
     }
     
-    // Hent opslag synlige for en bestemt bruger/rolle
     public List<Post> GetForUser(string username, string role)
     {
-        return _collection.Find(post =>
-            post.VisibleTo.Contains("Alle") ||
-            post.VisibleTo.Contains(role) ||
-            post.VisibleTo.Contains(username)
-        ).ToList();
+        return _collection.Find(_ => true).ToList(); // Samme som GetAll()
     }
+
 }

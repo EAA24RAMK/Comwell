@@ -1,0 +1,101 @@
+﻿@page "/posts"
+@using WebApp.Services
+@using Core.Models
+@inject IUserService UserService
+
+
+
+@if (currentUser == null)
+{
+    <p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
+}
+else
+{
+
+<h3>Opslagstavle</h3>
+
+<!-- Formular til nyt opslag -->
+<div>
+    <input @bind="newPost.Title" placeholder="Titel" />
+    <br />
+    <textarea @bind="newPost.Content" placeholder="Indhold" rows="4"></textarea>
+    <br />
+    <button @onclick="CreatePost">Opret opslag</button>
+</div>
+
+<hr />
+
+<div>
+    @if (posts is not null)
+    {
+        @foreach (var post in posts)
+        {
+            <div style="margin-top: 10px;">
+                <h4>@post.Title</h4>
+                <p>@post.Content</p>
+                <p><i>af @post.Author</i></p>
+                <hr />
+            </div>
+        }
+    }
+</div>
+
+}
+
+@code {
+    private List<Post> posts = new();
+    private Post newPost = new();
+    private User? currentUser;
+
+    [Inject]
+    public HttpClient Http { get; set; }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+    }
+
+
+    private async Task LoadPosts()
+    {
+        if (currentUser == null)
+        {
+            Console.WriteLine("Du skal være logget ind for at se opslag.");
+            posts = new();
+            return;
+        }
+
+        posts = await Http.GetFromJsonAsync<List<Post>>("api/posts") ?? new();
+    }
+
+    
+
+
+    private async Task CreatePost()
+    {
+        if (currentUser == null)
+        {
+            Console.WriteLine("Du skal være logget ind for at oprette opslag.");
+            return;
+        }
+
+        newPost.Author = currentUser.Name;
+        newPost.CreatedAt = DateTime.Now;
+
+        await Http.PostAsJsonAsync("api/posts", newPost);
+        
+        // Ryd form og hent igen
+        newPost = new();
+        
+        await LoadPosts();
+    }
+
+    public class Post
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Content { get; set; } = "";
+        public string Author { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+}
