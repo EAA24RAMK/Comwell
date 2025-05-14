@@ -16,11 +16,7 @@
 <EditForm Model="planModel" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
-
-    <div>
-        <label>Titel:</label>
-        <InputText @bind-Value="planModel.Title" />
-    </div>
+    
 
     <div>
         <label>Vælg elev:</label>
@@ -43,40 +39,29 @@
             }
         </select>
     </div>
+    
+    <div>
+        <label>Lokation:</label>
+        <select @bind="location">
+            <option value="">-- Vælg lokation --</option>
+            <option value="Comwell Aarhus">Comwell Aarhus</option>
+            <option value="Comwell Kolding">Comwell Kolding</option>
+            <option value="Comwell Roskilde">Comwell Roskilde</option>
+        </select>
+    </div>
+    
 
-    @if (selectedTemplate != null)
-    {
-        <h4>Rediger perioder i skabelonen:</h4>
-        @foreach (var goal in selectedTemplate.Goals)
-        {
-            <div class="goal-section" style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ccc;">
-                <h5>@goal.Title</h5>
-                <p>@goal.Description</p>
-
-                <div>
-                    <label>Lokation:</label>
-                    <select @bind="goal.Location">
-                        <option value="">-- Vælg lokation --</option>
-                        <option value="Comwell Aarhus">Comwell Aarhus</option>
-                        <option value="Comwell Kolding">Comwell Kolding</option>
-                        <option value="Comwell Roskilde">Comwell Roskilde</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label>Ansvarlig:</label>
-                    <select @bind="goal.Responsible">
-                        <option value="">-- Vælg ansvarlig --</option>
-                        @foreach (var user in kitchenChefs.Where(u => u.Role == "Køkkenchef"))
-                        {
-                            <option value="@user.Name">@user.Name</option>
-                        }
-                    </select>
-                </div>
-            </div>
-        }
-    }
-
+    <div>
+        <label>Ansvarlig:</label>
+        <select @bind="responsible">
+            <option value="">-- Vælg ansvarlig --</option>
+            @foreach (var user in kitchenChefs.Where(u => u.Role == "Køkkenchef"))
+            {
+                <option value="@user.Name">@user.Name</option>
+            }
+        </select>
+    </div>
+    
     <div>
         <label>Startdato:</label>
         <InputDate @bind-Value="planModel.PeriodStart" />
@@ -86,13 +71,19 @@
 </EditForm>
 
 @code {
-    private StudentPlan planModel = new();
     private string feedbackMessage = "";
     private List<User> students = new();
     private List<User> kitchenChefs = new();
     private int selectedUserId;
     private List<Template> templates = new();
     private Template? selectedTemplate;
+    private string responsible = "";
+    private string location = "";
+    private StudentPlan planModel = new()
+    {
+        PeriodStart = DateTime.Today
+    };
+
 
     private int selectedTemplateId;
     private int SelectedTemplateId
