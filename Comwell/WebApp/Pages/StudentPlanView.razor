@@ -3,6 +3,7 @@
 @inject IStudentPlanService StudentPlanService
 @using Core.Models
 @inject IUserService UserService
+@inject ITemplateService TemplateService
 
 <h3>Elevplan</h3>
 
@@ -15,8 +16,9 @@ else
     @foreach (var plan in plans)
     {
         <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
-            <h4>@plan.Title</h4>
+            <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
             <p><strong>Elev:</strong> @userNamesById.GetValueOrDefault(plan.StudentId, "(Ukendt)")</p>
+            <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
             <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
@@ -131,6 +133,7 @@ else
 
 @code {
     private List<StudentPlan> plans = new();
+    private List<Template> templates = new();
     private User? currentUser;
     private HashSet<int> openPlanIds = new();
     private HashSet<int> openGoalIds = new();
@@ -153,7 +156,8 @@ else
         if (currentUser is null) return;
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-
+        templates = await TemplateService.GetAllTemplatesAsync();
+        
         foreach (var plan in plans)
         {
             if (!userNamesById.ContainsKey(plan.StudentId))
