@@ -43,5 +43,11 @@ public class StudentPlanService : IStudentPlanService
         }
         return new();
     }
+    
+    public async Task UpdateStudentPlanAsync(StudentPlan plan)
+    {
+        await _http.PutAsJsonAsync($"api/studentplan/{plan.Id}", plan);
+    }
+
 
 }

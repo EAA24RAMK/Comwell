@@ -1,7 +1,44 @@
 ﻿@page "/"
+@inject WebApp.Services.IUserService UserService
+@inject WebApp.Services.IStudentPlanService StudentPlanService
+@using Core.Models
 
-<PageTitle>Home</PageTitle>
+<h1>Oversigt</h1>
+<p>Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
 
-<h1>Hello, world!</h1>
+@if (goals != null && goals.Any())
+{
+    <div class="goal-summary">
+        <h3>Dine mål</h3>
+        <ul>
+            <li><strong>Mål i alt:</strong> @goals.Count()</li>
+            <li><strong>Fuldført:</strong> @goals.Count(g => g.Status == "Fuldført")</li>
+            <li><strong>I gang:</strong> @goals.Count(g => g.Status == "I gang")</li>
+            <li><strong>Vær opmærksom på:</strong> @goals.Count(g => g.Status == "Vær opmærksom på")</li>
+        </ul>
+    </div>
+}
+else
+{
+    <p>Ingen mål fundet endnu.</p>
+}
 
-Welcome to your new app.
+@code {
+    private string userName = "gæst";
+    private List<Goal> goals = new();
+
+    protected override async Task OnInitializedAsync() => await LoadGoals();
+
+    protected override async Task OnParametersSetAsync() => await LoadGoals();
+
+    private async Task LoadGoals()
+    {
+        var currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null)
+        {
+            userName = currentUser.Name ?? currentUser.Email ?? "bruger";
+            var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+            goals = plans.SelectMany(p => p.Goals).ToList();
+        }
+    }
+}

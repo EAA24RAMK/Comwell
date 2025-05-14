@@ -1,6 +1,6 @@
 namespace Core.Models;
 
-public class Goal
+public class Goal // embeddet i StudentPlan
 {
     public int Id { get; set; } 
     public string Title { get; set; } = "";

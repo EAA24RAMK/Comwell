@@ -10,18 +10,13 @@ public class TemplateController : ControllerBase
 {
     private readonly ITemplateRepository _templateRepo;
     
+    // Dependency injection
     public TemplateController(ITemplateRepository templateRepo)
     {
         _templateRepo = templateRepo;
     }
 
-    [HttpGet("create")]
-    public async Task<ActionResult> CreateStandardTemplate()
-    {
-        await _templateRepo.CreateStandardTemplateAsync();
-        return Ok("Standardtemplate oprettet.");
-    }
-
+    // Returner alle templates fra databasen
     [HttpGet]
     public async Task<ActionResult<List<Template>>> GetAllTemplatesAsync()
     {
@@ -29,6 +24,7 @@ public class TemplateController : ControllerBase
         return Ok(templates);
     } 
     
+    // Returner template ud fra id
     [HttpGet("{id}")]
     public async Task<ActionResult<Template>> GetTemplateById(int id)
     {

@@ -35,7 +35,7 @@
 
     <div>
         <label>Vælg skabelon:</label>
-        <select @onchange="OnTemplateChanged">
+        <select @bind="SelectedTemplateId">
             <option value="">-- Vælg en skabelon --</option>
             @foreach (var template in templates)
             {
@@ -78,11 +78,6 @@
     }
 
     <div>
-        <label>Oprettet af (bruger-id):</label>
-        <InputText @bind-Value="planModel.CreatedBy" />
-    </div>
-
-    <div>
         <label>Startdato:</label>
         <InputDate @bind-Value="planModel.PeriodStart" />
     </div>
@@ -91,25 +86,40 @@
 </EditForm>
 
 @code {
-    private StudentPlan planModel = new StudentPlan();
+    private StudentPlan planModel = new();
     private string feedbackMessage = "";
-    private List<User> students = new ();
+    private List<User> students = new();
     private List<User> kitchenChefs = new();
     private int selectedUserId;
     private List<Template> templates = new();
-    private int selectedTemplateId;
     private Template? selectedTemplate;
-    private string selectedResponsible = "";
-    private string selectedLocation = "";
 
+    private int selectedTemplateId;
+    private int SelectedTemplateId
+    {
+        get => selectedTemplateId;
+        set
+        {
+            if (selectedTemplateId != value)
+            {
+                selectedTemplateId = value;
+                LoadSelectedTemplate();
+            }
+        }
+    }
 
-    
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await UserService.GetAllUsersAsync();
         kitchenChefs = allUsers.Where(u => u.Role == "Køkkenchef").ToList();
         students = allUsers.Where(u => u.Role == "Elev").ToList();
         templates = await TemplateService.GetAllTemplatesAsync();
+    }
+
+    private async void LoadSelectedTemplate()
+    {
+        selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplateId);
+        StateHasChanged(); // Sørger for UI-opdatering
     }
 
     private async Task HandleSubmit()
@@ -122,17 +132,16 @@
 
         planModel.StudentId = selectedUserId;
         planModel.TemplateId = selectedTemplateId;
-        
+
         DateTime start = planModel.PeriodStart;
-        // Bruger første mål som referencepunkt
         var referenceDate = selectedTemplate.Goals.First().Deadline;
-        
+
         var adjustedGoals = new List<Goal>();
 
         foreach (var goal in selectedTemplate.Goals)
         {
             var dayOffset = (goal.Deadline - referenceDate).Days;
-            
+
             var adjustedGoal = new Goal
             {
                 Id = goal.Id,
@@ -141,10 +150,10 @@
                 Category = goal.Category,
                 Deadline = start.AddDays(dayOffset),
                 Status = "Ikke startet",
-                Responsible = goal.Responsible, 
+                Responsible = goal.Responsible,
                 InitiatedBy = goal.InitiatedBy,
                 CheckedOff = false,
-                Location = selectedLocation,
+                Location = goal.Location,
                 Subtasks = goal.Subtasks.ToList(),
                 Comments = new(),
                 StudentNotes = new(),
@@ -153,6 +162,10 @@
 
             adjustedGoals.Add(adjustedGoal);
         }
+        
+        var currentUser = await UserService.GetCurrentUserAsync(); // 👈 hent brugeren
+        planModel.CreatedBy = currentUser.Name;
+    
 
         planModel.Goals = adjustedGoals;
         planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
@@ -161,15 +174,4 @@
         feedbackMessage = "Planen er gemt!";
         NavigationManager.NavigateTo("/elevplaner");
     }
-
-    
-    private async Task OnTemplateChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out int templateId))
-        {
-            selectedTemplateId = templateId;
-            selectedTemplate = await TemplateService.GetTemplateByIdAsync(templateId);
-        }
-    }
-
 }

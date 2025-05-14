@@ -11,4 +11,6 @@ public interface IStudentPlanService
     // Henter planer for den user der er logget ind
     Task<List<StudentPlan>> GetPlansByUserAsync(User user);
 
+    Task UpdateStudentPlanAsync(StudentPlan plan);
+
 }

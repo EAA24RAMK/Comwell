@@ -14,17 +14,106 @@ else
 {
     @foreach (var plan in plans)
     {
-        <div class="plan-box">
+        <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
             <h4>@plan.Title</h4>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
-            <h5>Mål</h5>
-            @foreach (var goal in plan.Goals)
+            <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
+                Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+            </button>
+
+            @if (openPlanIds.Contains(plan.Id))
             {
-                <div>
-                    <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
-                </div>
+                @foreach (var goal in plan.Goals)
+                {
+                    <div style="margin-left: 1rem; margin-bottom: 1rem;">
+                        <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
+                            <strong>@goal.Title</strong> - @goal.Status (@goal.Category)
+                            @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+                        </button>
+
+                        @if (openGoalIds.Contains(goal.Id))
+                        {
+                            @if (editingGoalId == goal.Id)
+                            {
+                                <div>
+                                    <label>Titel:</label>
+                                    <InputText @bind-Value="editableGoalTitle" />
+
+                                    <label>Status:</label>
+                                    <select @bind="editableGoalStatus">
+                                        <option value="Ikke startet">Ikke startet</option>
+                                        <option value="I gang">I gang</option>
+                                        <option value="Fuldført">Fuldført</option>
+                                    </select>
+
+                                    <label>Kategori:</label>
+                                    <select @bind="editableGoalCategory">
+                                        <option value="Skole">Skole</option>
+                                        <option value="Praktik">Praktik</option>
+                                    </select>
+                                </div>
+
+                                <ul>
+                                    @for (int i = 0; i < editableSubtasks.Count; i++)
+                                    {
+                                        var index = i;
+                                        <li @key="index">
+                                            <input value="@editableSubtasks[index]" 
+                                                   @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
+                                            <button @onclick="() => RemoveSubtask(index)">❌</button>
+                                        </li>
+                                    }
+                                    <li>
+                                        <button @onclick="AddSubtask">➕ Tilføj ny subtask</button>
+                                    </li>
+                                </ul>
+
+                                <button @onclick="() => SaveGoalChanges(plan, goal)">💾 Gem mål og subtasks</button>
+                                <button @onclick="CancelEditing">Annuller</button>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var subtask in goal.Subtasks)
+                                    {
+                                        <li>@subtask</li>
+                                    }
+                                </ul>
+                                <button @onclick="() => StartEditing(goal)">✏️ Rediger</button>
+                                <button @onclick="() => DeleteGoal(plan, goal)">🗑️ Slet</button>
+                            }
+                        }
+                    </div>
+                }
+
+                <button @onclick="() => StartAddingNewGoal(plan.Id)">➕ Tilføj nyt mål</button>
+
+                @if (newGoalPlanId == plan.Id)
+                {
+                    <div style="margin-left: 1rem; margin-top: 1rem; border-top: 1px dashed #aaa; padding-top: 1rem;">
+                        <h5>Nyt mål</h5>
+                        <label>Titel:</label>
+                        <InputText @bind-Value="newGoalTitle" />
+
+                        <label>Status:</label>
+                        <select @bind="editableGoalStatus">
+                            <option value="Ikke startet">Ikke startet</option>
+                            <option value="I gang">I gang</option>
+                            <option value="Fuldført">Fuldført</option>
+                        </select>
+
+                        <label>Kategori:</label>
+                        <select @bind="editableGoalCategory">
+                            <option value="Skole">Skole</option>
+                            <option value="Praktik">Praktik</option>
+                        </select>
+
+                        <button @onclick="() => ConfirmAddGoal(plan)">💾 Tilføj</button>
+                        <button @onclick="CancelAddGoal">Annuller</button>
+                    </div>
+                }
             }
 
             <h5>Noter</h5>
@@ -40,10 +129,23 @@ else
     }
 }
 
-
 @code {
     private List<StudentPlan> plans = new();
     private User? currentUser;
+    private HashSet<int> openPlanIds = new();
+    private HashSet<int> openGoalIds = new();
+
+    private int editingGoalId = -1;
+    private List<string> editableSubtasks = new();
+    private string editableGoalTitle = "";
+    private string editableGoalStatus = "";
+    private string editableGoalCategory = "";
+
+    // Tilføj nyt mål
+    private int newGoalPlanId = -1;
+    private string newGoalTitle = "";
+    private string newGoalStatus = "";
+    private string newGoalCategory = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,5 +153,121 @@ else
         if (currentUser is null) return;
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        
     }
+
+    private void TogglePlan(int planId)
+    {
+        if (!openPlanIds.Add(planId))
+            openPlanIds.Remove(planId);
+    }
+
+    private void ToggleGoal(int goalId)
+    {
+        if (!openGoalIds.Add(goalId))
+            openGoalIds.Remove(goalId);
+    }
+
+    private void StartEditing(Goal goal)
+    {
+        editingGoalId = goal.Id;
+        editableSubtasks = new(goal.Subtasks);
+        editableGoalTitle = goal.Title;
+        editableGoalStatus = goal.Status;
+        editableGoalCategory = goal.Category;
+    }
+
+    private void CancelEditing()
+    {
+        editingGoalId = -1;
+        editableSubtasks.Clear();
+        editableGoalTitle = editableGoalStatus = editableGoalCategory = "";
+    }
+
+    private void RemoveSubtask(int index)
+    {
+        if (index >= 0 && index < editableSubtasks.Count)
+        {
+            editableSubtasks.RemoveAt(index);
+        }
+    }
+
+    private void AddSubtask()
+    {
+        editableSubtasks.Add(string.Empty);
+    }
+
+    private async Task SaveGoalChanges(StudentPlan plan, Goal goal)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        var goalToUpdate = planToUpdate.Goals.FirstOrDefault(g => g.Id == goal.Id);
+        if (goalToUpdate == null) return;
+
+        goalToUpdate.Title = editableGoalTitle;
+        goalToUpdate.Status = editableGoalStatus;
+        goalToUpdate.Category = editableGoalCategory;
+        goalToUpdate.Subtasks = editableSubtasks.ToList();
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        editingGoalId = -1;
+        editableSubtasks.Clear();
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+
+    private void StartAddingNewGoal(int planId)
+    {
+        newGoalPlanId = planId;
+        newGoalTitle = "";
+        newGoalStatus = "";
+        newGoalCategory = "";
+    }
+
+    private void CancelAddGoal()
+    {
+        newGoalPlanId = -1;
+        newGoalTitle = newGoalStatus = newGoalCategory = "";
+    }
+
+    private async Task ConfirmAddGoal(StudentPlan plan)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        var newGoalId = planToUpdate.Goals.Any() ? planToUpdate.Goals.Max(g => g.Id) + 1 : 1;
+
+        var newGoal = new Goal
+        {
+            Id = newGoalId,
+            Title = newGoalTitle,
+            Status = newGoalStatus,
+            Category = newGoalCategory,
+            Subtasks = new List<string>()
+        };
+
+        planToUpdate.Goals.Add(newGoal);
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        CancelAddGoal();
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+    
+    private async Task DeleteGoal(StudentPlan plan, Goal goal)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        planToUpdate.Goals.RemoveAll(g => g.Id == goal.Id);
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+
 }
+
+
