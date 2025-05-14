@@ -2,6 +2,8 @@
 @using WebApp.Services
 @using Core.Models
 @inject IUserService UserService
+@inject IPostService PostService
+
 
 
 
@@ -46,9 +48,7 @@ else
     private List<Post> posts = new();
     private Post newPost = new();
     private User? currentUser;
-
-    [Inject]
-    public HttpClient Http { get; set; }
+    
     
     protected override async Task OnInitializedAsync()
     {
@@ -66,7 +66,7 @@ else
             return;
         }
 
-        posts = await Http.GetFromJsonAsync<List<Post>>("api/posts") ?? new();
+        posts = await PostService.GetAllPostsAsync();
     }
 
     
@@ -83,20 +83,12 @@ else
         newPost.Author = currentUser.Name;
         newPost.CreatedAt = DateTime.Now;
 
-        await Http.PostAsJsonAsync("api/posts", newPost);
+        await PostService.CreatePostAsync(newPost);
         
         // Ryd form og hent igen
         newPost = new();
         
         await LoadPosts();
     }
-
-    public class Post
-    {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Content { get; set; } = "";
-        public string Author { get; set; } = "";
-        public DateTime CreatedAt { get; set; }
-    }
+    
 }
