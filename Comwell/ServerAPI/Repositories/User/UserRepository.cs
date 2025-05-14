@@ -62,4 +62,10 @@ public class UserRepository : IUserRepository
         var result = await _users.DeleteOneAsync(u => u.Id == id);
         return result.DeletedCount > 0;
     }
+    
+    public async Task<User?> GetUserByIdAsync(int id)
+    {
+        return await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
+    }
+
 }

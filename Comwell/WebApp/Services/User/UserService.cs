@@ -62,4 +62,10 @@ public class UserService : IUserService
         var response = await _http.DeleteAsync($"api/user/{userId}");
         return response.IsSuccessStatusCode;
     }
+    
+    public async Task<User?> GetUserByIdAsync(int id)
+    {
+        return await _http.GetFromJsonAsync<User>($"api/user/id/{id}");
+    }
+
 }
