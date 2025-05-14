@@ -1,10 +1,21 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
+@inject WebApp.Services.IUserService UserService
+@using Core.Models
+
+<div class="layout">
     <div class="sidebar">
-        <NavMenu/>
+        <NavMenu />
+
+        <div class="user-info">
+            <div class="avatar">@GetInitials(currentUser?.Name)</div>
+            <div class="user-details">
+                <div class="user-name">@currentUser?.Name</div>
+                <div class="user-role">@currentUser?.Role</div>
+            </div>
+        </div>
     </div>
 
-    <main>
+    <div class="main">
         <div class="top-row px-4">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
@@ -12,5 +23,22 @@
         <article class="content px-4">
             @Body
         </article>
-    </main>
+    </div>
 </div>
+
+@code {
+    private User? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+    }
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "";
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
+        return string.Concat(parts[0][0], parts[^1][0]).ToUpper();
+    }
+}
