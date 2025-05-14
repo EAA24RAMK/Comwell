@@ -64,4 +64,13 @@ public class UserController : ControllerBase
         if (!deleted) return NotFound();
         return Ok();
     }
+    
+    [HttpGet("id/{id}")]
+    public async Task<ActionResult<User>> GetById(int id)
+    {
+        var user = await _repo.GetUserByIdAsync(id);
+        if (user == null) return NotFound();
+        return Ok(user);
+    }
+
 }
