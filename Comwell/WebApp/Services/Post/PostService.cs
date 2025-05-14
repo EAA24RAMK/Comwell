@@ -21,4 +21,10 @@ public class PostService : IPostService
     {
         await _http.PostAsJsonAsync("api/posts", post);
     }
+    
+    public async Task DeletePostAsync(int id)
+    {
+        await _http.DeleteAsync($"api/posts/{id}");
+    }
+
 }

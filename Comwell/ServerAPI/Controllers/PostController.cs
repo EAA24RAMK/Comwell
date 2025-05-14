@@ -32,4 +32,14 @@ public class PostsController : ControllerBase
         var posts = _postRepository.GetAll();
         return Ok(posts);
     }
+    
+    // DELETE: api/posts/{id}
+    [HttpDelete("{id}")]
+    public IActionResult DeletePost(int id)
+    {
+        _postRepository.Delete(id);
+        return Ok();
+    }
+
+
 }

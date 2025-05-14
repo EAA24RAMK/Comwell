@@ -30,12 +30,13 @@ else
 <div>
     @if (posts is not null)
     {
-        @foreach (var post in posts)
+        @foreach (var post in posts.OrderByDescending(p => p.Id))
         {
             <div style="margin-top: 10px;">
                 <h4>@post.Title</h4>
                 <p>@post.Content</p>
-                <p><i>af @post.Author</i></p>
+                <p><i>af @post.Author - @post.CreatedAt.ToString("dd-MM-yyyy HH:mm")</i></p>
+                <button @onclick="() => DeletePost(post.Id)">Slet</button>
                 <hr />
             </div>
         }
@@ -59,13 +60,6 @@ else
 
     private async Task LoadPosts()
     {
-        if (currentUser == null)
-        {
-            Console.WriteLine("Du skal være logget ind for at se opslag.");
-            posts = new();
-            return;
-        }
-
         posts = await PostService.GetAllPostsAsync();
     }
 
@@ -74,12 +68,6 @@ else
 
     private async Task CreatePost()
     {
-        if (currentUser == null)
-        {
-            Console.WriteLine("Du skal være logget ind for at oprette opslag.");
-            return;
-        }
-
         newPost.Author = currentUser.Name;
         newPost.CreatedAt = DateTime.Now;
 
@@ -90,5 +78,13 @@ else
         
         await LoadPosts();
     }
+    
+    private async Task DeletePost(int id)
+    {
+        await PostService.DeletePostAsync(id);
+        posts = await PostService.GetAllPostsAsync();
+
+    }
+
     
 }
