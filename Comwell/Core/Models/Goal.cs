@@ -12,7 +12,7 @@ public class Goal // embeddet i StudentPlan
     public string InitiatedBy { get; set; } = "";
     public bool CheckedOff { get; set; } = false;
     public string Location { get; set; } = "";
-    public List<string> Subtasks { get; set; } = new();
+    public List<Subtask> Subtasks { get; set; } = new();
     public List<string> Comments { get; set; } = new();
     public List<string> StudentNotes { get; set; } = new();
     public List<string> Attachments { get; set; } = new();
