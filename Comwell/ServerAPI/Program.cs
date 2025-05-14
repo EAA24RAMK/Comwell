@@ -13,7 +13,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
 builder.Services.AddSingleton<ITemplateRepository, TemplateRepository>();
-
+builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
 
 builder.Services.AddCors(options =>
 {
