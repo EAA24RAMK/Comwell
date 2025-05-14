@@ -41,14 +41,16 @@
     </div>
     
     <div>
-        <label>Lokation:</label>
+        <label>Vælg lokation:</label>
         <select @bind="location">
             <option value="">-- Vælg lokation --</option>
-            <option value="Comwell Aarhus">Comwell Aarhus</option>
-            <option value="Comwell Kolding">Comwell Kolding</option>
-            <option value="Comwell Roskilde">Comwell Roskilde</option>
+            @foreach (var hotel in hotelLocations)
+            {
+                <option value="@hotel">@hotel</option>
+            }
         </select>
     </div>
+
     
 
     <div>
@@ -79,6 +81,8 @@
     private Template? selectedTemplate;
     private string responsible = "";
     private string location = "";
+    private List<string> hotelLocations = new();
+    
     private StudentPlan planModel = new()
     {
         PeriodStart = DateTime.Today
@@ -105,6 +109,13 @@
         kitchenChefs = allUsers.Where(u => u.Role == "Køkkenchef").ToList();
         students = allUsers.Where(u => u.Role == "Elev").ToList();
         templates = await TemplateService.GetAllTemplatesAsync();
+        
+        // Henter alle hoteller fra brugerne
+        hotelLocations = allUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
+            .Select(u => u.Hotel)
+            .Distinct()
+            .ToList();
     }
 
     private async void LoadSelectedTemplate()
