@@ -1,10 +1,12 @@
 @page "/rapporter"
 @inject IUserService UserService
+@inject IStudentPlanService StudentPlanService
 @using Core.Models
 @using WebApp.Services
 
 <h3>Rapporter</h3>
 
+<!-- Vælg lokation -->
 <div>
     <label>Vælg lokation:</label>
     <select @bind="selectedLocation">
@@ -16,6 +18,7 @@
     </select>
 </div>
 
+<!-- Statistik pr. rolle -->
 <div style="margin-top: 1rem;">
     <h4>Statistik</h4>
     <p><strong>Samlet antal ansatte:</strong> @filteredUsers.Count()</p>
@@ -27,6 +30,7 @@
     </ul>
 </div>
 
+<!-- Brugerliste -->
 <div style="margin-top: 1rem;">
     <h4>Alle brugere</h4>
     <table>
@@ -52,7 +56,57 @@
     </table>
 </div>
 
+<!-- Målopfyldelse pr. lokation -->
+<div style="margin-top: 2rem;">
+    <h4>Målopfyldelse</h4>
+
+    <label>Vælg mål:</label>
+    <select @bind="selectedGoalTitle">
+        <option value="">-- Vælg mål --</option>
+        @foreach (var title in allGoalTitles)
+        {
+            <option value="@title">@title</option>
+        }
+    </select>
+
+    @if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
+    {
+        <table class="table" style="margin-top: 1rem;">
+            <thead>
+                <tr>
+                    <th>Lokation</th>
+                    <th>Fuldført</th>
+                    <th>I gang</th>
+                    <th>Ikke startet</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var location in (string.IsNullOrWhiteSpace(selectedLocation) ? locations : new List<string> { selectedLocation }))
+            {
+                var goals = allPlans
+                    .Where(p => allUsers.Any(u => u.Id == p.StudentId && u.Hotel == location))
+                    .SelectMany(p => p.Goals.Where(g => g.Title == selectedGoalTitle));
+
+                var completed = goals.Count(g => g.Status == "Fuldført");
+                var inProgress = goals.Count(g => g.Status == "I gang");
+                var notStarted = goals.Count(g => g.Status == "Ikke startet");
+
+                <tr>
+                    <td>@location</td>
+                    <td>@completed</td>
+                    <td>@inProgress</td>
+                    <td>@notStarted</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
 @code {
+    private string selectedGoalTitle = "";
+    private List<string> allGoalTitles = new();
+    private List<StudentPlan> allPlans = new();
     private List<User> allUsers = new();
     private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
         ? allUsers
@@ -65,6 +119,7 @@
     protected override async Task OnInitializedAsync()
     {
         allUsers = await UserService.GetAllUsersAsync();
+        allPlans = await StudentPlanService.GetAllPlansAsync();
 
         locations = allUsers
             .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
@@ -78,6 +133,13 @@
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Distinct()
             .OrderBy(r => r)
+            .ToList();
+
+        allGoalTitles = allPlans
+            .SelectMany(p => p.Goals)
+            .Select(g => g.Title)
+            .Distinct()
+            .OrderBy(t => t)
             .ToList();
     }
 }
