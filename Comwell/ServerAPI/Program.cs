@@ -13,7 +13,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
 builder.Services.AddSingleton<ITemplateRepository, TemplateRepository>();
-
+builder.Services.AddSingleton<IStudentPlanRepository, StudentPlanRepository>();
+builder.Services.AddSingleton<IPostRepository, PostRepository>();
 
 builder.Services.AddCors(options =>
 {
