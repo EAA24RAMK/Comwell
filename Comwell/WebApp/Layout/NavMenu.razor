@@ -33,16 +33,20 @@
                 <span class="bi bi-people" aria-hidden="true"></span> Brugere
             </NavLink>
         </div>
-        <li class="nav-item px-3">
-            @if (_isLoggedIn)
+        <div class="nav-item px-3">
+            @if (isLoggedIn)
             {
-                <a class="nav-link" href="" @onclick="HandleLogout">Log ud</a>
+                <a class="nav-link" href="#" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right"></span> Log ud
+                </a>
             }
             else
             {
-                <NavLink class="nav-link" href="/login">Login</NavLink>
+                <NavLink class="nav-link" href="/login">
+                    <span class="bi bi-box-arrow-in-right"></span> Log ind
+                </NavLink>
             }
-        </li>
+        </div>
     </nav>
 </div>
 
@@ -58,18 +62,18 @@
         collapseNavMenu = !collapseNavMenu;
     }
     
-    private bool _isLoggedIn = false;
+    private bool isLoggedIn = false;
 
     protected override async Task OnInitializedAsync()
     {
         var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
-        _isLoggedIn = user != null;
+        isLoggedIn = user != null;
     }
 
     private async Task HandleLogout()
     {
         await LocalStorage.RemoveItemAsync("loggedInUser");
-        _isLoggedIn = false;
+        isLoggedIn = false;
         NavManager.NavigateTo("/login", true);
     }
 }

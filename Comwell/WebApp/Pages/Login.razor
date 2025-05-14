@@ -36,7 +36,8 @@
         if (user != null)
         {
             await LocalStorage.SetItemAsync("loggedInUser", user);
-            NavManager.NavigateTo("/", true);
+            NavManager.NavigateTo("/", forceLoad: true);
+
         }
         else
         {
