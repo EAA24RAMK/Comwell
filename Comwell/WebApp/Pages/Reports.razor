@@ -35,23 +35,57 @@
     <h4>Alle brugere</h4>
     <table>
         <thead>
-        <tr>
-            <th>Navn</th>
-            <th>Email</th>
-            <th>Rolle</th>
-            <th>Lokation</th>
-        </tr>
+            <tr>
+                <th>Navn</th>
+                <th>Email</th>
+                <th>Rolle</th>
+                <th>Lokation</th>
+                <th>Fuldførelsesprocent</th>
+            </tr>
         </thead>
         <tbody>
-        @foreach (var user in filteredUsers)
-        {
-            <tr>
-                <td>@user.Name</td>
-                <td>@user.Email</td>
-                <td>@user.Role</td>
-                <td>@user.Hotel</td>
-            </tr>
-        }
+            @foreach (var user in filteredUsers)
+            {
+                var userPlan = allPlans.FirstOrDefault(p => p.StudentId == user.Id);
+                int total = userPlan?.Goals.Count ?? 0;
+                int done = userPlan?.Goals.Count(g => g.Status == "Fuldført") ?? 0;
+                int percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+
+                <tr>
+                    <td>
+                        <button @onclick="() => ToggleStudent(user.Id)" style="border: none; background: none; text-decoration: underline;">
+                            @user.Name
+                        </button>
+                    </td>
+                    <td>@user.Email</td>
+                    <td>@user.Role</td>
+                    <td>@user.Hotel</td>
+                    <td>@percent %</td>
+                </tr>
+
+                @if (expandedStudentId == user.Id && userPlan != null)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <strong>Status for @user.Name</strong><br />
+                            Periode: @userPlan.PeriodStart.ToShortDateString() - @userPlan.PeriodEnd.ToShortDateString()<br />
+                            Mål: @userPlan.Goals.Count |
+                            Fuldført: @userPlan.Goals.Count(g => g.Status == "Fuldført") |
+                            I gang: @userPlan.Goals.Count(g => g.Status == "I gang") |
+                            Ikke startet: @userPlan.Goals.Count(g => g.Status == "Ikke startet")
+
+                            <ul>
+                                @foreach (var goal in userPlan.Goals)
+                                {
+                                    <li>@goal.Title – @goal.Status – Deadline: @goal.Deadline.ToShortDateString()</li>
+                                }
+                            </ul>
+
+                            <button @onclick="() => ToggleStudent(user.Id)">Luk</button>
+                        </td>
+                    </tr>
+                }
+            }
         </tbody>
     </table>
 </div>
@@ -81,23 +115,23 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach (var location in (string.IsNullOrWhiteSpace(selectedLocation) ? locations : new List<string> { selectedLocation }))
-            {
-                var goals = allPlans
-                    .Where(p => allUsers.Any(u => u.Id == p.StudentId && u.Hotel == location))
-                    .SelectMany(p => p.Goals.Where(g => g.Title == selectedGoalTitle));
+                @foreach (var location in (string.IsNullOrWhiteSpace(selectedLocation) ? locations : new List<string> { selectedLocation }))
+                {
+                    var goals = allPlans
+                        .Where(p => allUsers.Any(u => u.Id == p.StudentId && u.Hotel == location))
+                        .SelectMany(p => p.Goals.Where(g => g.Title == selectedGoalTitle));
 
-                var completed = goals.Count(g => g.Status == "Fuldført");
-                var inProgress = goals.Count(g => g.Status == "I gang");
-                var notStarted = goals.Count(g => g.Status == "Ikke startet");
+                    var completed = goals.Count(g => g.Status == "Fuldført");
+                    var inProgress = goals.Count(g => g.Status == "I gang");
+                    var notStarted = goals.Count(g => g.Status == "Ikke startet");
 
-                <tr>
-                    <td>@location</td>
-                    <td>@completed</td>
-                    <td>@inProgress</td>
-                    <td>@notStarted</td>
-                </tr>
-            }
+                    <tr>
+                        <td>@location</td>
+                        <td>@completed</td>
+                        <td>@inProgress</td>
+                        <td>@notStarted</td>
+                    </tr>
+                }
             </tbody>
         </table>
     }
@@ -111,6 +145,7 @@
     private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
         ? allUsers
         : allUsers.Where(u => u.Hotel == selectedLocation).ToList();
+    private int expandedStudentId = -1;
 
     private List<string> locations = new();
     private List<string> roles = new();
@@ -141,5 +176,10 @@
             .Distinct()
             .OrderBy(t => t)
             .ToList();
+    }
+
+    private void ToggleStudent(int userId)
+    {
+        expandedStudentId = expandedStudentId == userId ? -1 : userId;
     }
 }

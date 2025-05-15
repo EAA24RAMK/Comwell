@@ -28,6 +28,13 @@ public class PostRepository : IPostRepository
         _collection.InsertOne(post);
     }
     
+    // Slet et opslag
+    public void Delete(int id)
+    {
+        _collection.DeleteOne(p => p.Id == id);
+    }
+
+    
     // Hent alle opslag
     public List<Post> GetAll()
     {
@@ -38,5 +45,4 @@ public class PostRepository : IPostRepository
     {
         return _collection.Find(_ => true).ToList(); // Samme som GetAll()
     }
-
 }
