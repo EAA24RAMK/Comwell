@@ -3,6 +3,7 @@
 @using WebApp.Services
 @inject IUserService UserService
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 
 <h3>Brugere</h3>
@@ -126,6 +127,10 @@
             .ToList();
 
         currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null && currentUser.Role == "Elev")
+        {
+            Nav.NavigateTo("/");
+        }
     }
 
     private void CreateUser()
