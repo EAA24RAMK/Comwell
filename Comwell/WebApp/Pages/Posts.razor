@@ -4,87 +4,88 @@
 @inject IUserService UserService
 @inject IPostService PostService
 
-
-
-
 @if (currentUser == null)
 {
     <p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
 }
 else
 {
+    <h3>Opslagstavle</h3>
 
-<h3>Opslagstavle</h3>
+    <!-- Formular til nyt opslag -->
+    <div>
+        <input @bind="newPost.Title" placeholder="Titel" />
+        <br />
+        <textarea @bind="newPost.Content" placeholder="Indhold" rows="4"></textarea>
+        <br />
+        <button @onclick="CreatePost">Opret opslag</button>
+    </div>
 
-<!-- Formular til nyt opslag -->
-<div>
-    <input @bind="newPost.Title" placeholder="Titel" />
-    <br />
-    <textarea @bind="newPost.Content" placeholder="Indhold" rows="4"></textarea>
-    <br />
-    <button @onclick="CreatePost">Opret opslag</button>
-</div>
+    <hr />
 
-<hr />
+    <!-- Søgning -->
+    <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." />
 
-<div>
-    @if (posts is not null)
-    {
-        @foreach (var post in posts.OrderByDescending(p => p.Id))
+    <div>
+        @if (FilteredPosts.Any())
         {
-            <div style="margin-top: 10px;">
-                <h4>@post.Title</h4>
-                <p>@post.Content</p>
-                <p><i>af @post.Author - @post.CreatedAt.ToString("dd-MM-yyyy HH:mm")</i></p>
-                <button @onclick="() => DeletePost(post.Id)">Slet</button>
-                <hr />
-            </div>
+            @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+            {
+                <div style="margin-top: 10px;">
+                    <h4>@post.Title</h4>
+                    <p>@post.Content</p>
+                    <p><i>af @post.Author - @post.CreatedAt.ToString("dd-MM-yyyy HH:mm")</i></p>
+                    <button @onclick="() => DeletePost(post.Id)">Slet</button>
+                    <hr />
+                </div>
+            }
         }
-    }
-</div>
-
+        else
+        {
+            <p>Ingen opslag matcher din søgning.</p>
+        }
+    </div>
 }
 
 @code {
     private List<Post> posts = new();
     private Post newPost = new();
     private User? currentUser;
-    
-    
+    private string searchTerm = "";
+
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
         await LoadPosts();
     }
 
-
     private async Task LoadPosts()
     {
         posts = await PostService.GetAllPostsAsync();
     }
 
-    
-
-
     private async Task CreatePost()
     {
-        newPost.Author = currentUser.Name;
+        newPost.Author = currentUser?.Name ?? "Ukendt";
         newPost.CreatedAt = DateTime.Now;
 
         await PostService.CreatePostAsync(newPost);
-        
-        // Ryd form og hent igen
-        newPost = new();
-        
+        newPost = new(); // Ryd formular
+
         await LoadPosts();
     }
-    
+
     private async Task DeletePost(int id)
     {
         await PostService.DeletePostAsync(id);
-        posts = await PostService.GetAllPostsAsync();
-
+        await LoadPosts();
     }
 
-    
+    private IEnumerable<Post> FilteredPosts =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? posts
+            : posts.Where(p =>
+                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            );
 }

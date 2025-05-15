@@ -3,6 +3,7 @@
 @inject IStudentPlanService StudentPlanService
 @using Core.Models
 @using WebApp.Services
+@inject NavigationManager Nav
 
 <h3>Rapporter</h3>
 
@@ -151,9 +152,16 @@
     private List<string> locations = new();
     private List<string> roles = new();
     private string selectedLocation = "";
+    private User? currentUser;
 
     protected override async Task OnInitializedAsync()
     {
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null && currentUser.Role == "Elev")
+        {
+            Nav.NavigateTo("/");
+        }
+        
         allUsers = await UserService.GetAllUsersAsync();
         allPlans = await StudentPlanService.GetAllPlansAsync();
 
