@@ -49,6 +49,25 @@ else
                                 {
                                     <li>
                                         @subtask.Text
+
+                                        @if (!subtask.IsCompleted)
+                                        {
+                                            @if (!subtask.IsRequestedCompleted)
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary ms-2"
+                                                        @onclick="() => RequestSubtaskCompletion(plan, goal, subtask)">
+                                                    Anmod om 'fuldført'
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark ms-2">Anmodet</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success ms-2">Fuldført</span>
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -113,4 +132,13 @@ else
         if (completed == total) return "Fuldført";
         return $"{completed}/{total} fuldført";
     }
+    
+    // metode til anmod om fuldført knap
+    private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.IsRequestedCompleted = true;
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        StateHasChanged();
+    }
+
 }
