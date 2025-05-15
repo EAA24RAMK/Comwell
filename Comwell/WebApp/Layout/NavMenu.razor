@@ -1,6 +1,8 @@
 ﻿@using Core.Models
+@using WebApp.Services
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
+@inject IUserService UserService
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -23,11 +25,25 @@
                 <span class="bi bi bi-plus-circle" aria-hidden="true"></span> Opret plan
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="elevplaner">
-                <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplaner
-            </NavLink>
-        </div>
+        @if (currentUser != null)
+        {
+            if (currentUser.Role == "Elev")
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="elevplan">
+                        <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplan
+                    </NavLink>
+                </div>
+            }
+            else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef")
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="elevplaner">
+                        <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplaner
+                    </NavLink>
+                </div>
+            }
+        }
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="users">
                 <span class="bi bi-people" aria-hidden="true"></span> Brugere
@@ -65,10 +81,9 @@
     </nav>
 </div>
 
-
-
 @code {
     private bool collapseNavMenu = true;
+    private User? currentUser;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -83,6 +98,8 @@
     {
         var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
         isLoggedIn = user != null;
+
+        currentUser = await UserService.GetCurrentUserAsync();
     }
 
     private async Task HandleLogout()
@@ -91,5 +108,6 @@
         isLoggedIn = false;
         NavManager.NavigateTo("/login", true);
     }
+    
 }
 }
