@@ -78,10 +78,20 @@ else
                                     @foreach (var subtask in goal.Subtasks)
                                     {
                                         <li>
-                                            <input type="checkbox" 
-                                                   checked="@subtask.IsCompleted" 
+                                            <input type="checkbox"
+                                                   checked="@subtask.IsCompleted"
                                                    @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)" />
+
                                             @subtask.Text
+
+                                            @if (subtask.IsRequestedCompleted && !subtask.IsCompleted)
+                                            {
+                                                <span class="badge bg-warning text-dark ms-2">Elev har anmodet</span>
+                                            }
+                                            @if (subtask.IsCompleted)
+                                            {
+                                                <span class="badge bg-success ms-2">Fuldført</span>
+                                            }
                                         </li>
                                     }
                                 </ul>
@@ -319,6 +329,3 @@ else
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
 }
-
-
-
