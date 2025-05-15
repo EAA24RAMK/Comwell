@@ -47,6 +47,11 @@
                 </div>
             }
         }
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="notifikationer">
+                <span class="bi bi-bell" aria-hidden="true"></span> Notifikationer
+            </NavLink>
+        </div>
         @if (currentUser != null && currentUser.Role != "Elev")
         {
             <div class="nav-item px-3">
