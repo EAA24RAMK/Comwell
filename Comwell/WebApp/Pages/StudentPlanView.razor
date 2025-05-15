@@ -8,13 +8,41 @@
 
 <h3>Elevplaner</h3>
 
+<div class="mb-3 d-flex gap-3">
+    <div>
+        <label>Filtrer efter hotel:</label>
+        <select @onchange="OnHotelChanged" class="form-select">
+            <option value="">Alle hoteller</option>
+            @foreach (var hotel in allHotels)
+            {
+                <option value="@hotel" selected="@(hotel == selectedHotel)">
+                    @hotel
+                </option>
+            }
+        </select>
+    </div>
+    <div>
+        <label>Filtrer efter elev:</label>
+        <select @onchange="OnStudentChanged" class="form-select">
+            <option value="-1">Alle elever</option>
+            @foreach (var user in allUsers.Where(u => u.Role == "Elev" && (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel)))
+            {
+                <option value="@user.Id" selected="@(user.Id == selectedStudentId)">
+                    @user.Name (@user.Hotel)
+                </option>
+            }
+        </select>
+    </div>
+</div>
+
+
 @if (plans == null || !plans.Any())
 {
     <p>Ingen planer fundet.</p>
 }
 else
 {
-    @foreach (var plan in plans)
+    @foreach (var plan in FilteredPlans())
     {
         <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
@@ -153,6 +181,12 @@ else
     private int newGoalPlanId = -1;
     private string newGoalTitle = "";
     private string newGoalCategory = "";
+    
+    //hent alle brugere og lav lister til dropdowns
+    private List<User> allUsers = new();
+    private List<string> allHotels = new();
+    private int selectedStudentId = -1;
+    private string selectedHotel = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -164,6 +198,14 @@ else
         {
             Nav.NavigateTo("/");
         }
+        
+        allUsers = await UserService.GetAllUsersAsync();
+        allHotels = allUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
+            .Select(u => u.Hotel)
+            .Distinct()
+            .OrderBy(h => h)
+            .ToList();
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         templates = await TemplateService.GetAllTemplatesAsync();
@@ -328,4 +370,41 @@ else
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
+    
+    // Filtrer planer baseret på dropdowns
+    private IEnumerable<StudentPlan> FilteredPlans()
+    {
+        IEnumerable<StudentPlan> filtered = plans;
+
+        if (!string.IsNullOrEmpty(selectedHotel))
+        {
+            var studentIds = allUsers
+                .Where(u => u.Role == "Elev" && u.Hotel == selectedHotel)
+                .Select(u => u.Id)
+                .ToHashSet();
+            filtered = filtered.Where(p => studentIds.Contains(p.StudentId));
+        }
+
+        if (selectedStudentId != -1)
+        {
+            filtered = filtered.Where(p => p.StudentId == selectedStudentId);
+        }
+
+        return filtered;
+    }
+
+    private void OnHotelChanged(ChangeEventArgs e)
+    {
+        selectedHotel = e.Value?.ToString() ?? "";
+        selectedStudentId = -1; // Nulstil elevvalg når hotel skiftes
+    }
+
+    private void OnStudentChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var id))
+            selectedStudentId = id;
+        else
+            selectedStudentId = -1;
+    }
+
 }
