@@ -77,30 +77,53 @@ public class NotificationController : ControllerBase
 
                     var message = $"Målet '{goal.Title}' skal være færdigt om 2 dage.";
 
-                    // Elev får notifikation
-                    await _notificationRepo.AddAsync(new Notification
-                    {
-                        Message = message,
-                        Deadline = goal.Deadline,
-                        RelatedUserId = student.Id,
-                        PlanId = plan.Id,
-                        GoalId = goal.Id,
-                        CreatedAt = DateTime.Now
-                    });
+                    // --- Tjek om denne notifikation allerede findes for eleven ---
+                    var existingStudentNotes = await _notificationRepo.GetByUserIdAsync(student.Id);
+                    bool alreadyExistsForStudent = existingStudentNotes.Any(n =>
+                        n.GoalId == goal.Id &&
+                        n.PlanId == plan.Id &&
+                        n.Deadline.Date == goal.Deadline.Date &&
+                        n.Message == message
+                    );
 
-                    // HR-brugere får også notifikation
-                    var hrUsers = allUsers.Where(u => u.Role == "HR");
-                    foreach (var hr in hrUsers)
+                    if (!alreadyExistsForStudent)
                     {
                         await _notificationRepo.AddAsync(new Notification
                         {
-                            Message = $"(HR) {student.Name}: {message}",
+                            Message = message,
                             Deadline = goal.Deadline,
-                            RelatedUserId = hr.Id,
+                            RelatedUserId = student.Id,
                             PlanId = plan.Id,
                             GoalId = goal.Id,
                             CreatedAt = DateTime.Now
                         });
+                    }
+
+                    // --- HR-brugere ---
+                    var hrUsers = allUsers.Where(u => u.Role == "HR");
+                    foreach (var hr in hrUsers)
+                    {
+                        var hrMessage = $"(HR) {student.Name}: {message}";
+                        var existingHrNotes = await _notificationRepo.GetByUserIdAsync(hr.Id);
+                        bool alreadyExistsForHr = existingHrNotes.Any(n =>
+                            n.GoalId == goal.Id &&
+                            n.PlanId == plan.Id &&
+                            n.Deadline.Date == goal.Deadline.Date &&
+                            n.Message == hrMessage
+                        );
+
+                        if (!alreadyExistsForHr)
+                        {
+                            await _notificationRepo.AddAsync(new Notification
+                            {
+                                Message = hrMessage,
+                                Deadline = goal.Deadline,
+                                RelatedUserId = hr.Id,
+                                PlanId = plan.Id,
+                                GoalId = goal.Id,
+                                CreatedAt = DateTime.Now
+                            });
+                        }
                     }
                 }
             }
@@ -108,5 +131,5 @@ public class NotificationController : ControllerBase
 
         return Ok("Notifikationer genereret.");
     }
-
+    
 }
