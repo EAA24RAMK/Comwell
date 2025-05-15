@@ -46,9 +46,10 @@
         <tbody>
             @foreach (var user in filteredUsers)
             {
-                var userPlan = allPlans.FirstOrDefault(p => p.StudentId == user.Id);
-                int total = userPlan?.Goals.Count ?? 0;
-                int done = userPlan?.Goals.Count(g => g.Status == "Fuldført") ?? 0;
+                var userPlans = allPlans.Where(p => p.StudentId == user.Id).ToList();
+                var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+                int total = allGoals.Count;
+                int done = allGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
                 int percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
 
                 <tr>
@@ -63,19 +64,19 @@
                     <td>@percent %</td>
                 </tr>
 
-                @if (expandedStudentId == user.Id && userPlan != null)
+                @if (expandedStudentId == user.Id && userPlans.Any())
                 {
                     <tr>
                         <td colspan="5">
                             <strong>Status for @user.Name</strong><br />
-                            Periode: @userPlan.PeriodStart.ToShortDateString() - @userPlan.PeriodEnd.ToShortDateString()<br />
-                            Mål: @userPlan.Goals.Count |
-                            Fuldført: @userPlan.Goals.Count(g => g.Status == "Fuldført") |
-                            I gang: @userPlan.Goals.Count(g => g.Status == "I gang") |
-                            Ikke startet: @userPlan.Goals.Count(g => g.Status == "Ikke startet")
+                            Periode(r): @string.Join(", ", userPlans.Select(p => $"{p.PeriodStart.ToShortDateString()} - {p.PeriodEnd.ToShortDateString()}"))<br />
+                            Mål: @total |
+                            Fuldført: @done |
+                            I gang: @allGoals.Count(g => g.Status == "I gang") |
+                            Ikke startet: @allGoals.Count(g => g.Status == "Ikke startet")
 
                             <ul>
-                                @foreach (var goal in userPlan.Goals)
+                                @foreach (var goal in allGoals)
                                 {
                                     <li>@goal.Title – @goal.Status – Deadline: @goal.Deadline.ToShortDateString()</li>
                                 }
@@ -162,7 +163,7 @@
             .Distinct()
             .OrderBy(h => h)
             .ToList();
-        
+
         roles = allUsers
             .Select(u => u.Role)
             .Where(r => !string.IsNullOrWhiteSpace(r))
