@@ -4,6 +4,7 @@
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
 @inject ITemplateService TemplateService
+@inject NavigationManager Nav
 
 <h3>Elevplaner</h3>
 
@@ -147,6 +148,12 @@ else
     {
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser is null) return;
+        
+        // Hvis rolle ikke er HR eller køkkenchef ingen adgang
+        if (currentUser == null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef"))
+        {
+            Nav.NavigateTo("/");
+        }
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         templates = await TemplateService.GetAllTemplatesAsync();
