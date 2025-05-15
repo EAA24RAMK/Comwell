@@ -61,7 +61,11 @@ else
                                             }
                                             else
                                             {
-                                                <span class="badge bg-warning text-dark ms-2">Anmodet</span>
+                                                <button class="btn btn-sm btn-warning ms-2"
+                                                        title="Fortryd anmodning"
+                                                        @onclick="() => CancelSubtaskRequest(plan, goal, subtask)">
+                                                    Anmodet (fortryd)
+                                                </button>
                                             }
                                         }
                                         else
@@ -140,5 +144,14 @@ else
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         StateHasChanged();
     }
+    
+    // metode til at annullere sin anmodning
+    private async Task CancelSubtaskRequest(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.IsRequestedCompleted = false;
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        StateHasChanged();
+    }
+
 
 }
