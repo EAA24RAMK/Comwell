@@ -238,6 +238,19 @@ else
     private async Task ToggleSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask, bool isCompleted)
     {
         subtask.IsCompleted = isCompleted;
+        // Opdater status automatisk hvis alle subtasks er fuldført
+        if (goal.Subtasks.All(s => s.IsCompleted))
+        {
+            goal.Status = "Fuldført";
+        }
+        else if (goal.Subtasks.Any(s => s.IsCompleted))
+        {
+            goal.Status = "I gang";
+        }
+        else
+        {
+            goal.Status = "Ikke startet";
+        }
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
