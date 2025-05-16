@@ -1,3 +1,155 @@
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.filters input,
+.filters select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.filters button {
+    background-color: #a6af87;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filters button:hover {
+    background-color: #8f976e;
+}
+
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.user-card {
+    display: grid;
+    grid-template-columns: 48px 1fr 1fr 1fr 32px;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    gap: 1rem;
+    position: relative;
+}
+
+.user-header {
+    background: none;
+    box-shadow: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b7280;
+    padding-bottom: 0;
+}
+
+.header-label {
+    align-self: end;
+}
+
+.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    color: #374151;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #111827;
+}
+
+.user-role {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.user-location {
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.user-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+    min-width: 65px;
+}
+
+.user-status.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.user-status.inactive {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.user-actions {
+    position: relative;
+}
+
+.user-actions button {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.action-menu {
+    position: absolute;
+    top: 1.8rem;
+    right: 0;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    z-index: 10;
+}
+
+.delete-button {
+    background: none;
+    border: none;
+    color: #dc2626;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    text-align: left;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background-color: #fef2f2;
+}
+
+/* Modal styling (uændret) */
 .modal-background {
     position: fixed;
     top: 0;
@@ -26,11 +178,38 @@
     display: block;
     width: 100%;
     margin: 0.5rem 0;
-    padding: 0.5rem;
-    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: #fff;
 }
 
 .modal-box button {
     margin-top: 1rem;
     margin-right: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
 }
+
+.modal-box button:first-of-type {
+    background-color: #a6af87;
+    color: white;
+}
+
+.modal-box button:first-of-type:hover {
+    background-color: #8f976e;
+}
+
+.modal-box button:last-of-type {
+    background-color: #e5e7eb;
+    color: #111827;
+}
+
+.modal-box button:last-of-type:hover {
+    background-color: #d1d5db;
+}
+
