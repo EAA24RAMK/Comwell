@@ -88,15 +88,15 @@ else
                                                    @onchange="e => editableSubtasksCompleted[index] = (bool)e.Value" />
                                             <input value="@editableSubtasks[index]"
                                                    @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
-                                            <button @onclick="() => RemoveSubtask(index)">❌</button>
+                                            <button @onclick="() => RemoveSubtask(index)">Slet delmål</button>
                                         </li>
                                     }
                                     <li>
-                                        <button @onclick="AddSubtask">➕ Tilføj ny subtask</button>
+                                        <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj ny subtask</button>
                                     </li>
                                 </ul>
 
-                                <button @onclick="() => SaveGoalChanges(plan, goal)">💾 Gem mål og subtasks</button>
+                                <button class="bi bi-save" @onclick="() => SaveGoalChanges(plan, goal)"> Gem mål og subtasks</button>
                                 <button @onclick="CancelEditing">Annuller</button>
                             }
                             else
@@ -122,14 +122,14 @@ else
                                         </li>
                                     }
                                 </ul>
-                                <button @onclick="() => StartEditing(goal)">✏️ Rediger</button>
-                                <button @onclick="() => DeleteGoal(plan, goal)">🗑️ Slet</button>
+                                <button class="bi bi-pencil-square" @onclick="() => StartEditing(goal)"> Rediger</button>
+                                <button class="bi bi-trash" @onclick="() => DeleteGoal(plan, goal)"> ️Slet</button>
                             }
                         }
                     </div>
                 }
 
-                <button @onclick="() => StartAddingNewGoal(plan.Id)">➕ Tilføj nyt mål</button>
+                <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)"> Tilføj nyt mål</button>
 
                 @if (newGoalPlanId == plan.Id)
                 {
@@ -144,7 +144,7 @@ else
                             <option value="Praktik">Praktik</option>
                         </select>
 
-                        <button @onclick="() => ConfirmAddGoal(plan)">💾 Tilføj</button>
+                        <button class="bi bi-plus" @onclick="() => ConfirmAddGoal(plan)"> Tilføj</button>
                         <button @onclick="CancelAddGoal">Annuller</button>
                     </div>
                 }
