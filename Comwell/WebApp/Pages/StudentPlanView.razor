@@ -88,15 +88,15 @@ else
                                                    @onchange="e => editableSubtasksCompleted[index] = (bool)e.Value" />
                                             <input value="@editableSubtasks[index]"
                                                    @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
-                                            <button @onclick="() => RemoveSubtask(index)">Slet delmål</button>
+                                            <button @onclick="() => RemoveSubtask(index)">Slet</button>
                                         </li>
                                     }
                                     <li>
-                                        <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj ny subtask</button>
+                                        <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj delmål</button>
                                     </li>
                                 </ul>
 
-                                <button class="bi bi-save" @onclick="() => SaveGoalChanges(plan, goal)"> Gem mål og subtasks</button>
+                                <button @onclick="() => SaveGoalChanges(plan, goal)"> Gem</button>
                                 <button @onclick="CancelEditing">Annuller</button>
                             }
                             else
