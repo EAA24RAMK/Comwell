@@ -8,9 +8,9 @@
 <h3>Rapporter</h3>
 
 <!-- Vælg lokation -->
-<div>
-    <label>Vælg lokation:</label>
-    <select @bind="selectedLocation">
+<div class="section">
+    <label class="filter-label">Vælg lokation:</label>
+    <select class="filter-select" @bind="selectedLocation">
         <option value="">Alle lokationer</option>
         @foreach (var loc in locations)
         {
@@ -20,175 +20,121 @@
 </div>
 
 <!-- Statistik pr. rolle -->
-<div style="margin-top: 1rem;">
-    <h4>Statistik</h4>
-    <p><strong>Samlet antal ansatte:</strong> @filteredUsers.Count()</p>
-    <ul>
+<div class="section">
+    <h4 class="subsection-title">Statistik over ansatte</h4>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h5>Samlet antal</h5>
+            <div class="count">@filteredUsers.Count()</div>
+        </div>
         @foreach (var role in roles)
         {
-            <li>@role: @filteredUsers.Count(u => u.Role == role)</li>
+            var count = filteredUsers.Count(u => u.Role == role);
+            if (count > 0)
+            {
+                <div class="stat-card">
+                    <h5>@role</h5>
+                    <div class="count">@count</div>
+                </div>
+            }
         }
-    </ul>
+    </div>
 </div>
 
-<!-- Brugerliste -->
-<div style="margin-top: 1rem;">
-    <h4>Alle brugere</h4>
-    <table>
-        <thead>
+<!-- Brugergrupper -->
+@foreach (var role in roles)
+{
+    var usersInRole = filteredUsers.Where(u => u.Role == role).ToList();
+    if (!usersInRole.Any()) continue;
+
+    <div class="section" id="@role">
+        <h4 class="subsection-title">@role</h4>
+
+        @if (role == "Elev")
+        {
+            <!-- Dropdown for mål -->
+            <label class="filter-label">Vælg mål:</label>
+            <select class="filter-select" @bind="selectedGoalTitle">
+                <option value="">Vælg mål</option>
+                @foreach (var title in allGoalTitles)
+                {
+                    <option value="@title">@title</option>
+                }
+            </select>
+        }
+
+        <table class="data-table @(role == "Elev" ? "" : "fixed-layout")">
+            <thead>
             <tr>
                 <th>Navn</th>
                 <th>Email</th>
-                <th>Rolle</th>
                 <th>Lokation</th>
-                <th>Fuldførelsesprocent</th>
+                @if (role == "Elev")
+                {
+                    <th>Fuldførelsesprocent</th>
+                }
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in filteredUsers)
+            </thead>
+            <tbody>
+            @foreach (var user in usersInRole)
             {
                 var userPlans = allPlans.Where(p => p.StudentId == user.Id).ToList();
                 var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
-                int total = allGoals.Count;
-                int done = allGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
-                int percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                int percent = 0;
+
+                if (role == "Elev")
+                {
+                    if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
+                    {
+                        var selectedGoals = allGoals.Where(g => g.Title == selectedGoalTitle).ToList();
+                        int total = selectedGoals.Count;
+                        int done = selectedGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
+                        percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                    }
+                    else
+                    {
+                        int total = allGoals.Count;
+                        int done = allGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
+                        percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                    }
+                }
 
                 <tr>
-                    <td>
-                        <button @onclick="() => ToggleStudent(user.Id)" style="border: none; background: none; text-decoration: underline;">
-                            @user.Name
-                        </button>
-                    </td>
+                    <td>@user.Name</td>
                     <td>@user.Email</td>
-                    <td>@user.Role</td>
                     <td>@user.Hotel</td>
-                    <td>@percent %</td>
+                    @if (role == "Elev")
+                    {
+                        <td>@percent %</td>
+                    }
                 </tr>
-
-                @if (expandedStudentId == user.Id && userPlans.Any())
-                {
-                    <tr>
-                        <td colspan="5">
-                            <strong>Status for @user.Name</strong><br />
-                            Periode(r): @string.Join(", ", userPlans.Select(p => $"{p.PeriodStart.ToShortDateString()} - {p.PeriodEnd.ToShortDateString()}"))<br />
-                            Mål: @total |
-                            Fuldført: @done |
-                            I gang: @allGoals.Count(g => g.Status == "I gang") |
-                            Ikke startet: @allGoals.Count(g => g.Status == "Ikke startet")
-
-                            <ul>
-                                @foreach (var goal in allGoals)
-                                {
-                                    <li>@goal.Title – @goal.Status – Deadline: @goal.Deadline.ToShortDateString()</li>
-                                }
-                            </ul>
-
-                            <button @onclick="() => ToggleStudent(user.Id)">Luk</button>
-                        </td>
-                    </tr>
-                }
             }
-        </tbody>
-    </table>
-</div>
-
-<!-- Målopfyldelse pr. lokation -->
-<div style="margin-top: 2rem;">
-    <h4>Målopfyldelse</h4>
-
-    <label>Vælg mål:</label>
-    <select @bind="selectedGoalTitle">
-        <option value="">-- Vælg mål --</option>
-        @foreach (var title in allGoalTitles)
-        {
-            <option value="@title">@title</option>
-        }
-    </select>
-
-    @if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
-    {
-        <table class="table" style="margin-top: 1rem;">
-            <thead>
-                <tr>
-                    <th>Lokation</th>
-                    <th>Fuldført</th>
-                    <th>I gang</th>
-                    <th>Ikke startet</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var location in (string.IsNullOrWhiteSpace(selectedLocation) ? locations : new List<string> { selectedLocation }))
-                {
-                    var goals = allPlans
-                        .Where(p => allUsers.Any(u => u.Id == p.StudentId && u.Hotel == location))
-                        .SelectMany(p => p.Goals.Where(g => g.Title == selectedGoalTitle));
-
-                    var completed = goals.Count(g => g.Status == "Fuldført");
-                    var inProgress = goals.Count(g => g.Status == "I gang");
-                    var notStarted = goals.Count(g => g.Status == "Ikke startet");
-
-                    <tr>
-                        <td>@location</td>
-                        <td>@completed</td>
-                        <td>@inProgress</td>
-                        <td>@notStarted</td>
-                    </tr>
-                }
             </tbody>
         </table>
-    }
-</div>
+
+    </div>
+}
 
 @code {
-    private string selectedGoalTitle = "";
-    private List<string> allGoalTitles = new();
     private List<StudentPlan> allPlans = new();
     private List<User> allUsers = new();
+    private List<string> roles = new();
+    private List<string> locations = new();
+    private List<string> allGoalTitles = new();
+    private string selectedLocation = "";
+    private string selectedGoalTitle = "";
+
     private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
         ? allUsers
         : allUsers.Where(u => u.Hotel == selectedLocation).ToList();
-    private int expandedStudentId = -1;
-
-    private List<string> locations = new();
-    private List<string> roles = new();
-    private string selectedLocation = "";
-    private User? currentUser;
 
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser != null && currentUser.Role == "Elev")
-        {
-            Nav.NavigateTo("/");
-        }
-        
         allUsers = await UserService.GetAllUsersAsync();
         allPlans = await StudentPlanService.GetAllPlansAsync();
 
-        locations = allUsers
-            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
-            .Select(u => u.Hotel)
-            .Distinct()
-            .OrderBy(h => h)
-            .ToList();
-
-        roles = allUsers
-            .Select(u => u.Role)
-            .Where(r => !string.IsNullOrWhiteSpace(r))
-            .Distinct()
-            .OrderBy(r => r)
-            .ToList();
-
-        allGoalTitles = allPlans
-            .SelectMany(p => p.Goals)
-            .Select(g => g.Title)
-            .Distinct()
-            .OrderBy(t => t)
-            .ToList();
+        roles = allUsers.Select(u => u.Role).Distinct().OrderByDescending(r => r == "Elev").ToList();
+        locations = allUsers.Select(u => u.Hotel).Where(h => !string.IsNullOrWhiteSpace(h)).Distinct().OrderBy(h => h).ToList();
+        allGoalTitles = allPlans.SelectMany(p => p.Goals).Select(g => g.Title).Distinct().OrderBy(t => t).ToList();
     }
-
-    private void ToggleStudent(int userId)
-    {
-        expandedStudentId = expandedStudentId == userId ? -1 : userId;
-    }
-}
+} 

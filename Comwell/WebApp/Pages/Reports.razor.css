@@ -1,0 +1,107 @@
+.rapport-wrapper {
+    padding: 2rem;
+    font-family: sans-serif;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.filter-label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    border: 1px solid #ddd;
+    padding: 0.6rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+.expand-btn,
+.luk-btn {
+    background: none;
+    color: #0a5a7a;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+.subsection-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stats-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.stat-card {
+    background-color: #f6f6f6;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    flex: 1 1 150px;
+    text-align: center;
+}
+
+.stat-card h5 {
+    font-size: 1rem;
+    margin: 0;
+    color: #555;
+}
+
+.stat-card .count {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+    margin-top: 0.3rem;
+}
+
+/* Sikrer faste kolonnebredder i alle tabeller undtagen for elever */
+.fixed-layout {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.fixed-layout th:nth-child(1),
+.fixed-layout td:nth-child(1) {
+    width: 33%;
+}
+
+.fixed-layout th:nth-child(2),
+.fixed-layout td:nth-child(2) {
+    width: 33%;
+}
+
+.fixed-layout th:nth-child(3),
+.fixed-layout td:nth-child(3) {
+    width: 33%;
+}
+
+
+
