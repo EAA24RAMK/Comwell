@@ -10,41 +10,61 @@
 }
 else
 {
-    <h3>Opslagstavle</h3>
+    <div class="posts-container">
+        <h3>Opslagstavle</h3>
+        
+        <div class="topbar">
+            <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
+            <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
+        </div>
 
-    <!-- Formular til nyt opslag -->
-    <div>
-        <input @bind="newPost.Title" placeholder="Titel" />
-        <br />
-        <textarea @bind="newPost.Content" placeholder="Indhold" rows="4"></textarea>
-        <br />
-        <button @onclick="CreatePost">Opret opslag</button>
-    </div>
-
-    <hr />
-
-    <!-- Søgning -->
-    <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." />
-
-    <div>
-        @if (FilteredPosts.Any())
-        {
-            @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+        <!-- Opslag -->
+        <div class="posts-list">
+            @if (FilteredPosts.Any())
             {
-                <div style="margin-top: 10px;">
-                    <h4>@post.Title</h4>
-                    <p>@post.Content</p>
-                    <p><i>af @post.Author - @post.CreatedAt.ToString("dd-MM-yyyy HH:mm")</i></p>
-                    <button @onclick="() => DeletePost(post.Id)">Slet</button>
-                    <hr />
-                </div>
+                @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+                {
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author-avatar">@GetInitials(post.Author)</div>
+                            <div class="post-meta">
+                                <div class="post-title">@post.Title</div>
+                                <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                            </div>
+                            <div class="post-options">
+                                <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
+                                @if (confirmDeletePostId == post.Id)
+                                {
+                                    <div class="confirm-popup">
+                                        <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <p class="post-content">@post.Content</p>
+                    </div>
+                }
             }
-        }
-        else
-        {
-            <p>Ingen opslag matcher din søgning.</p>
-        }
+            else
+            {
+                <p>Ingen opslag matcher din søgning.</p>
+            }
+        </div>
     </div>
+    
+    @if (showModal)
+    {
+        <div class="modal-backdrop" @onclick="CloseModal"></div>
+        <div class="modal">
+            <h4>Opret nyt opslag</h4>
+            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
+            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+            <div class="modal-actions">
+                <button class="cancel-button" @onclick="CloseModal">Annuller</button>
+                <button class="create-button" @onclick="SubmitModal">Opret</button>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -52,6 +72,8 @@ else
     private Post newPost = new();
     private User? currentUser;
     private string searchTerm = "";
+    private int? confirmDeletePostId = null;
+    private bool showModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,21 +86,36 @@ else
         posts = await PostService.GetAllPostsAsync();
     }
 
-    private async Task CreatePost()
+    private async Task SubmitModal()
     {
         newPost.Author = currentUser?.Name ?? "Ukendt";
         newPost.CreatedAt = DateTime.Now;
 
         await PostService.CreatePostAsync(newPost);
-        newPost = new(); // Ryd formular
+        newPost = new();
+        showModal = false;
 
         await LoadPosts();
     }
 
-    private async Task DeletePost(int id)
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    private async Task ConfirmDelete(int id)
     {
         await PostService.DeletePostAsync(id);
+        confirmDeletePostId = null;
         await LoadPosts();
+    }
+
+    private void ToggleDeletePopup(int postId)
+    {
+        if (confirmDeletePostId == postId)
+            confirmDeletePostId = null;
+        else
+            confirmDeletePostId = postId;
     }
 
     private IEnumerable<Post> FilteredPosts =>
@@ -88,4 +125,13 @@ else
                 (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             );
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "";
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? parts[0][0].ToString().ToUpper()
+            : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
 }

@@ -1,0 +1,216 @@
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.topbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.search-field {
+    max-width: 400px;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    background-color: #fff;
+}
+
+.create-modal-button {
+    background-color: #a6af87;
+    border: none;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.create-modal-button:hover {
+    background-color: #8f976e;
+}
+
+.posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.post-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.post-author-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: #e5e7eb;
+    color: #374151;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.post-meta {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.post-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #111827;
+}
+
+.post-author {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.post-content {
+    font-size: 0.95rem;
+    color: #374151;
+    margin-top: 0.5rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.post-options {
+    position: relative;
+}
+
+.delete-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.delete-button:hover {
+    color: #dc2626;
+}
+
+.confirm-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.3rem;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+}
+
+.confirm-popup button {
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: none;
+    color: #b91c1c;
+    font-size: 0.9rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+
+.confirm-popup button:hover {
+    background-color: #fef2f2;
+}
+
+/* Modal og formular */
+.modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 101;
+    width: 90%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: auto;
+    max-height: 90vh;
+}
+
+.input-field,
+.textarea-field {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    background-color: #fff;
+    width: 100%;
+}
+
+.textarea-field {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.cancel-button {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.cancel-button:hover {
+    background-color: #e5e7eb;
+}
+
+.create-button {
+    background-color: #a6af87;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.create-button:hover {
+    background-color: #8f976e;
+}

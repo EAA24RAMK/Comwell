@@ -3,7 +3,7 @@
 @inject WebApp.Services.IStudentPlanService StudentPlanService
 @using Core.Models
 
-<h1>Oversigt</h1>
+<h1 class="page-title">Oversigt</h1>
 
 @if (isCheckingUser)
 {
@@ -11,28 +11,53 @@
 }
 else if (!isLoggedIn)
 {
-    <p style="color:black;"><strong>Log venligst ind for at tilgå portalen.</strong></p>
+    <p class="access-denied"><strong>Log venligst ind for at tilgå portalen.</strong></p>
 }
 else
 {
-    <p>Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
+    <p class="welcome-text">Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
 
-    @if (goals != null && goals.Any())
-    {
-        <div class="goal-summary">
-            <h3>Dine mål</h3>
-            <ul>
-                <li><strong>Mål i alt:</strong> @goals.Count()</li>
-                <li><strong>Fuldført:</strong> @goals.Count(g => g.Status == "Fuldført")</li>
-                <li><strong>I gang:</strong> @goals.Count(g => g.Status == "I gang")</li>
-                <li><strong>Vær opmærksom på:</strong> @goals.Count(g => g.Status == "Vær opmærksom på")</li>
-            </ul>
+    <div class="goal-grid">
+        <div class="goal-card total">
+            <div class="goal-icon icon-green">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="goal-content">
+                <span class="goal-label">Mål i alt</span>
+                <span class="goal-value">@goals.Count()</span>
+            </div>
         </div>
-    }
-    else
-    {
-        <p>Ingen mål fundet endnu.</p>
-    }
+
+        <div class="goal-card completed">
+            <div class="goal-icon icon-beige">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="goal-content">
+                <span class="goal-label">Færdigt</span>
+                <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span>
+            </div>
+        </div>
+
+        <div class="goal-card in-progress">
+            <div class="goal-icon icon-orange">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="goal-content">
+                <span class="goal-label">I gang</span>
+                <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span>
+            </div>
+        </div>
+
+        <div class="goal-card attention">
+            <div class="goal-icon icon-dark">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="goal-content">
+                <span class="goal-label">Vær opmærksom på</span>
+                <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -51,7 +76,6 @@ else
         try
         {
             var currentUser = await UserService.GetCurrentUserAsync();
-
             if (currentUser != null)
             {
                 isLoggedIn = true;
@@ -62,7 +86,7 @@ else
         }
         finally
         {
-            isCheckingUser = false; // Uanset hvad, er vi færdige med tjekket
+            isCheckingUser = false;
         }
     }
 }
