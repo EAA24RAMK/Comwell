@@ -10,43 +10,45 @@
 }
 else
 {
-    <h3>Opslagstavle</h3>
+    <div class="posts-container">
+        <h3>Opslagstavle</h3>
 
-    <!-- Formular til nyt opslag -->
-    <div>
-        <input @bind="newPost.Title" placeholder="Titel" />
-        <br />
-        <textarea @bind="newPost.Content" placeholder="Indhold" rows="4"></textarea>
-        <br />
-        <button @onclick="CreatePost">Opret opslag</button>
-    </div>
+        <!-- Formular -->
+        <div class="new-post-card">
+            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
+            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+            <button class="create-button" @onclick="CreatePost">Opret opslag</button>
+        </div>
 
-    <hr />
+        <!-- Søgning -->
+        <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
 
-    <!-- Søgning -->
-    <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." />
-
-    <div>
-        @if (FilteredPosts.Any())
-        {
-            @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+        <!-- Indlæg -->
+        <div class="posts-list">
+            @if (FilteredPosts.Any())
             {
-                <div style="margin-top: 10px;">
-                    <h4>@post.Title</h4>
-                    <p>@post.Content</p>
-                    <p><i>af @post.Author - @post.CreatedAt.ToString("dd-MM-yyyy HH:mm")</i></p>
-                    <button @onclick="() => DeletePost(post.Id)">Slet</button>
-                    <hr />
-                </div>
+                @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+                {
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author-avatar">@GetInitials(post.Author)</div>
+                            <div class="post-meta">
+                                <div class="post-title">@post.Title</div>
+                                <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                            </div>
+                            <button class="delete-button" @onclick="() => DeletePost(post.Id)">⋮</button>
+                        </div>
+                        <p class="post-content">@post.Content</p>
+                    </div>
+                }
             }
-        }
-        else
-        {
-            <p>Ingen opslag matcher din søgning.</p>
-        }
+            else
+            {
+                <p>Ingen opslag matcher din søgning.</p>
+            }
+        </div>
     </div>
 }
-
 @code {
     private List<Post> posts = new();
     private Post newPost = new();
@@ -70,7 +72,7 @@ else
         newPost.CreatedAt = DateTime.Now;
 
         await PostService.CreatePostAsync(newPost);
-        newPost = new(); // Ryd formular
+        newPost = new(); // ryd formular
 
         await LoadPosts();
     }
@@ -88,4 +90,13 @@ else
                 (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             );
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "";
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? parts[0][0].ToString().ToUpper()
+            : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
 }
