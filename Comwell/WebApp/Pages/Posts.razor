@@ -12,18 +12,13 @@ else
 {
     <div class="posts-container">
         <h3>Opslagstavle</h3>
-
-        <!-- Formular -->
-        <div class="new-post-card">
-            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
-            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
-            <button class="create-button" @onclick="CreatePost">Opret opslag</button>
+        
+        <div class="topbar">
+            <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
+            <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
         </div>
 
-        <!-- Søgning -->
-        <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
-
-        <!-- Indlæg -->
+        <!-- Opslag -->
         <div class="posts-list">
             @if (FilteredPosts.Any())
             {
@@ -36,7 +31,15 @@ else
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
                             </div>
-                            <button class="delete-button" @onclick="() => DeletePost(post.Id)">⋮</button>
+                            <div class="post-options">
+                                <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
+                                @if (confirmDeletePostId == post.Id)
+                                {
+                                    <div class="confirm-popup">
+                                        <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                                    </div>
+                                }
+                            </div>
                         </div>
                         <p class="post-content">@post.Content</p>
                     </div>
@@ -48,12 +51,29 @@ else
             }
         </div>
     </div>
+    
+    @if (showModal)
+    {
+        <div class="modal-backdrop" @onclick="CloseModal"></div>
+        <div class="modal">
+            <h4>Opret nyt opslag</h4>
+            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
+            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+            <div class="modal-actions">
+                <button class="cancel-button" @onclick="CloseModal">Annuller</button>
+                <button class="create-button" @onclick="SubmitModal">Opret</button>
+            </div>
+        </div>
+    }
 }
+
 @code {
     private List<Post> posts = new();
     private Post newPost = new();
     private User? currentUser;
     private string searchTerm = "";
+    private int? confirmDeletePostId = null;
+    private bool showModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,21 +86,36 @@ else
         posts = await PostService.GetAllPostsAsync();
     }
 
-    private async Task CreatePost()
+    private async Task SubmitModal()
     {
         newPost.Author = currentUser?.Name ?? "Ukendt";
         newPost.CreatedAt = DateTime.Now;
 
         await PostService.CreatePostAsync(newPost);
-        newPost = new(); // ryd formular
+        newPost = new();
+        showModal = false;
 
         await LoadPosts();
     }
 
-    private async Task DeletePost(int id)
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    private async Task ConfirmDelete(int id)
     {
         await PostService.DeletePostAsync(id);
+        confirmDeletePostId = null;
         await LoadPosts();
+    }
+
+    private void ToggleDeletePopup(int postId)
+    {
+        if (confirmDeletePostId == postId)
+            confirmDeletePostId = null;
+        else
+            confirmDeletePostId = postId;
     }
 
     private IEnumerable<Post> FilteredPosts =>
