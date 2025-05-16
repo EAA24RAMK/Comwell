@@ -1,26 +1,33 @@
 ﻿@inherits LayoutComponentBase
 @inject WebApp.Services.IUserService UserService
+@inject NavigationManager NavManager
 @using Core.Models
 
 <div class="layout">
-    <div class="sidebar">
-        <NavMenu />
+    @if (!IsLoginPage)
+    {
+        <div class="sidebar">
+            <NavMenu />
 
-        <div class="user-info">
-            <div class="avatar">@GetInitials(currentUser?.Name)</div>
-            <div class="user-details">
-                <div class="user-name">@currentUser?.Name</div>
-                <div class="user-role">@currentUser?.Role</div>
+            <div class="user-info">
+                <div class="avatar">@GetInitials(currentUser?.Name)</div>
+                <div class="user-details">
+                    <div class="user-name">@currentUser?.Name</div>
+                    <div class="user-role">@currentUser?.Role</div>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
     <div class="main">
-        <div class="top-row px-4">
-            <h6>Comwell træningsportal</h6>
-        </div>
+        @if (!IsLoginPage)
+        {
+            <div class="top-row px-4">
+                <h5>Comwell træningsportal</h5>
+            </div>
+        }
 
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </div>
@@ -28,6 +35,7 @@
 
 @code {
     private User? currentUser;
+    private bool IsLoginPage => NavManager.Uri.Contains("/login");
 
     protected override async Task OnInitializedAsync()
     {
