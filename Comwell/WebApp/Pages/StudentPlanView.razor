@@ -7,10 +7,10 @@
 @inject NavigationManager Nav
 
 <h3>Elevplaner</h3>
+<p class="welcome-text">Her er et samlet overblik over alle elevplaner.</p>
 
 <div class="mb-3 d-flex gap-3">
     <div>
-        <label>Filtrer efter hotel:</label>
         <select @onchange="OnHotelChanged" class="form-select">
             <option value="">Alle hoteller</option>
             @foreach (var hotel in allHotels)
@@ -22,7 +22,6 @@
         </select>
     </div>
     <div>
-        <label>Filtrer efter elev:</label>
         <select @onchange="OnStudentChanged" class="form-select">
             <option value="-1">Alle elever</option>
             @foreach (var user in allUsers.Where(u => u.Role == "Elev" && (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel)))
