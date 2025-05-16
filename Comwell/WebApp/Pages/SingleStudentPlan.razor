@@ -1,0 +1,157 @@
+@page "/elevplan"
+@using WebApp.Services
+@using Core.Models
+@inject IStudentPlanService StudentPlanService
+@inject IUserService UserService
+@inject ITemplateService TemplateService
+@inject NavigationManager Nav
+
+@if (currentUser != null)
+{
+    <h3>@currentUser.Name elevplan</h3>
+}
+else
+{
+    <h3>Min elevplan</h3>
+}
+
+@if (plans == null || !plans.Any())
+{
+    <p>Ingen planer fundet.</p>
+}
+else
+{
+    @foreach (var plan in plans)
+    {
+        <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
+            <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
+            <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
+            <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
+
+            <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
+                Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+            </button>
+
+            @if (openPlanIds.Contains(plan.Id))
+            {
+                @foreach (var goal in plan.Goals)
+                {
+                    <div style="margin-left: 1rem; margin-bottom: 1rem;">
+                        <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
+                            <strong>@goal.Title</strong> - @GetGoalStatusText(goal)
+                            @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+                        </button>
+
+                        @if (openGoalIds.Contains(goal.Id))
+                        {
+                            <ul>
+                                @foreach (var subtask in goal.Subtasks)
+                                {
+                                    <li>
+                                        @subtask.Text
+
+                                        @if (!subtask.IsCompleted)
+                                        {
+                                            @if (!subtask.IsRequestedCompleted)
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary ms-2"
+                                                        @onclick="() => RequestSubtaskCompletion(plan, goal, subtask)">
+                                                    Anmod om 'fuldført'
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-warning ms-2"
+                                                        title="Fortryd anmodning"
+                                                        @onclick="() => CancelSubtaskRequest(plan, goal, subtask)">
+                                                    Anmodet (fortryd)
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success ms-2">Fuldført</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            }
+
+            <h5>Noter</h5>
+            @foreach (var note in plan.Notes)
+            {
+                <div>
+                    <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                </div>
+            }
+            <hr />
+        </div>
+    }
+}
+
+@code {
+    private List<StudentPlan> plans = new();
+    private List<Template> templates = new();
+    private User? currentUser;
+    private HashSet<int> openPlanIds = new();
+    private HashSet<int> openGoalIds = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser is null) return;
+
+        // Henter kun planer for den aktuelle elev
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        templates = await TemplateService.GetAllTemplatesAsync();
+        
+        if (currentUser == null || currentUser.Role != "Elev")
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void TogglePlan(int planId)
+    {
+        if (!openPlanIds.Add(planId))
+            openPlanIds.Remove(planId);
+    }
+
+    private void ToggleGoal(int goalId)
+    {
+        if (!openGoalIds.Add(goalId))
+            openGoalIds.Remove(goalId);
+    }
+
+    private string GetGoalStatusText(Goal goal)
+    {
+        int total = goal.Subtasks.Count;
+        int completed = goal.Subtasks.Count(s => s.IsCompleted);
+
+        if (total == 0) return "Ingen delopgaver";
+        if (completed == 0) return "Ikke startet";
+        if (completed == total) return "Fuldført";
+        return $"{completed}/{total} fuldført";
+    }
+    
+    // metode til anmod om fuldført knap
+    private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.IsRequestedCompleted = true;
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        StateHasChanged();
+    }
+    
+    // metode til at annullere sin anmodning
+    private async Task CancelSubtaskRequest(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.IsRequestedCompleted = false;
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        StateHasChanged();
+    }
+
+
+}

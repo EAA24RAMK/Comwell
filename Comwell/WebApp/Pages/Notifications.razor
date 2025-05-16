@@ -1,0 +1,46 @@
+@page "/notifikationer"
+@inject HttpClient Http
+@inject IUserService UserService
+@inject INotificationService NotificationService
+@using Core.Models
+@using WebApp.Services
+
+<h3>Notifikationer</h3>
+
+@if (notifications == null)
+{
+    <p>Indlæser notifikationer...</p>
+}
+else if (!notifications.Any())
+{
+    <p>Du har ingen notifikationer.</p>
+}
+else
+{
+    <ul>
+        @foreach (var note in notifications.OrderByDescending(n => n.CreatedAt))
+        {
+            <li>
+                <strong>@(note.IsRead ? "" : "[NY] ")</strong>
+                @note.Message <br />
+                <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<Notification> notifications = new();
+    private User? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+
+        // Automatisk kald til backend for at generere nye notifikationer
+        await Http.PostAsync("api/notification/generate", null);
+
+        // Hent notifikationer for den aktuelle bruger
+        notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
+    }
+}

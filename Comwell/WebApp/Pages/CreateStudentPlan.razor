@@ -4,7 +4,7 @@
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
 @inject ITemplateService TemplateService
-@inject NavigationManager NavigationManager
+@inject NavigationManager Nav
 
 <h3>Opret plan</h3>
 
@@ -82,6 +82,7 @@
     private string responsible = "";
     private string location = "";
     private List<string> hotelLocations = new();
+    private User? currentUser;
     
     private StudentPlan planModel = new()
     {
@@ -116,6 +117,12 @@
             .Select(u => u.Hotel)
             .Distinct()
             .ToList();
+        
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null && currentUser.Role == "Elev")
+        {
+            Nav.NavigateTo("/");
+        }
     }
 
     private async void LoadSelectedTemplate()
@@ -174,6 +181,6 @@
 
         await StudentPlanService.CreateStudentPlanAsync(planModel);
         feedbackMessage = "Planen er gemt!";
-        NavigationManager.NavigateTo("/elevplaner");
+        Nav.NavigateTo("/elevplaner");
     }
 }
