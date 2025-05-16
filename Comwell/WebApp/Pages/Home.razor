@@ -4,41 +4,65 @@
 @using Core.Models
 
 <h1>Oversigt</h1>
-<p>Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
 
-@if (goals != null && goals.Any())
+@if (isCheckingUser)
 {
-    <div class="goal-summary">
-        <h3>Dine mål</h3>
-        <ul>
-            <li><strong>Mål i alt:</strong> @goals.Count()</li>
-            <li><strong>Fuldført:</strong> @goals.Count(g => g.Status == "Fuldført")</li>
-            <li><strong>I gang:</strong> @goals.Count(g => g.Status == "I gang")</li>
-            <li><strong>Vær opmærksom på:</strong> @goals.Count(g => g.Status == "Vær opmærksom på")</li>
-        </ul>
-    </div>
+    <p>Indlæser...</p>
+}
+else if (!isLoggedIn)
+{
+    <p style="color:black;"><strong>Log venligst ind for at tilgå portalen.</strong></p>
 }
 else
 {
-    <p>Ingen mål fundet endnu.</p>
+    <p>Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
+
+    @if (goals != null && goals.Any())
+    {
+        <div class="goal-summary">
+            <h3>Dine mål</h3>
+            <ul>
+                <li><strong>Mål i alt:</strong> @goals.Count()</li>
+                <li><strong>Fuldført:</strong> @goals.Count(g => g.Status == "Fuldført")</li>
+                <li><strong>I gang:</strong> @goals.Count(g => g.Status == "I gang")</li>
+                <li><strong>Vær opmærksom på:</strong> @goals.Count(g => g.Status == "Vær opmærksom på")</li>
+            </ul>
+        </div>
+    }
+    else
+    {
+        <p>Ingen mål fundet endnu.</p>
+    }
 }
 
 @code {
     private string userName = "gæst";
     private List<Goal> goals = new();
+    private bool isLoggedIn = false;
+    private bool isCheckingUser = true;
 
-    protected override async Task OnInitializedAsync() => await LoadGoals();
-
-    protected override async Task OnParametersSetAsync() => await LoadGoals();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGoals();
+    }
 
     private async Task LoadGoals()
     {
-        var currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser != null)
+        try
         {
-            userName = currentUser.Name ?? currentUser.Email ?? "bruger";
-            var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-            goals = plans.SelectMany(p => p.Goals).ToList();
+            var currentUser = await UserService.GetCurrentUserAsync();
+
+            if (currentUser != null)
+            {
+                isLoggedIn = true;
+                userName = currentUser.Name ?? currentUser.Email ?? "bruger";
+                var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+                goals = plans.SelectMany(p => p.Goals).ToList();
+            }
+        }
+        finally
+        {
+            isCheckingUser = false; // Uanset hvad, er vi færdige med tjekket
         }
     }
 }
