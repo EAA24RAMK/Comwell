@@ -4,27 +4,40 @@
 @inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<h3>Login</h3>
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo-circle">
+            <span class="logo-text">CW</span>
+        </div>
 
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <p style="color: red">@ErrorMessage</p>
-}
+        <h2>Comwell</h2>
+        <p class="subtitle">Login på din bruger</p>
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="error-message">@ErrorMessage</p>
+        }
 
-    <div>
-        <label>Email:</label>
-        <InputText @bind-Value="loginModel.Email" />
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <InputText @bind-Value="loginModel.Email" placeholder="Email" class="input-field" />
+            </div>
+            <div class="form-group">
+                <InputText @bind-Value="loginModel.Password" type="password" placeholder="Kodeord" class="input-field" />
+            </div>
+
+            <div class="form-options">
+                <label><input type="checkbox" /> Husk mig</label>
+                <a href="#" class="forgot-password">Glemt dit password?</a>
+            </div>
+
+            <button type="submit" class="login-button">Login</button>
+        </EditForm>
     </div>
-    <div>
-        <label>Password:</label>
-        <InputText @bind-Value="loginModel.Password" type="password" />
-    </div>
-    <button type="submit">Login</button>
-</EditForm>
+</div>
 
 @code {
     private LoginModel loginModel = new();
@@ -37,7 +50,6 @@
         {
             await LocalStorage.SetItemAsync("loggedInUser", user);
             NavManager.NavigateTo("/", forceLoad: true);
-
         }
         else
         {
