@@ -1,0 +1,99 @@
+.page-title {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-text {
+    color: #777;
+    margin-bottom: 2rem;
+}
+
+.access-denied {
+    color: #888;
+    background-color: #f2f2f2;
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+/* 🆕 Justeret: grid placeres til venstre og gøres lidt smallere */
+.goal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 600px;          /* Smallere end før (700px) */
+    margin-bottom: 2rem;
+}
+
+/* Fjern centreret margin – placer grid til venstre */
+@media (min-width: 769px) {
+    .goal-grid {
+        margin-left: 0;
+    }
+}
+
+.goal-card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    min-height: 70px;
+}
+
+.goal-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.goal-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.goal-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.goal-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #222;
+}
+
+/* Farver */
+.icon-green {
+    background-color: #cbd7b0;
+}
+
+.icon-beige {
+    background-color: #d8c6aa;
+}
+
+.icon-orange {
+    background-color: #dcbba0;
+}
+
+.icon-dark {
+    background-color: #888;
+}
+
+/* Responsivt layout til mobil */
+@media (max-width: 768px) {
+    .goal-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+}

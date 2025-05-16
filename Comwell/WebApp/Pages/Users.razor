@@ -5,7 +5,6 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-
 <h3>Brugere</h3>
 
 <div class="filters">
@@ -30,44 +29,47 @@
     }
 </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Bruger</th>
-            <th>Lokation</th>
-            <th>Status</th>
-            <th>Fremskridt</th>
-            <th>Handling</th> @* Ny kolonne *@
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in FilteredUsers)
-        {
-            <tr>
-                <td>@user.Name (@user.Role)</td>
-                <td>@user.Hotel</td>
-                <td>@user.Status</td>
-                <td>-</td>
-                <td>
-                    @if (currentUser != null && currentUser.Role != "Elev")
-                    {
-                        <button @onclick="() => DeleteUserAsync(user.Id)">🗑️ Slet</button>
-                    }
-                    else if (currentUser == null)
-                    {
-                        <span style="color: gray;">🔒 Login påkrævet</span>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="user-list">
+    <!-- Header -->
+    <div class="user-card user-header">
+        <div class="header-label">Bruger</div>
+        <div></div>
+        <div class="header-label">Lokation</div>
+        <div class="header-label">Status</div>
+        <div></div>
+    </div>
+
+    <!-- Brugere -->
+    @foreach (var user in FilteredUsers)
+    {
+        <div class="user-card">
+            <div class="avatar">@GetInitials(user.Name)</div>
+            <div class="user-info">
+                <div class="user-name">@user.Name</div>
+                <div class="user-role">@user.Role</div>
+            </div>
+            <div class="user-location">@user.Hotel</div>
+            <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
+                @user.Status
+            </div>
+            <div class="user-actions">
+                <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
+                @if (activeActionMenuUserId == user.Id)
+                {
+                    <div class="action-menu">
+                        <button class="delete-button" @onclick="() => DeleteUserAsync(user.Id)">Slet</button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
 
 @if (showCreateModal)
 {
     <div class="modal-background">
         <div class="modal-box">
-            <h3>Opret ny bruger</h3>
+            <h5>Opret ny bruger</h5>
             <input @bind="newUser.Name" placeholder="Navn" />
             <input @bind="newUser.Email" placeholder="Email" />
             <input @bind="newUser.Password" placeholder="Adgangskode" type="password" />
@@ -104,6 +106,7 @@
     private User newUser = new();
     private string createMessage = "";
     private User? currentUser;
+    private int? activeActionMenuUserId = null;
 
     private List<string> roles = new() { "Elev", "Køkkenchef", "HR", "Afdelingsleder" };
     private List<string> hotels = new();
@@ -148,11 +151,10 @@
     private async Task SaveUserAsync()
     {
         var result = await UserService.CreateUserAsync(newUser);
-        Console.WriteLine($"Navn: {newUser.Name}, Email: {newUser.Email}, Rolle: {newUser.Role}, Hotel: {newUser.Hotel}, Status: {newUser.Status}, Password: {newUser.Password}");
         if (result != null)
         {
             createMessage = "Bruger oprettet!";
-            users = await UserService.GetAllUsersAsync(); // Opdaterer listen
+            users = await UserService.GetAllUsersAsync();
             showCreateModal = false;
         }
         else
@@ -163,21 +165,31 @@
 
     private async Task DeleteUserAsync(int userId)
     {
-        if (currentUser == null || currentUser.Role == "Elev")
-        {
-            Console.WriteLine("Adgang nægtet: Du har ikke rettigheder til at slette brugere.");
-            return;
-        }
+        if (currentUser == null || currentUser.Role == "Elev") return;
 
         var success = await UserService.DeleteUserAsync(userId);
 
         if (success)
         {
-            users = await UserService.GetAllUsersAsync(); 
+            users = await UserService.GetAllUsersAsync();
         }
-        else
+
+        activeActionMenuUserId = null;
+    }
+
+    private void ToggleActionMenu(int userId)
+    {
+        activeActionMenuUserId = activeActionMenuUserId == userId ? null : userId;
+    }
+
+    private string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
         {
-            Console.WriteLine("Kunne ikke slette bruger");
-        }
+            0 => "",
+            1 => parts[0][0].ToString().ToUpper(),
+            _ => $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+        };
     }
 }
