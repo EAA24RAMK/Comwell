@@ -17,27 +17,35 @@ public class PostsController : ControllerBase
 
     // POST: api/posts
     [HttpPost]
-    public IActionResult CreatePost(Post post)
+    public IActionResult CreatePost([FromBody] Post post)
     {
-        if (post == null) return BadRequest();
+        if (post == null)
+            return BadRequest();
 
         _postRepository.Create(post);
         return Ok();
     }
 
-    // GET: api/posts Load posts
+    // GET: api/posts
     [HttpGet]
     public ActionResult<List<Post>> GetAllPosts()
     {
         var posts = _postRepository.GetAll();
         return Ok(posts);
     }
-    
+
     // DELETE: api/posts/{id}
     [HttpDelete("{id}")]
     public IActionResult DeletePost(int id)
     {
         _postRepository.Delete(id);
         return Ok();
+    }
+    
+    [HttpGet("mine")]
+    public ActionResult<List<Post>> GetMyPosts([FromQuery] string username, [FromQuery] string role)
+    {
+        var posts = _postRepository.GetForUser(username, role);
+        return Ok(posts);
     }
 }

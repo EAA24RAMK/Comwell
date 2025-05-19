@@ -7,5 +7,6 @@ public interface IPostService
     Task<List<Post>> GetAllPostsAsync();
     Task CreatePostAsync(Post post);
     Task DeletePostAsync(int id);
+    Task<List<Post>> GetPostsForUserAsync(string email, string role);
 
 }
