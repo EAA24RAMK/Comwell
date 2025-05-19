@@ -101,45 +101,42 @@ public class StudentPlanRepository : IStudentPlanRepository
         await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan);
     }
     
-    private DateTime CalculateDeadline(DateTime start, string goalTitle, string planTitle)
+    private DateTime CalculateDeadline(DateTime periodStart, string goalTitle, string planTitle)
     {
-        var praktik1Start = start;
-        var praktik2Start = praktik1Start.AddDays(52 * 7);
-        var praktik3Start = praktik2Start.AddDays(43 * 7);
-        var afslutningStart = praktik3Start.AddDays(43 * 7);
-
         if (planTitle.Contains("1. praktik"))
         {
-            if (goalTitle.Contains("inden første dag")) return praktik1Start.AddDays(-1);
-            if (goalTitle.Contains("velkommen")) return praktik1Start.AddDays(7);
-            if (goalTitle.Contains("information")) return praktik1Start.AddDays(14);
-            if (goalTitle.Contains("sikkerhed")) return praktik1Start.AddMonths(1);
-            if (goalTitle.Contains("samtaler")) return praktik1Start.AddDays(42);
-            if (goalTitle.Contains("kurser")) return praktik1Start.AddMonths(2);
-            if (goalTitle.Contains("faglige mål")) return praktik1Start.AddMonths(3);
-            if (goalTitle.Contains("madspild")) return praktik1Start.AddMonths(3);
+            if (goalTitle.Contains("inden første dag")) return periodStart.AddDays(-1);
+            if (goalTitle.Contains("velkommen")) return periodStart.AddDays(7);
+            if (goalTitle.Contains("information")) return periodStart.AddDays(14);
+            if (goalTitle.Contains("sikkerhed")) return periodStart.AddMonths(1);
+            if (goalTitle.Contains("samtaler")) return periodStart.AddDays(42);
+            if (goalTitle.Contains("kurser")) return periodStart.AddMonths(2);
+            if (goalTitle.Contains("faglige mål")) return periodStart.AddMonths(3);
+            if (goalTitle.Contains("madspild")) return periodStart.AddMonths(3);
         }
 
         if (planTitle.Contains("2. praktik"))
         {
-            if (goalTitle.Contains("evaluering")) return praktik2Start.AddDays(-1);
-            if (goalTitle.Contains("interne") || goalTitle.Contains("faglige mål")) return praktik2Start.AddDays(43 * 7);
+            if (goalTitle.Contains("evaluering")) return periodStart.AddDays(-1);
+            if (goalTitle.Contains("interne")) return periodStart.AddDays(43 * 7);
+            if (goalTitle.Contains("faglige mål")) return periodStart.AddDays(43 * 7);
         }
 
         if (planTitle.Contains("3. praktik"))
         {
-            if (goalTitle.Contains("evaluering")) return praktik3Start.AddDays(-1);
-            if (goalTitle.Contains("interne") || goalTitle.Contains("faglige mål")) return praktik3Start.AddDays(43 * 7);
-            if (goalTitle.Contains("klar-parat")) return afslutningStart.AddDays(-14);
+            if (goalTitle.Contains("evaluering")) return periodStart.AddDays(-1);
+            if (goalTitle.Contains("interne")) return periodStart.AddDays(43 * 7);
+            if (goalTitle.Contains("faglige mål")) return periodStart.AddDays(43 * 7);
+            if (goalTitle.Contains("klar-parat")) return periodStart.AddDays(43 * 7); // eller evt. -14
         }
 
         if (planTitle.Contains("afslutning"))
         {
-            if (goalTitle.Contains("evaluering") || goalTitle.Contains("interne"))
-                return afslutningStart.AddDays(28);
+            if (goalTitle.Contains("evaluering")) return periodStart.AddDays(28);
+            if (goalTitle.Contains("interne")) return periodStart.AddDays(28);
         }
 
-        return start;
+        return periodStart;
     }
 }
 
