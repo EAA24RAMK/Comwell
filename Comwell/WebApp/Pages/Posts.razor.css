@@ -1,3 +1,5 @@
+/* === POST STYLES === */
+
 .posts-container {
     display: flex;
     flex-direction: column;
@@ -140,7 +142,8 @@
     background-color: #fef2f2;
 }
 
-/* Modal og formular */
+/* === MODAL STYLING === */
+
 .modal-backdrop {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -213,4 +216,56 @@
 
 .create-button:hover {
     background-color: #8f976e;
+}
+
+/* === VÆLG ALLE PERSONER KNAP === */
+.select-all-button {
+    align-self: center;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #cbd5e1;
+    background-color: #f3f4f6;
+    color: #374151;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.select-all-button:hover {
+    background-color: #e2e8f0;
+}
+
+.select-all-button.active {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* === MODTAGERLISTE === */
+.user-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-left: 0.5rem;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.user-checkboxes label {
+    margin-left: 0.4rem;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.user-checkboxes input[type="checkbox"] {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+/* === GEM IKKE BRUGTE FELTER === */
+.hidden {
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
 }

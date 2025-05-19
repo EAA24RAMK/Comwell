@@ -76,11 +76,11 @@ else
 
             @if (currentUser?.Role == "HR")
             {
-                <button class="btn btn-sm btn-outline-secondary" @onclick="SelectAllUsers">
+                <button class="select-all-button @(selectedAllUsers ? "active" : "")" @onclick="SelectAllUsers">
                     Vælg alle personer
                 </button>
 
-                <select @onchange="OnHotelChanged" class="form-select">
+                <select @onchange="OnHotelChanged" class="form-select" hidden="@selectedAllUsers">
                     <option value="">Vælg hotel</option>
                     @foreach (var hotel in allHotels)
                     {
@@ -88,18 +88,21 @@ else
                     }
                 </select>
 
-                <label>Vælg modtagere:</label>
-                <div class="user-checkboxes">
-                    @foreach (var user in filteredUsers)
-                    {
-                        <div>
-                            <input type="checkbox"
-                                   @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
-                                   checked="@selectedUserIds.Contains(user.Id)" />
-                            <label>@user.Name</label>
-                        </div>
-                    }
-                </div>
+                @if (!selectedAllUsers)
+                {
+                    <label>Vælg modtagere:</label>
+                    <div class="user-checkboxes">
+                        @foreach (var user in filteredUsers)
+                        {
+                            <div>
+                                <input type="checkbox"
+                                       @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
+                                       checked="@selectedUserIds.Contains(user.Id)" />
+                                <label>@user.Name</label>
+                            </div>
+                        }
+                    </div>
+                }
             }
 
             <div class="modal-actions">
@@ -124,6 +127,7 @@ else
     private string selectedHotel = "";
     private List<User> filteredUsers = new();
     private List<int> selectedUserIds = new();
+    private bool selectedAllUsers = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -155,6 +159,7 @@ else
         selectedUserIds.Clear();
         selectedHotel = "";
         filteredUsers.Clear();
+        selectedAllUsers = false;
         showModal = false;
 
         await LoadPosts();
@@ -187,6 +192,7 @@ else
             .Where(u => u.Hotel == selectedHotel)
             .ToList();
         selectedUserIds = filteredUsers.Select(u => u.Id).ToList();
+        selectedAllUsers = false;
     }
 
     private void ToggleUserSelection(int userId, bool isChecked)
@@ -204,9 +210,22 @@ else
 
     private void SelectAllUsers()
     {
-        selectedUserIds = allUsers.Select(u => u.Id).ToList();
-        selectedHotel = "";
-        filteredUsers = new();
+        if (selectedAllUsers)
+        {
+            // Hvis allerede valgt, nulstil valget
+            selectedAllUsers = false;
+            selectedUserIds.Clear();
+            filteredUsers.Clear();
+            selectedHotel = "";
+        }
+        else
+        {
+            // Ellers vælg alle
+            selectedUserIds = allUsers.Select(u => u.Id).ToList();
+            selectedHotel = "";
+            filteredUsers = new();
+            selectedAllUsers = true;
+        }
     }
 
     private IEnumerable<Post> FilteredPosts =>
