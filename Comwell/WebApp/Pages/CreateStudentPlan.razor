@@ -170,13 +170,13 @@
 
             adjustedGoals.Add(adjustedGoal);
         }
-        
-        var currentUser = await UserService.GetCurrentUserAsync(); // 👈 hent brugeren
+
+        var currentUser = await UserService.GetCurrentUserAsync();
         planModel.CreatedBy = currentUser.Name;
-    
 
         planModel.Goals = adjustedGoals;
         planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
+        planModel.PeriodStart = planModel.PeriodStart.Date;
 
         await StudentPlanService.CreateStudentPlanAsync(planModel);
         feedbackMessage = "Planen er gemt!";

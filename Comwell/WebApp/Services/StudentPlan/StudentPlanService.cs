@@ -25,7 +25,7 @@ public class StudentPlanService : IStudentPlanService
     
     public async Task<List<StudentPlan>> GetPlansByUserAsync(User user)
     {
-        if (user.Role == "HR")
+        if (user.Role == "HR" || user.Role == "Afdelingsleder")
         {
             return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
         }
@@ -37,10 +37,7 @@ public class StudentPlanService : IStudentPlanService
         {
             return await _http.GetFromJsonAsync<List<StudentPlan>>($"api/studentplan/student/{user.Id}") ?? new();
         }
-        else if (user.Role == "Afdelingsleder")
-        {
-            return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
-        }
+
         return new();
     }
     
@@ -48,6 +45,4 @@ public class StudentPlanService : IStudentPlanService
     {
         await _http.PutAsJsonAsync($"api/studentplan/{plan.Id}", plan);
     }
-
-
 }

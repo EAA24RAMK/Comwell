@@ -122,6 +122,14 @@ else
                                         </li>
                                     }
                                 </ul>
+                                
+                                <p>
+                                    <strong>Deadline:</strong>
+                                    <span style="color:@(goal.Deadline < DateTime.Today ? "red" : "black")">
+                                        @goal.Deadline.ToString("dd-MM-yyyy")
+                                    </span>
+                                </p>
+                                
                                 <button class="bi bi-pencil-square" @onclick="() => StartEditing(goal)"> Rediger</button>
                                 <button class="bi bi-trash" @onclick="() => DeleteGoal(plan, goal)"> ️Slet</button>
                             }
@@ -173,19 +181,17 @@ else
                                   @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
                             @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
                         </textarea>
-                        <button class="btn btn-sm btn-success me-2" @onclick="() => SaveNote(plan)">Gem note</button>
-                        <button class="btn btn-sm btn-secondary" @onclick="CancelAddNote">Annuller</button>
+                        <button @onclick="() => SaveNote(plan)">Gem note</button>
+                        <button @onclick="CancelAddNote">Annuller</button>
                     </div>
                 }
                 else
                 {
-                    <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => StartAddNote(plan.Id)">
+                    <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">
                         Tilføj note
                     </button>
                 }
             }
-
-            <hr />
         </div>
     }
 }
