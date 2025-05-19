@@ -245,14 +245,27 @@
 .user-checkboxes {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0;
     padding-left: 0.5rem;
     max-height: 150px;
     overflow-y: auto;
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+.user-checkboxes div {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.user-checkboxes div:last-child {
+    border-bottom: none;
 }
 
 .user-checkboxes label {
-    margin-left: 0.4rem;
     font-size: 0.9rem;
     color: #374151;
 }
@@ -260,12 +273,4 @@
 .user-checkboxes input[type="checkbox"] {
     transform: scale(1.05);
     cursor: pointer;
-}
-
-/* === GEM IKKE BRUGTE FELTER === */
-.hidden {
-    display: none;
-    visibility: hidden;
-    opacity: 0;
-    transition: all 0.2s ease-in-out;
 }
