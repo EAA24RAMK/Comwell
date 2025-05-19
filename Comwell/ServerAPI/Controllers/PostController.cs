@@ -40,6 +40,4 @@ public class PostsController : ControllerBase
         _postRepository.Delete(id);
         return Ok();
     }
-
-
 }

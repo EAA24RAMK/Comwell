@@ -31,15 +31,18 @@ else
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
                             </div>
-                            <div class="post-options">
-                                <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
-                                @if (confirmDeletePostId == post.Id)
-                                {
-                                    <div class="confirm-popup">
-                                        <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
-                                    </div>
-                                }
-                            </div>
+                            @if (CanDeletePosts)
+                            {
+                                <div class="post-options">
+                                    <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
+                                    @if (confirmDeletePostId == post.Id)
+                                    {
+                                        <div class="confirm-popup">
+                                            <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                         <p class="post-content">@post.Content</p>
                     </div>
@@ -74,6 +77,8 @@ else
     private string searchTerm = "";
     private int? confirmDeletePostId = null;
     private bool showModal = false;
+    private bool CanDeletePosts => currentUser?.Role != "Elev";
+
 
     protected override async Task OnInitializedAsync()
     {
