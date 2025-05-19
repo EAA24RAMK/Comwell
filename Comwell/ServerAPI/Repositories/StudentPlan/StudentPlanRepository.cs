@@ -138,6 +138,14 @@ public class StudentPlanRepository : IStudentPlanRepository
 
         return periodStart;
     }
+    
+    // sletter en hel studentplan
+    public async Task<bool> DeleteStudentPlanAsync(int id)
+    {
+        var result = await _studentPlan.DeleteOneAsync(p => p.Id == id);
+        return result.DeletedCount > 0;
+    }
+
 }
 
     

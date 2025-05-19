@@ -12,5 +12,6 @@ public interface IStudentPlanService
     Task<List<StudentPlan>> GetPlansByUserAsync(User user);
 
     Task UpdateStudentPlanAsync(StudentPlan plan);
+    Task<bool> DeleteStudentPlanAsync(int id);
 
 }

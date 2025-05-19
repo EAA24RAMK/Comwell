@@ -45,6 +45,16 @@ else
     {
         <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
+            <!-- tre prikker til at slette studentplan -->
+            <div class="plan-actions" style="position: absolute; top: 0.5rem; right: 0.5rem;">
+                <button @onclick="() => ToggleActionMenu(plan.Id)">⋮</button>
+                @if (activeActionMenuPlanId == plan.Id)
+                {
+                    <div class="action-menu">
+                        <button class="delete-button" @onclick="() => DeleteStudentPlanAsync(plan.Id)">Slet</button>
+                    </div>
+                }
+            </div>
             <p><strong>Elev:</strong> @userNamesById.GetValueOrDefault(plan.StudentId, "(Ukendt)")</p>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
@@ -223,6 +233,9 @@ else
     
     private int addingNoteForPlanId = -1;
     private Dictionary<int, string> newNoteTexts = new();
+    
+    // tre prikker til slet knappen
+    private int activeActionMenuPlanId = -1;
 
     protected override async Task OnInitializedAsync()
     {
@@ -495,4 +508,21 @@ else
         // Opdater viewet
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
+    
+    // sletter en hel studentplan
+    private async Task DeleteStudentPlanAsync(int planId)
+    {
+        var success = await StudentPlanService.DeleteStudentPlanAsync(planId);
+        if (success)
+        {
+            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        }
+    }
+    
+    // tre prikker til slet knappen
+    private void ToggleActionMenu(int planId)
+    {
+        activeActionMenuPlanId = activeActionMenuPlanId == planId ? -1 : planId;
+    }
+
 }

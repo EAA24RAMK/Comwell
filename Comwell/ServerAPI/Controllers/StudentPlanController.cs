@@ -58,5 +58,16 @@ public class StudentPlanController : ControllerBase
 
         return NoContent();
     }
+    
+    // sletter en hel studentplan
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted = await _studentPlanRepo.DeleteStudentPlanAsync(id);
+        if (!deleted)
+            return NotFound("Plan ikke fundet");
 
+        return Ok("Plan slettet");
+    }
+    
 }
