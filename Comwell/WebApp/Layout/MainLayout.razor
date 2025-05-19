@@ -7,32 +7,25 @@
 @if (!IsLoginPage)
 {
     <div class="layout">
-        <div class="sidebar">
-            <NavMenu />
-
-            <!-- Avatar og info i sidebar -->
-            <div class="user-info mt-4">
-                <div class="avatar">@GetInitials(currentUser?.Name)</div>
-                <div class="user-details">
-                    <div class="user-name">@currentUser?.Name</div>
-                    <div class="user-role">@currentUser?.Role</div>
-                </div>
-            </div>
+        <div class="@SidebarCssClass">
+            <NavMenu ToggleMenu="ToggleSidebar" />
         </div>
 
         <div class="main">
-            <!-- Topbar med klokke og avatar -->
             <div class="top-row px-4 d-flex justify-content-between align-items-center">
-                <h5>Comwell træningsportal</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="navbar-toggler d-md-none" @onclick="ToggleSidebar">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <h5 class="mb-0">Comwell træningsportal</h5>
+                </div>
 
                 <div class="d-flex align-items-center gap-3 position-relative">
-                    <!-- Klokke-ikon -->
                     <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;" @onclick="ToggleNotifications"></i>
 
-                    <!-- Notifikation-overlay -->
                     @if (showNotifications)
                     {
-                        <div id="notificationOverlay" class="notification-overlay position-absolute end-0 mt-2 p-3 shadow bg-white rounded">
+                        <div class="notification-overlay position-absolute end-0 mt-2 p-3 shadow bg-white rounded">
                             <h6 class="mb-3">Notifikationer</h6>
                             <ul class="list-unstyled mb-0">
                                 @if (notifications?.Any() == true)
@@ -50,7 +43,6 @@
                         </div>
                     }
 
-                    <!-- Avatar øverst -->
                     <div class="avatar" title="@currentUser?.Name">
                         @GetInitials(currentUser?.Name)
                     </div>
@@ -65,7 +57,6 @@
 }
 else
 {
-    <!-- Login layout uden sidebar og topbar -->
     <div class="main">
         @Body
     </div>
@@ -77,6 +68,9 @@ else
     private bool showNotifications = false;
     private List<Notification> notifications = new();
 
+    private bool sidebarCollapsed = true;
+    private string SidebarCssClass => sidebarCollapsed ? "sidebar collapse" : "sidebar";
+
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -85,6 +79,17 @@ else
         {
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         }
+
+        NavManager.LocationChanged += (_, __) =>
+        {
+            sidebarCollapsed = true;
+            InvokeAsync(StateHasChanged);
+        };
+    }
+
+    public void ToggleSidebar()
+    {
+        sidebarCollapsed = !sidebarCollapsed;
     }
 
     private void ToggleNotifications()
@@ -99,4 +104,5 @@ else
         if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
         return string.Concat(parts[0][0], parts[^1][0]).ToUpper();
     }
+
 }
