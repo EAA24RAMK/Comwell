@@ -122,6 +122,14 @@ else
                                         </li>
                                     }
                                 </ul>
+                                
+                                <p>
+                                    <strong>Deadline:</strong>
+                                    <span style="color:@(goal.Deadline < DateTime.Today ? "red" : "black")">
+                                        @goal.Deadline.ToString("dd-MM-yyyy")
+                                    </span>
+                                </p>
+                                
                                 <button @onclick="() => StartEditing(goal)">✏️ Rediger</button>
                                 <button @onclick="() => DeleteGoal(plan, goal)">🗑️ Slet</button>
                             }
