@@ -15,5 +15,6 @@ public interface IStudentPlanRepository
     
     Task<StudentPlan?> GetPlanByIdAsync(int id);
     Task UpdateStudentPlanAsync(StudentPlan updatedPlan);
-
+    
+    Task<bool> DeleteStudentPlanAsync(int id);
 }

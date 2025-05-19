@@ -45,4 +45,12 @@ public class StudentPlanService : IStudentPlanService
     {
         await _http.PutAsJsonAsync($"api/studentplan/{plan.Id}", plan);
     }
+    
+    // sletter en hel studentplan
+    public async Task<bool> DeleteStudentPlanAsync(int id)
+    {
+        var response = await _http.DeleteAsync($"api/studentplan/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
 }
