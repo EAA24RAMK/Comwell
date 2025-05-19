@@ -80,31 +80,39 @@ else
                 }
             }
 
-            <h5>Noter</h5>
-            @foreach (var note in plan.Notes)
-            {
-                <div>
-                    <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
-                    <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
-                </div>
-            }
-
-            @if (addingNoteForPlanId == plan.Id)
-            {
-                <div>
-                    <textarea class="form-control mb-2"
-                              @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
-                        @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
-                    </textarea>
-                    <button class="btn btn-sm btn-success me-2" @onclick="() => SaveNote(plan)">Gem note</button>
-                    <button class="btn btn-sm btn-secondary" @onclick="CancelAddNote">Annuller</button>
-                </div>
-            }
-            else
-            {
-                <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => StartAddNote(plan.Id)">
-                    Tilføj note
+            <h5>
+                <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
+                    Noter @if (openNotePlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
                 </button>
+            </h5>
+
+            @if (openNotePlanIds.Contains(plan.Id))
+            {
+                @foreach (var note in plan.Notes)
+                {
+                    <div>
+                        <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
+                    </div>
+                }
+
+                @if (addingNoteForPlanId == plan.Id)
+                {
+                    <div>
+                        <textarea class="form-control mb-2"
+                                  @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
+                            @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
+                        </textarea>
+                        <button class="btn btn-sm btn-success me-2" @onclick="() => SaveNote(plan)">Gem note</button>
+                        <button class="btn btn-sm btn-secondary" @onclick="CancelAddNote">Annuller</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => StartAddNote(plan.Id)">
+                        Tilføj note
+                    </button>
+                }
             }
 
             <hr />
@@ -118,6 +126,7 @@ else
     private User? currentUser;
     private HashSet<int> openPlanIds = new();
     private HashSet<int> openGoalIds = new();
+    private HashSet<int> openNotePlanIds = new();
 
     private int addingNoteForPlanId = -1;
     private Dictionary<int, string> newNoteTexts = new();
@@ -146,6 +155,12 @@ else
     {
         if (!openGoalIds.Add(goalId))
             openGoalIds.Remove(goalId);
+    }
+
+    private void ToggleNotes(int planId)
+    {
+        if (!openNotePlanIds.Add(planId))
+            openNotePlanIds.Remove(planId);
     }
 
     private string GetGoalStatusText(Goal goal)
@@ -206,17 +221,15 @@ else
         addingNoteForPlanId = -1;
         StateHasChanged();
     }
-    
+
     private async Task DeleteNote(StudentPlan plan, int noteId)
     {
         var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
         if (planToUpdate == null) return;
 
         planToUpdate.Notes.RemoveAll(n => n.Id == noteId);
-
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
 
-        // Opdater viewet
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
 }
