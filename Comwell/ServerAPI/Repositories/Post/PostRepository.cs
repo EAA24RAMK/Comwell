@@ -6,43 +6,53 @@ namespace ServerAPI.Repositories;
 public class PostRepository : IPostRepository
 {
     private readonly IMongoCollection<Post> _collection;
-    
+    private readonly IMongoCollection<User> _userCollection;
+
     public PostRepository(IConfiguration config)
     {
         var client = new MongoClient(config["MongoDB:ConnectionString"]);
         var db = client.GetDatabase(config["MongoDB:DatabaseName"]);
         _collection = db.GetCollection<Post>("post");
+        _userCollection = db.GetCollection<User>("user"); // bruger-kollektion
     }
-    
-    // Opret nyt opslag med nyt ID
+
     public void Create(Post post)
     {
         var maxId = _collection.Find(_ => true)
-            .SortByDescending(post => post.Id)
+            .SortByDescending(p => p.Id)
             .Limit(1)
             .FirstOrDefault()?.Id ?? 0;
-        
+
         post.Id = maxId + 1;
         post.CreatedAt = DateTime.UtcNow;
-        
+
         _collection.InsertOne(post);
     }
-    
-    // Slet et opslag
+
     public void Delete(int id)
     {
         _collection.DeleteOne(p => p.Id == id);
     }
 
-    
-    // Hent alle opslag
     public List<Post> GetAll()
     {
         return _collection.Find(_ => true).ToList();
     }
-    
+
     public List<Post> GetForUser(string username, string role)
     {
-        return _collection.Find(_ => true).ToList(); // Samme som GetAll()
+        if (role == "HR" || role == "Køkkenchef")
+        {
+            // Disse roller må se alt
+            return _collection.Find(_ => true).ToList();
+        }
+
+        // Find brugerens ID
+        var user = _userCollection.Find(u => u.Email == username).FirstOrDefault();
+        if (user == null) return new();
+
+        // Find opslag der er målrettet denne bruger eller ikke har nogen modtagere
+        return _collection.Find(post =>
+            post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(user.Id)).ToList();
     }
 }

@@ -80,13 +80,41 @@ else
                 }
             }
 
-            <h5>Noter</h5>
-            @foreach (var note in plan.Notes)
+            <h5>
+                <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
+                    Noter @if (openNotePlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+                </button>
+            </h5>
+
+            @if (openNotePlanIds.Contains(plan.Id))
             {
-                <div>
-                    <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
-                </div>
+                @foreach (var note in plan.Notes)
+                {
+                    <div>
+                        <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
+                    </div>
+                }
+
+                @if (addingNoteForPlanId == plan.Id)
+                {
+                    <div>
+                        <textarea class="form-control mb-2"
+                                  @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
+                            @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
+                        </textarea>
+                        <button @onclick="() => SaveNote(plan)">Gem note</button>
+                        <button @onclick="CancelAddNote">Annuller</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">
+                        Tilføj note
+                    </button>
+                }
             }
+
             <hr />
         </div>
     }
@@ -98,17 +126,20 @@ else
     private User? currentUser;
     private HashSet<int> openPlanIds = new();
     private HashSet<int> openGoalIds = new();
-    
+    private HashSet<int> openNotePlanIds = new();
+
+    private int addingNoteForPlanId = -1;
+    private Dictionary<int, string> newNoteTexts = new();
+
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser is null) return;
 
-        // Henter kun planer for den aktuelle elev
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         templates = await TemplateService.GetAllTemplatesAsync();
-        
-        if (currentUser == null || currentUser.Role != "Elev")
+
+        if (currentUser.Role != "Elev")
         {
             Nav.NavigateTo("/");
         }
@@ -126,6 +157,12 @@ else
             openGoalIds.Remove(goalId);
     }
 
+    private void ToggleNotes(int planId)
+    {
+        if (!openNotePlanIds.Add(planId))
+            openNotePlanIds.Remove(planId);
+    }
+
     private string GetGoalStatusText(Goal goal)
     {
         int total = goal.Subtasks.Count;
@@ -136,16 +173,14 @@ else
         if (completed == total) return "Fuldført";
         return $"{completed}/{total} fuldført";
     }
-    
-    // metode til anmod om fuldført knap
+
     private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
     {
         subtask.IsRequestedCompleted = true;
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         StateHasChanged();
     }
-    
-    // metode til at annullere sin anmodning
+
     private async Task CancelSubtaskRequest(StudentPlan plan, Goal goal, Subtask subtask)
     {
         subtask.IsRequestedCompleted = false;
@@ -153,5 +188,48 @@ else
         StateHasChanged();
     }
 
+    private void StartAddNote(int planId)
+    {
+        addingNoteForPlanId = planId;
+        if (!newNoteTexts.ContainsKey(planId))
+        {
+            newNoteTexts[planId] = string.Empty;
+        }
+    }
 
+    private void CancelAddNote()
+    {
+        addingNoteForPlanId = -1;
+    }
+
+    private async Task SaveNote(StudentPlan plan)
+    {
+        if (!newNoteTexts.TryGetValue(plan.Id, out var noteText) || string.IsNullOrWhiteSpace(noteText))
+            return;
+
+        var newNote = new Note
+        {
+            Id = plan.Notes.Any() ? plan.Notes.Max(n => n.Id) + 1 : 1,
+            Text = noteText.Trim(),
+            CreatedAt = DateTime.Now
+        };
+
+        plan.Notes.Add(newNote);
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+
+        newNoteTexts[plan.Id] = string.Empty;
+        addingNoteForPlanId = -1;
+        StateHasChanged();
+    }
+
+    private async Task DeleteNote(StudentPlan plan, int noteId)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        planToUpdate.Notes.RemoveAll(n => n.Id == noteId);
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
 }

@@ -26,5 +26,9 @@ public class PostService : IPostService
     {
         await _http.DeleteAsync($"api/posts/{id}");
     }
-
+    
+    public async Task<List<Post>> GetPostsForUserAsync(string email, string role)
+    {
+        return await _http.GetFromJsonAsync<List<Post>>($"api/posts/mine?username={email}&role={role}") ?? new();
+    }
 }

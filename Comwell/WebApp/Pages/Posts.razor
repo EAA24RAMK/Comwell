@@ -12,7 +12,7 @@ else
 {
     <div class="posts-container">
         <h3>Opslagstavle</h3>
-        
+
         <div class="topbar">
             <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
             <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
@@ -30,16 +30,30 @@ else
                             <div class="post-meta">
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                            </div>
-                            <div class="post-options">
-                                <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
-                                @if (confirmDeletePostId == post.Id)
+                                @if (currentUser?.Role == "HR" && post.TargetUserIds.Count > 0)
                                 {
-                                    <div class="confirm-popup">
-                                        <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                                    var targetNames = allUsers
+                                        .Where(u => post.TargetUserIds.Contains(u.Id))
+                                        .Select(u => u.Name)
+                                        .ToList();
+
+                                    <div style="font-style: italic; color: gray; font-size: 0.7em;">
+                                        Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
                                     </div>
                                 }
                             </div>
+                            @if (CanDeletePosts)
+                            {
+                                <div class="post-options">
+                                    <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
+                                    @if (confirmDeletePostId == post.Id)
+                                    {
+                                        <div class="confirm-popup">
+                                            <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                         <p class="post-content">@post.Content</p>
                     </div>
@@ -51,7 +65,7 @@ else
             }
         </div>
     </div>
-    
+
     @if (showModal)
     {
         <div class="modal-backdrop" @onclick="CloseModal"></div>
@@ -59,6 +73,35 @@ else
             <h4>Opret nyt opslag</h4>
             <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
             <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+
+            @if (currentUser?.Role == "HR")
+            {
+                <button class="btn btn-sm btn-outline-secondary" @onclick="SelectAllUsers">
+                    Vælg alle personer
+                </button>
+
+                <select @onchange="OnHotelChanged" class="form-select">
+                    <option value="">Vælg hotel</option>
+                    @foreach (var hotel in allHotels)
+                    {
+                        <option value="@hotel">@hotel</option>
+                    }
+                </select>
+
+                <label>Vælg modtagere:</label>
+                <div class="user-checkboxes">
+                    @foreach (var user in filteredUsers)
+                    {
+                        <div>
+                            <input type="checkbox"
+                                   @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
+                                   checked="@selectedUserIds.Contains(user.Id)" />
+                            <label>@user.Name</label>
+                        </div>
+                    }
+                </div>
+            }
+
             <div class="modal-actions">
                 <button class="cancel-button" @onclick="CloseModal">Annuller</button>
                 <button class="create-button" @onclick="SubmitModal">Opret</button>
@@ -74,25 +117,44 @@ else
     private string searchTerm = "";
     private int? confirmDeletePostId = null;
     private bool showModal = false;
+    private bool CanDeletePosts => currentUser?.Role != "Elev";
+
+    private List<User> allUsers = new();
+    private List<string> allHotels = new();
+    private string selectedHotel = "";
+    private List<User> filteredUsers = new();
+    private List<int> selectedUserIds = new();
 
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
+        allUsers = await UserService.GetAllUsersAsync();
+        allHotels = allUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
+            .Select(u => u.Hotel)
+            .Distinct()
+            .ToList();
         await LoadPosts();
     }
 
     private async Task LoadPosts()
     {
-        posts = await PostService.GetAllPostsAsync();
+        if (currentUser == null) return;
+
+        posts = await PostService.GetPostsForUserAsync(currentUser.Email, currentUser.Role);
     }
 
     private async Task SubmitModal()
     {
         newPost.Author = currentUser?.Name ?? "Ukendt";
         newPost.CreatedAt = DateTime.Now;
+        newPost.TargetUserIds = selectedUserIds;
 
         await PostService.CreatePostAsync(newPost);
         newPost = new();
+        selectedUserIds.Clear();
+        selectedHotel = "";
+        filteredUsers.Clear();
         showModal = false;
 
         await LoadPosts();
@@ -118,13 +180,50 @@ else
             confirmDeletePostId = postId;
     }
 
+    private void OnHotelChanged(ChangeEventArgs e)
+    {
+        selectedHotel = e.Value?.ToString() ?? "";
+        filteredUsers = allUsers
+            .Where(u => u.Hotel == selectedHotel)
+            .ToList();
+        selectedUserIds = filteredUsers.Select(u => u.Id).ToList();
+    }
+
+    private void ToggleUserSelection(int userId, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!selectedUserIds.Contains(userId))
+                selectedUserIds.Add(userId);
+        }
+        else
+        {
+            selectedUserIds.Remove(userId);
+        }
+    }
+
+    private void SelectAllUsers()
+    {
+        selectedUserIds = allUsers.Select(u => u.Id).ToList();
+        selectedHotel = "";
+        filteredUsers = new();
+    }
+
     private IEnumerable<Post> FilteredPosts =>
         string.IsNullOrWhiteSpace(searchTerm)
-            ? posts
-            : posts.Where(p =>
-                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            ? posts.Where(p => CanViewPost(p))
+            : posts.Where(p => CanViewPost(p) &&
+                               (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
             );
+
+    private bool CanViewPost(Post post)
+    {
+        if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+            return true;
+
+        return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
+    }
 
     private string GetInitials(string? fullName)
     {
