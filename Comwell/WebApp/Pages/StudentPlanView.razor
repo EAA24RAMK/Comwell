@@ -158,6 +158,24 @@ else
                 </div>
             }
 
+            @if (addingNoteForPlanId == plan.Id)
+            {
+                <div>
+                    <textarea class="form-control mb-2"
+                              @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
+                        @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
+                    </textarea>
+                    <button class="btn btn-sm btn-success me-2" @onclick="() => SaveNote(plan)">Gem note</button>
+                    <button class="btn btn-sm btn-secondary" @onclick="CancelAddNote">Annuller</button>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="() => StartAddNote(plan.Id)">
+                    Tilføj note
+                </button>
+            }
+
             <hr />
         </div>
     }
@@ -186,6 +204,9 @@ else
     private List<string> allHotels = new();
     private int selectedStudentId = -1;
     private string selectedHotel = "";
+    
+    private int addingNoteForPlanId = -1;
+    private Dictionary<int, string> newNoteTexts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -404,6 +425,40 @@ else
             selectedStudentId = id;
         else
             selectedStudentId = -1;
+    }
+    
+    private void StartAddNote(int planId)
+    {
+        addingNoteForPlanId = planId;
+        if (!newNoteTexts.ContainsKey(planId))
+        {
+            newNoteTexts[planId] = string.Empty;
+        }
+    }
+
+    private void CancelAddNote()
+    {
+        addingNoteForPlanId = -1;
+    }
+
+    private async Task SaveNote(StudentPlan plan)
+    {
+        if (!newNoteTexts.TryGetValue(plan.Id, out var noteText) || string.IsNullOrWhiteSpace(noteText))
+            return;
+
+        var newNote = new Note
+        {
+            Id = plan.Notes.Any() ? plan.Notes.Max(n => n.Id) + 1 : 1,
+            Text = noteText.Trim(),
+            CreatedAt = DateTime.Now
+        };
+
+        plan.Notes.Add(newNote);
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+
+        newNoteTexts[plan.Id] = string.Empty;
+        addingNoteForPlanId = -1;
+        StateHasChanged();
     }
 
 }

@@ -85,6 +85,7 @@ else
             {
                 <div>
                     <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
+                    <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
                 </div>
             }
 
@@ -204,5 +205,18 @@ else
         newNoteTexts[plan.Id] = string.Empty;
         addingNoteForPlanId = -1;
         StateHasChanged();
+    }
+    
+    private async Task DeleteNote(StudentPlan plan, int noteId)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        planToUpdate.Notes.RemoveAll(n => n.Id == noteId);
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+
+        // Opdater viewet
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
 }
