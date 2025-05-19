@@ -6,277 +6,277 @@
 
 @if (currentUser == null)
 {
-    <p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
+<p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
 }
 else
 {
-    <div class="posts-container">
-        <h3>Opslagstavle</h3>
+<div class="posts-container">
+    <h3>Opslagstavle</h3>
 
-        <div class="topbar">
-            <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
-            <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
-        </div>
-
-        <div class="posts-list">
-            @if (FilteredPosts.Any())
-            {
-                @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
-                {
-                    <div class="post-card">
-                        <div class="post-header">
-                            <div class="post-author-avatar">@GetInitials(post.Author)</div>
-                            <div class="post-meta">
-                                <div class="post-title">@post.Title</div>
-                                <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                                @if (currentUser?.Role == "HR")
-                                {
-                                    var targetNames = allUsers
-                                        .Where(u => post.TargetUserIds.Contains(u.Id))
-                                        .Select(u => u.Name)
-                                        .ToList();
-
-                                    if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
-                                    {
-                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
-                                            Synlig for alle
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
-                                            Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
-                                        </div>
-                                    }
-                                }
-                            </div>
-                            @if (CanDeletePosts)
-                            {
-                                <div class="post-options">
-                                    <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
-                                    @if (confirmDeletePostId == post.Id)
-                                    {
-                                        <div class="confirm-popup">
-                                            <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                        <p class="post-content">@post.Content</p>
-                    </div>
-                }
-            }
-            else
-            {
-                <p>Ingen opslag matcher din søgning.</p>
-            }
-        </div>
+    <div class="topbar">
+        <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
+        <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
     </div>
 
-    @if (showModal)
-    {
-        <div class="modal-backdrop" @onclick="CloseModal"></div>
-        <div class="modal">
-            <h4>Opret nyt opslag</h4>
-            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
-            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
-
-            @if (currentUser?.Role == "HR")
-            {
-                <div class="role-selection-buttons">
-                    <button class="select-all-button @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
-                        @(selectedTargetGroup == "All" ? "Annuller valg" : "Vælg alle personer")
-                    </button>
-                    <button class="select-all-button @(selectedTargetGroup == "Elev" ? "active" : "")" @onclick='() => ToggleRoleSelection("Elev")'>
-                        @(selectedTargetGroup == "Elev" ? "Annuller valg" : "Vælg alle elever")
-                    </button>
-                    <button class="select-all-button @(selectedTargetGroup == "Køkkenchef" ? "active" : "")" @onclick='() => ToggleRoleSelection("Køkkenchef")'>
-                        @(selectedTargetGroup == "Køkkenchef" ? "Annuller valg" : "Vælg alle køkkenchefer")
-                    </button>
-                </div>
-
-                <select @onchange="OnHotelChanged" class="form-select" hidden="@selectedAllUsers">
-                    <option value="">Vælg hotel</option>
-                    @foreach (var hotel in allHotels)
+    <div class="posts-list">
+        @if (FilteredPosts.Any())
+        {
+        @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+        {
+        <div class="post-card">
+            <div class="post-header">
+                <div class="post-author-avatar">@GetInitials(post.Author)</div>
+                <div class="post-meta">
+                    <div class="post-title">@post.Title</div>
+                    <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                    @if (currentUser?.Role == "HR")
                     {
-                        <option value="@hotel">@hotel</option>
-                    }
-                </select>
-
-                @if (!selectedAllUsers)
-                {
-                    <label>Vælg modtagere:</label>
-                    <div class="user-checkboxes">
-                        @foreach (var user in filteredUsers)
-                        {
-                            <div style="border-bottom: 1px solid #ccc; padding: 4px 0;">
-                                <input type="checkbox"
-                                       @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
-                                       checked="@selectedUserIds.Contains(user.Id)" />
-                                <label>@user.Name <span style="color: gray; font-style: italic;">(@user.Role)</span></label>
-                            </div>
-                        }
+                    if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
+                    {
+                    <div style="font-style: italic; color: gray; font-size: 0.7em;">
+                        Synlig for alle
                     </div>
-                }
-            }
+                    }
+                    else
+                    {
+                    var targetNames = allUsers
+                    .Where(u => post.TargetUserIds.Contains(u.Id))
+                    .Select(u => u.Name)
+                    .ToList();
 
-            <div class="modal-actions">
-                <button class="cancel-button" @onclick="CloseModal">Annuller</button>
-                <button class="create-button" @onclick="SubmitModal">Opret</button>
+                    <div style="font-style: italic; color: gray; font-size: 0.7em;">
+                        Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
+                    </div>
+                    }
+                    }
+                </div>
+                @if (CanDeletePost(post))
+                {
+                <div class="post-options">
+                    <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
+                    @if (confirmDeletePostId == post.Id)
+                    {
+                    <div class="confirm-popup">
+                        <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
+                    </div>
+                    }
+                </div>
+                }
             </div>
+            <p class="post-content">@post.Content</p>
         </div>
+        }
+        }
+        else
+        {
+        <p>Ingen opslag matcher din søgning.</p>
+        }
+    </div>
+</div>
+
+@if (showModal)
+{
+<div class="modal-backdrop" @onclick="CloseModal"></div>
+<div class="modal">
+    <h4>Opret nyt opslag</h4>
+    <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
+    <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+
+    @if (currentUser?.Role == "HR")
+    {
+    <div class="role-selection-buttons">
+        <button class="select-all-button @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
+            @(selectedTargetGroup == "All" ? "Annuller valg" : "Vælg alle personer")
+        </button>
+        <button class="select-all-button @(selectedTargetGroup == "Elev" ? "active" : "")" @onclick='() => ToggleRoleSelection("Elev")'>
+            @(selectedTargetGroup == "Elev" ? "Annuller valg" : "Vælg alle elever")
+        </button>
+        <button class="select-all-button @(selectedTargetGroup == "Køkkenchef" ? "active" : "")" @onclick='() => ToggleRoleSelection("Køkkenchef")'>
+            @(selectedTargetGroup == "Køkkenchef" ? "Annuller valg" : "Vælg alle køkkenchefer")
+        </button>
+    </div>
+
+    <select @onchange="OnHotelChanged" class="form-select" hidden="@selectedAllUsers">
+        <option value="">Vælg hotel</option>
+        @foreach (var hotel in allHotels)
+        {
+        <option value="@hotel">@hotel</option>
+        }
+    </select>
+
+    @if (!selectedAllUsers)
+    {
+    <label>Vælg modtagere:</label>
+    <div class="user-checkboxes">
+        @foreach (var user in filteredUsers)
+        {
+        <div style="border-bottom: 1px solid #ccc; padding: 4px 0;">
+            <input type="checkbox"
+                   @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
+                   checked="@selectedUserIds.Contains(user.Id)" />
+            <label>@user.Name <span style="color: gray; font-style: italic;">(@user.Role)</span></label>
+        </div>
+        }
+    </div>
     }
+    }
+
+    <div class="modal-actions">
+        <button class="cancel-button" @onclick="CloseModal">Annuller</button>
+        <button class="create-button" @onclick="SubmitModal">Opret</button>
+    </div>
+</div>
+}
 }
 
 @code {
-    private List<Post> posts = new();
-    private Post newPost = new();
-    private User? currentUser;
-    private string searchTerm = "";
-    private int? confirmDeletePostId = null;
-    private bool showModal = false;
-    private bool CanDeletePosts => currentUser?.Role != "Elev";
+private List<Post> posts = new();
+private Post newPost = new();
+private User? currentUser;
+private string searchTerm = "";
+private int? confirmDeletePostId = null;
+private bool showModal = false;
 
-    private List<User> allUsers = new();
-    private List<string> allHotels = new();
-    private string selectedHotel = "";
-    private List<User> filteredUsers = new();
-    private List<int> selectedUserIds = new();
-    private bool selectedAllUsers = false;
-    private string selectedTargetGroup = "";
+private List<User> allUsers = new();
+private List<string> allHotels = new();
+private string selectedHotel = "";
+private List<User> filteredUsers = new();
+private List<int> selectedUserIds = new();
+private bool selectedAllUsers = false;
+private string selectedTargetGroup = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        currentUser = await UserService.GetCurrentUserAsync();
-        allUsers = await UserService.GetAllUsersAsync();
-        allHotels = allUsers
-            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
-            .Select(u => u.Hotel)
-            .Distinct()
-            .ToList();
-        await LoadPosts();
-    }
+protected override async Task OnInitializedAsync()
+{
+currentUser = await UserService.GetCurrentUserAsync();
+allUsers = await UserService.GetAllUsersAsync();
+allHotels = allUsers
+.Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
+.Select(u => u.Hotel)
+.Distinct()
+.ToList();
+await LoadPosts();
+}
 
-    private async Task LoadPosts()
-    {
-        if (currentUser == null) return;
-        posts = await PostService.GetPostsForUserAsync(currentUser.Email, currentUser.Role);
-    }
+private async Task LoadPosts()
+{
+if (currentUser == null) return;
+posts = await PostService.GetPostsForUserAsync(currentUser.Email, currentUser.Role);
+}
 
-    private async Task SubmitModal()
-    {
-        newPost.Author = currentUser?.Name ?? "Ukendt";
-        newPost.CreatedAt = DateTime.Now;
-        newPost.TargetUserIds = selectedUserIds;
+private async Task SubmitModal()
+{
+newPost.Author = currentUser?.Name ?? "Ukendt";
+newPost.CreatedAt = DateTime.Now;
+newPost.TargetUserIds = selectedUserIds;
 
-        await PostService.CreatePostAsync(newPost);
-        newPost = new();
-        selectedUserIds.Clear();
-        selectedHotel = "";
-        filteredUsers.Clear();
-        selectedAllUsers = false;
-        selectedTargetGroup = "";
-        showModal = false;
+await PostService.CreatePostAsync(newPost);
+newPost = new();
+selectedUserIds.Clear();
+selectedHotel = "";
+filteredUsers.Clear();
+selectedAllUsers = false;
+selectedTargetGroup = "";
+showModal = false;
 
-        await LoadPosts();
-    }
+await LoadPosts();
+}
 
-    private void CloseModal()
-    {
-        showModal = false;
-    }
+private void CloseModal() => showModal = false;
 
-    private async Task ConfirmDelete(int id)
-    {
-        await PostService.DeletePostAsync(id);
-        confirmDeletePostId = null;
-        await LoadPosts();
-    }
+private async Task ConfirmDelete(int id)
+{
+await PostService.DeletePostAsync(id);
+confirmDeletePostId = null;
+await LoadPosts();
+}
 
-    private void ToggleDeletePopup(int postId)
-    {
-        confirmDeletePostId = confirmDeletePostId == postId ? null : postId;
-    }
+private void ToggleDeletePopup(int postId)
+{
+confirmDeletePostId = confirmDeletePostId == postId ? null : postId;
+}
 
-    private void OnHotelChanged(ChangeEventArgs e)
-    {
-        selectedHotel = e.Value?.ToString() ?? "";
-        filteredUsers = allUsers
-            .Where(u => u.Hotel == selectedHotel)
-            .ToList();
-        selectedUserIds = filteredUsers.Select(u => u.Id).ToList();
-        selectedAllUsers = false;
-        selectedTargetGroup = "";
-    }
+private void OnHotelChanged(ChangeEventArgs e)
+{
+selectedHotel = e.Value?.ToString() ?? "";
+filteredUsers = allUsers.Where(u => u.Hotel == selectedHotel).ToList();
+selectedUserIds = filteredUsers.Select(u => u.Id).ToList();
+selectedAllUsers = false;
+selectedTargetGroup = "";
+}
 
-    private void ToggleUserSelection(int userId, bool isChecked)
-    {
-        if (isChecked && !selectedUserIds.Contains(userId))
-            selectedUserIds.Add(userId);
-        else if (!isChecked)
-            selectedUserIds.Remove(userId);
-    }
+private void ToggleUserSelection(int userId, bool isChecked)
+{
+if (isChecked && !selectedUserIds.Contains(userId))
+selectedUserIds.Add(userId);
+else if (!isChecked)
+selectedUserIds.Remove(userId);
+}
 
-    private void ToggleAllUsers()
-    {
-        if (selectedTargetGroup == "All")
-        {
-            selectedAllUsers = false;
-            selectedTargetGroup = "";
-            selectedUserIds.Clear();
-        }
-        else
-        {
-            selectedUserIds = allUsers.Select(u => u.Id).ToList();
-            selectedAllUsers = true;
-            selectedTargetGroup = "All";
-        }
+private void ToggleAllUsers()
+{
+if (selectedTargetGroup == "All")
+{
+selectedAllUsers = false;
+selectedTargetGroup = "";
+selectedUserIds.Clear();
+}
+else
+{
+selectedUserIds = allUsers.Select(u => u.Id).ToList();
+selectedAllUsers = true;
+selectedTargetGroup = "All";
+}
+selectedHotel = "";
+filteredUsers = new();
+}
 
-        selectedHotel = "";
-        filteredUsers = new();
-    }
+private void ToggleRoleSelection(string role)
+{
+if (selectedTargetGroup == role)
+{
+selectedUserIds.Clear();
+selectedTargetGroup = "";
+selectedAllUsers = false;
+}
+else
+{
+selectedUserIds = allUsers
+.Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase))
+.Select(u => u.Id)
+.ToList();
+selectedTargetGroup = role;
+selectedAllUsers = true;
+}
+selectedHotel = "";
+filteredUsers = new();
+}
 
-    private void ToggleRoleSelection(string role)
-    {
-        if (selectedTargetGroup == role)
-        {
-            selectedUserIds.Clear();
-            selectedTargetGroup = "";
-            selectedAllUsers = false;
-        }
-        else
-        {
-            selectedUserIds = allUsers
-                .Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase))
-                .Select(u => u.Id)
-                .ToList();
-            selectedTargetGroup = role;
-            selectedAllUsers = true;
-        }
+private IEnumerable<Post> FilteredPosts =>
+string.IsNullOrWhiteSpace(searchTerm)
+? posts.Where(CanViewPost)
+: posts.Where(p => CanViewPost(p) &&
+(!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+!string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
 
-        selectedHotel = "";
-        filteredUsers = new();
-    }
+private bool CanViewPost(Post post)
+{
+if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+return true;
+return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
+}
 
-    private IEnumerable<Post> FilteredPosts =>
-        string.IsNullOrWhiteSpace(searchTerm)
-            ? posts.Where(CanViewPost)
-            : posts.Where(p => CanViewPost(p) &&
-                               (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+private bool CanDeletePost(Post post)
+{
+if (currentUser == null) return false;
+if (currentUser.Role == "Elev")
+return post.Author == currentUser.Name;
+return true;
+}
 
-    private bool CanViewPost(Post post)
-    {
-        if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-            return true;
-        return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
-    }
-
-    private string GetInitials(string? fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName)) return "";
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length == 1 ? parts[0][0].ToString().ToUpper() : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
-    }
+private string GetInitials(string? fullName)
+{
+if (string.IsNullOrWhiteSpace(fullName)) return "";
+var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+return parts.Length == 1 ? parts[0][0].ToString().ToUpper() : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+}
 }
