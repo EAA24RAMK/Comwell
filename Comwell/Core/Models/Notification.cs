@@ -9,6 +9,6 @@ public class Notification
     public int RelatedUserId { get; set; } 
     public int? PlanId { get; set; } 
     public int? GoalId { get; set; } 
-    public int? SubtaskIndex { get; set; } 
     public bool IsRead { get; set; } = false;
+    public List<int> NotifyUserId { get; set; } = new List<int>();
 }
