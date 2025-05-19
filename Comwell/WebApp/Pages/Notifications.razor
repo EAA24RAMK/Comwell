@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject IUserService UserService
 @inject INotificationService NotificationService
+@inject NavigationManager Nav
 @using Core.Models
 @using WebApp.Services
 
@@ -20,10 +21,17 @@ else
     <ul>
         @foreach (var note in notifications.OrderByDescending(n => n.CreatedAt))
         {
-            <li>
+            <li style="margin-bottom: 1rem;">
                 <strong>@(note.IsRead ? "" : "[NY] ")</strong>
                 @note.Message <br />
-                <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small>
+                <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br />
+
+                @if (note.PlanId != null && note.GoalId != null)
+                {
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => GoToGoal(note.PlanId.Value, note.GoalId.Value)">
+                        🔗 Gå til mål
+                    </button>
+                }
             </li>
         }
     </ul>
@@ -35,12 +43,23 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Console.WriteLine("➡️ OnInitializedAsync kører...");
+        
         currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser == null) 
+            return;
 
         // Automatisk kald til backend for at generere nye notifikationer
         await Http.PostAsync("api/notification/generate", null);
+        
+        Console.WriteLine("➡️ Genererede notifikationer (POST sendt)");
 
         // Hent notifikationer for den aktuelle bruger
         notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
+    }
+    
+    private void GoToGoal(int planId, int goalId)
+    {
+        Nav.NavigateTo($"/elevplaner?planId={planId}&goalId={goalId}");
     }
 }
