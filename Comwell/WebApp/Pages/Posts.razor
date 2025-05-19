@@ -29,16 +29,25 @@ else
                             <div class="post-meta">
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                                @if (currentUser?.Role == "HR" && post.TargetUserIds.Count > 0)
+                                @if (currentUser?.Role == "HR")
                                 {
                                     var targetNames = allUsers
                                         .Where(u => post.TargetUserIds.Contains(u.Id))
                                         .Select(u => u.Name)
                                         .ToList();
 
-                                    <div style="font-style: italic; color: gray; font-size: 0.7em;">
-                                        Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
-                                    </div>
+                                    if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
+                                    {
+                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
+                                            Synlig for alle
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
+                                            Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
+                                        </div>
+                                    }
                                 }
                             </div>
                             @if (CanDeletePosts)

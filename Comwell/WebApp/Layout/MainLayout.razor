@@ -2,6 +2,7 @@
 @inject WebApp.Services.IUserService UserService
 @inject NavigationManager NavManager
 @inject WebApp.Services.INotificationService NotificationService
+@inject HttpClient Http
 @using Core.Models
 
 @if (!IsLoginPage)
@@ -22,6 +23,16 @@
 
                 <div class="d-flex align-items-center gap-3 position-relative">
                     <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;" @onclick="ToggleNotifications"></i>
+                    <!-- Klokke med badge -->
+                    <div class="notification-badge-container">
+                        <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;"
+                           @onclick="async () => await ToggleNotifications()"></i>
+
+                        @if (notificationCount > 0)
+                        {
+                            <span class="notification-badge">@notificationCount</span>
+                        }
+                    </div>
 
                     @if (showNotifications)
                     {
@@ -30,9 +41,19 @@
                             <ul class="list-unstyled mb-0">
                                 @if (notifications?.Any() == true)
                                 {
-                                    @foreach (var note in notifications)
+                                    @foreach (var note in notifications.OrderByDescending(n => n.CreatedAt))
                                     {
-                                        <li class="mb-2 border-bottom pb-2">@note.Message</li>
+                                        <li class="mb-2 border-bottom pb-2">
+                                            <div>@note.Message</div>
+                                            <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br/>
+                                            @if (note.PlanId != null && note.GoalId != null)
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary mt-1"
+                                                        @onclick="@(() => NavigateToGoal(note.PlanId.Value, note.GoalId.Value))">
+                                                    🔗 Gå til mål
+                                                </button>
+                                            }
+                                        </li>
                                     }
                                 }
                                 else
@@ -67,6 +88,8 @@ else
     private bool IsLoginPage => NavManager.Uri.Contains("/login");
     private bool showNotifications = false;
     private List<Notification> notifications = new();
+    private bool hasSeenNotifications = false;
+    private int notificationCount => hasSeenNotifications ? 0 : notifications?.Count ?? 0;
 
     private bool sidebarCollapsed = true;
     private string SidebarCssClass => sidebarCollapsed ? "sidebar collapse" : "sidebar";
@@ -92,9 +115,27 @@ else
         sidebarCollapsed = !sidebarCollapsed;
     }
 
-    private void ToggleNotifications()
+    private async Task ToggleNotifications()
     {
         showNotifications = !showNotifications;
+
+        if (showNotifications && currentUser != null)
+        {
+            // Kalder backend for at generere nye notifikationer først
+            await Http.PostAsync("api/notification/generate", null);
+
+            // Henter notifikationer bagefter
+            notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
+            hasSeenNotifications = true; // 👈 markér som læst (visuelt)
+            
+            StateHasChanged(); // Opdater UI
+        }
+    }
+    
+    private void NavigateToGoal(int planId, int goalId)
+    {
+        showNotifications = false;
+        NavManager.NavigateTo($"/elevplaner?planId={planId}&goalId={goalId}");
     }
 
     private string GetInitials(string? fullName)
