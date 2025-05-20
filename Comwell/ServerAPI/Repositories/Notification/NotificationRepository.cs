@@ -55,8 +55,8 @@ public class NotificationRepository : INotificationRepository
 
         foreach (var note in matching)
         {
-            note.NotifyUserId.Clear(); // fjerner for alle
-            await UpdateAsync(note);
+            note.NotifyUserId.Clear(); // ingen skal længere se den
+            await UpdateAsync(note);   // behold notifikationen
         }
     }
 
@@ -70,7 +70,14 @@ public class NotificationRepository : INotificationRepository
 
         notification.NotifyUserId.Remove(userId); // vis den ikke mere
 
-        await UpdateAsync(notification);
+        if (!notification.NotifyUserId.Any())
+        {
+            await _notifications.DeleteOneAsync(n => n.Id == notificationId);
+        }
+        else
+        {
+            await UpdateAsync(notification);
+        }
     }
 
     public async Task CreateNotificationAsync(StudentPlan plan, Goal goal, List<User> allUsers)
