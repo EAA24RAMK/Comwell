@@ -274,3 +274,25 @@
     transform: scale(1.05);
     cursor: pointer;
 }
+
+.post-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280; /* Tailwind gray-500 / Bootstrap secondary */
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.post-link a:hover {
+    color: #4b5563; /* Tailwind gray-600 */
+    text-decoration: underline;
+}
+
+.post-link .bi {
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
