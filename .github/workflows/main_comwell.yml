@@ -1,4 +1,4 @@
-name: Build and deploy ASP.Net Core app to Azure Web App - Comwell
+name: Build and deploy ASP.Net Core WebApp to Azure Web App - Comwell
 
 on:
   push:
@@ -15,22 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.x'
 
-      - name: Build with dotnet
-        run: dotnet build Comwell/Comwell.sln --configuration Release
+      - name: Build WebApp
+        run: dotnet build Comwell/WebApp/WebApp.csproj --configuration Release
 
-      - name: dotnet publish
-        run: dotnet publish Comwell/Comwell.sln -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Publish WebApp
+        run: dotnet publish Comwell/WebApp/WebApp.csproj -c Release -o ./publish
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: webapp
+          path: ./publish
 
   deploy:
     runs-on: windows-latest
@@ -43,11 +43,11 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-      
+          name: webapp
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,10 +55,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_CCCE3CB46B87441CB85174E815AFE8DE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8923CD35F8794B56BA7B4FA084581E11 }}
 
-      - name: Deploy to Azure Web App
+      - name: Deploy WebApp
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Comwell'
           slot-name: 'Production'
-          package: .
+          package: ./publish
