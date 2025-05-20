@@ -22,7 +22,6 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-3 position-relative">
-                    <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;" @onclick="ToggleNotifications"></i>
                     <!-- Klokke med badge -->
                     <div class="notification-badge-container">
                         <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;"
@@ -103,9 +102,9 @@ else
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         }
 
-        NavManager.LocationChanged += (_, __) =>
+        NavManager.LocationChanged += (_, __) => // lambda funktion
         {
-            sidebarCollapsed = true;
+            sidebarCollapsed = true; // lukker siden ved at sætte til true
             InvokeAsync(StateHasChanged);
         };
     }
@@ -126,7 +125,7 @@ else
 
             // Henter notifikationer bagefter
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
-            hasSeenNotifications = true; // 👈 markér som læst (visuelt)
+            hasSeenNotifications = true; // markér som læst (visuelt)
             
             StateHasChanged(); // Opdater UI
         }
