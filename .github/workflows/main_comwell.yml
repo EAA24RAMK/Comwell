@@ -55,7 +55,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_CCCE3CB46B87441CB85174E815AFE8DE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8923CD35F8794B56BA7B4FA084581E11 }}
 
-      - name: Deploy WebApp
+      - name: Deploy frontend to Azure
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
