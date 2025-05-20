@@ -1,0 +1,64 @@
+name: Build and deploy ASP.Net Core WebApp to Azure Web App - Comwell
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Build WebApp
+        run: dotnet build Comwell/WebApp/WebApp.csproj --configuration Release
+
+      - name: Publish WebApp
+        run: dotnet publish Comwell/WebApp/WebApp.csproj -c Release -o ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp
+          path: ./publish
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_73CB8A920F3E449E9E18F296044DBDAC }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_CCCE3CB46B87441CB85174E815AFE8DE }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8923CD35F8794B56BA7B4FA084581E11 }}
+
+      - name: Deploy frontend to Azure
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'Comwell'
+          slot-name: 'Production'
+          package: ./publish

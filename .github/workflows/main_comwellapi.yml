@@ -1,0 +1,64 @@
+name: Build and deploy ASP.Net Core API to Azure Web App - ComwellAPI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Build API
+        run: dotnet build Comwell/ServerAPI/ServerAPI.csproj --configuration Release
+
+      - name: Publish API
+        run: dotnet publish Comwell/ServerAPI/ServerAPI.csproj -c Release -o ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ./publish
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_E071A69AC1AE4178892A1D3A8A84967C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DB94C2C5768841D1BCBD9B5870D82B33 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FF9C33CB957945BCB0F8D85969F5239D }}
+
+      - name: Deploy API to Azure
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'ComwellAPI'
+          slot-name: 'Production'
+          package: ./publish

@@ -29,13 +29,8 @@ else
                             <div class="post-meta">
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                                @if (currentUser?.Role == "HR")
+                                @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
                                 {
-                                    var targetNames = allUsers
-                                        .Where(u => post.TargetUserIds.Contains(u.Id))
-                                        .Select(u => u.Name)
-                                        .ToList();
-
                                     if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
                                     {
                                         <div style="font-style: italic; color: gray; font-size: 0.7em;">
@@ -44,13 +39,18 @@ else
                                     }
                                     else
                                     {
+                                        var targetNames = allUsers
+                                            .Where(u => post.TargetUserIds.Contains(u.Id))
+                                            .Select(u => u.Name)
+                                            .ToList();
+
                                         <div style="font-style: italic; color: gray; font-size: 0.7em;">
                                             Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
                                         </div>
                                     }
                                 }
                             </div>
-                            @if (CanDeletePosts)
+                            @if (CanDeletePost(post))
                             {
                                 <div class="post-options">
                                     <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
@@ -64,6 +64,15 @@ else
                             }
                         </div>
                         <p class="post-content">@post.Content</p>
+                        @if (!string.IsNullOrWhiteSpace(post.Url))
+                        {
+                            <h10 class="post-link">
+                                <a href="@post.Url" target="_blank">
+                                    <i class="bi bi-link-45deg"></i>
+                                    <span>Åbn link</span>
+                                </a>
+                            </h10>
+                        }
                     </div>
                 }
             }
@@ -81,8 +90,9 @@ else
             <h4>Opret nyt opslag</h4>
             <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
             <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
+            <input @bind="newPost.Url" placeholder="Tilføj et link (valgfrit)" class="input-field" />
 
-            @if (currentUser?.Role == "HR")
+            @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
             {
                 <div class="role-selection-buttons">
                     <button class="select-all-button @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
@@ -136,7 +146,6 @@ else
     private string searchTerm = "";
     private int? confirmDeletePostId = null;
     private bool showModal = false;
-    private bool CanDeletePosts => currentUser?.Role != "Elev";
 
     private List<User> allUsers = new();
     private List<string> allHotels = new();
@@ -170,6 +179,11 @@ else
         newPost.CreatedAt = DateTime.Now;
         newPost.TargetUserIds = selectedUserIds;
 
+        if (!string.IsNullOrWhiteSpace(newPost.Url) && !newPost.Url.StartsWith("http"))
+        {
+            newPost.Url = "https://" + newPost.Url;
+        }
+
         await PostService.CreatePostAsync(newPost);
         newPost = new();
         selectedUserIds.Clear();
@@ -182,10 +196,7 @@ else
         await LoadPosts();
     }
 
-    private void CloseModal()
-    {
-        showModal = false;
-    }
+    private void CloseModal() => showModal = false;
 
     private async Task ConfirmDelete(int id)
     {
@@ -202,9 +213,7 @@ else
     private void OnHotelChanged(ChangeEventArgs e)
     {
         selectedHotel = e.Value?.ToString() ?? "";
-        filteredUsers = allUsers
-            .Where(u => u.Hotel == selectedHotel)
-            .ToList();
+        filteredUsers = allUsers.Where(u => u.Hotel == selectedHotel).ToList();
         selectedUserIds = filteredUsers.Select(u => u.Id).ToList();
         selectedAllUsers = false;
         selectedTargetGroup = "";
@@ -232,7 +241,6 @@ else
             selectedAllUsers = true;
             selectedTargetGroup = "All";
         }
-
         selectedHotel = "";
         filteredUsers = new();
     }
@@ -254,7 +262,6 @@ else
             selectedTargetGroup = role;
             selectedAllUsers = true;
         }
-
         selectedHotel = "";
         filteredUsers = new();
     }
@@ -263,14 +270,22 @@ else
         string.IsNullOrWhiteSpace(searchTerm)
             ? posts.Where(CanViewPost)
             : posts.Where(p => CanViewPost(p) &&
-                               (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
 
     private bool CanViewPost(Post post)
     {
         if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
             return true;
         return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
+    }
+
+    private bool CanDeletePost(Post post)
+    {
+        if (currentUser == null) return false;
+        if (currentUser.Role == "Elev")
+            return post.Author == currentUser.Name;
+        return true;
     }
 
     private string GetInitials(string? fullName)
