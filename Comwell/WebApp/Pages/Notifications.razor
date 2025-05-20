@@ -43,16 +43,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Console.WriteLine("➡️ OnInitializedAsync kører...");
-        
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser == null) 
             return;
 
         // Automatisk kald til backend for at generere nye notifikationer
         await Http.PostAsync("api/notification/generate", null);
-        
-        Console.WriteLine("➡️ Genererede notifikationer (POST sendt)");
 
         // Hent notifikationer for den aktuelle bruger
         notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);

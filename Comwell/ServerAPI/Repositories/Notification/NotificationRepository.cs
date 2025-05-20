@@ -49,10 +49,28 @@ public class NotificationRepository : INotificationRepository
         await _notifications.DeleteOneAsync(n => n.Id == id);
     }
 
-    public async Task DeleteAllForGoalAsync(int planId, int goalId)
+    public async Task RemoveGoalNotificationForAllUsersAsync(int planId, int goalId)
     {
-        await _notifications.DeleteManyAsync(n =>
-            n.PlanId == planId && n.GoalId == goalId);
+        var matching = await _notifications.Find(n => n.PlanId == planId && n.GoalId == goalId).ToListAsync();
+
+        foreach (var note in matching)
+        {
+            note.NotifyUserId.Clear(); // fjerner for alle
+            await UpdateAsync(note);
+        }
+    }
+
+    public async Task MarkAsDeletedForUserAsync(int notificationId, int userId)
+    {
+        var notification = await _notifications.Find(n => n.Id == notificationId).FirstOrDefaultAsync();
+        if (notification == null) return;
+
+        if (!notification.DeletedByUserIds.Contains(userId))
+            notification.DeletedByUserIds.Add(userId);
+
+        notification.NotifyUserId.Remove(userId); // vis den ikke mere
+
+        await UpdateAsync(notification);
     }
 
     public async Task CreateNotificationAsync(StudentPlan plan, Goal goal, List<User> allUsers)
@@ -62,29 +80,24 @@ public class NotificationRepository : INotificationRepository
 
         var message = $"{studentName}: Målet \"{goal.Title}\" nærmer sig.";
 
-
-        // Tjek om en notifikation med samme PlanId, GoalId og Message allerede findes
+        // Find eksisterende notifikation
         var existing = await _notifications.Find(n =>
             n.PlanId == plan.Id &&
             n.GoalId == goal.Id &&
-            n.Deadline == goal.Deadline &&
-            n.Message == message
+            n.Deadline == goal.Deadline
         ).FirstOrDefaultAsync();
 
-        if (existing != null)
-            return;
-
+        // Identificér brugere der skal have notifikationen
         var notifyUsers = new List<int>();
 
         // Elev
         notifyUsers.Add(plan.StudentId);
 
         // Køkkenchefer på samme hotel
-        var student = allUsers.FirstOrDefault(u => u.Id == plan.StudentId);
-        if (student != null)
+        if (studentUser != null)
         {
             var chefs = allUsers
-                .Where(u => u.Role == "Køkkenchef" && u.Hotel == student.Hotel)
+                .Where(u => u.Role == "Køkkenchef" && u.Hotel == studentUser.Hotel)
                 .Select(u => u.Id);
             notifyUsers.AddRange(chefs);
         }
@@ -93,6 +106,30 @@ public class NotificationRepository : INotificationRepository
         var hrUsers = allUsers.Where(u => u.Role == "HR").Select(u => u.Id);
         notifyUsers.AddRange(hrUsers);
 
+        notifyUsers = notifyUsers.Distinct().ToList();
+
+        // Hvis notifikation allerede findes
+        if (existing != null)
+        {
+            // 🛑 Hvis NotifyUserId allerede er tom → gør ingenting
+            if (!existing.NotifyUserId.Any())
+                return;
+
+            // Fjern dem der tidligere har slettet den
+            var visibleTo = notifyUsers.Except(existing.DeletedByUserIds).ToList();
+
+            // Hvis ingen skal se den → gør ingenting
+            if (!visibleTo.Any())
+                return;
+
+            // Opdatér eksisterende notifikation
+            existing.NotifyUserId = visibleTo;
+            existing.Message = message;
+            await UpdateAsync(existing);
+            return;
+        }
+
+        // 🆕 Opret ny notifikation
         var notification = new Notification
         {
             Message = message,
@@ -100,7 +137,8 @@ public class NotificationRepository : INotificationRepository
             Deadline = goal.Deadline,
             PlanId = plan.Id,
             GoalId = goal.Id,
-            NotifyUserId = notifyUsers.Distinct().ToList(),
+            NotifyUserId = notifyUsers,
+            DeletedByUserIds = new(),
             IsRead = false
         };
 

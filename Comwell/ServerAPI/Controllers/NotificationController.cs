@@ -79,4 +79,16 @@ public class NotificationController : ControllerBase
 
         return Ok("Notifikationer genereret.");
     }
+    [HttpPost("delete-for-user")]
+    public async Task<IActionResult> DeleteForUser([FromBody] DeleteNotificationRequest request)
+    {
+        await _notificationRepo.MarkAsDeletedForUserAsync(request.NotificationId, request.UserId);
+        return Ok();
+    }
+    
+    public class DeleteNotificationRequest
+    {
+        public int NotificationId { get; set; }
+        public int UserId { get; set; }
+    }
 }
