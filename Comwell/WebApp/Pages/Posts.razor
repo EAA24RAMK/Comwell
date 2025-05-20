@@ -29,7 +29,7 @@ else
                 <div class="post-meta">
                     <div class="post-title">@post.Title</div>
                     <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                    @if (currentUser?.Role == "HR")
+                    @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
                     {
                     if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
                     {
@@ -82,7 +82,7 @@ else
     <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
     <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
 
-    @if (currentUser?.Role == "HR")
+    @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
     {
     <div class="role-selection-buttons">
         <button class="select-all-button @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
