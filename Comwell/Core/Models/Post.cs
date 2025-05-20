@@ -8,4 +8,5 @@ public class Post
     public string Author { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public List<int> TargetUserIds { get; set; } = new();
+    public string? Url { get; set; }
 }
