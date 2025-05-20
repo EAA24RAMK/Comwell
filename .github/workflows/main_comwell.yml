@@ -1,4 +1,7 @@
-name: Build and deploy ASP.Net Core WebApp to Azure Web App - Comwell
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy ASP.Net Core app to Azure Web App - Comwell
 
 on:
   push:
@@ -10,27 +13,27 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET
+      - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.x'
 
-      - name: Build WebApp
-        run: dotnet build Comwell/WebApp/WebApp.csproj --configuration Release
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
 
-      - name: Publish WebApp
-        run: dotnet publish Comwell/WebApp/WebApp.csproj -c Release -o ./publish
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
-      - name: Upload artifact
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: webapp
-          path: ./publish
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
     runs-on: windows-latest
@@ -39,26 +42,27 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Download artifact
+      - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: webapp
-
+          name: .net-app
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_73CB8A920F3E449E9E18F296044DBDAC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_CCCE3CB46B87441CB85174E815AFE8DE }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8923CD35F8794B56BA7B4FA084581E11 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B96BE5C412AC47F49927E990521151DD }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1C0EC4567650472B88683C1C5F15D089 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_91FE1A7810DA4F838444FD18E08400E0 }}
 
-      - name: Deploy frontend to Azure
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'Comwell'
           slot-name: 'Production'
-          package: ./publish
+          package: .
+          
