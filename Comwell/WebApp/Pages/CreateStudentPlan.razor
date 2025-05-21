@@ -52,17 +52,6 @@
         </div>
 
         <div class="form-group">
-            <label>Ansvarlig:</label>
-            <select @bind="responsible">
-                <option value="">Vælg ansvarlig</option>
-                @foreach (var user in kitchenChefs.Where(u => u.Role == "Køkkenchef"))
-                {
-                    <option value="@user.Name">@user.Name</option>
-                }
-            </select>
-        </div>
-
-        <div class="form-group">
             <label>Startdato:</label>
             <InputDate @bind-Value="planModel.PeriodStart" />
         </div>
