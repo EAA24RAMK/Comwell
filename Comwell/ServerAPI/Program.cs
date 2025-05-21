@@ -16,6 +16,7 @@ builder.Services.AddSingleton<ITemplateRepository, TemplateRepository>();
 builder.Services.AddSingleton<IStudentPlanRepository, StudentPlanRepository>();
 builder.Services.AddSingleton<IPostRepository, PostRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<ILearningMaterialRepository, LearningMaterialRepository>();
 
 builder.Services.AddCors(options =>
 {
