@@ -57,7 +57,12 @@
                 @if (activeActionMenuUserId == user.Id)
                 {
                     <div class="action-menu">
-                        <button class="delete-button" @onclick="() => DeleteUserAsync(user.Id)">Slet</button>
+                        <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
+                            @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
+                        </button>
+                        <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
+                            Slet
+                        </button>
                     </div>
                 }
             </div>
@@ -192,4 +197,18 @@
             _ => $"{parts[0][0]}{parts[^1][0]}".ToUpper()
         };
     }
+    
+    private async Task ToggleUserStatusAsync(User user)
+    {
+        var newStatus = user.Status == "Aktiv" ? "Inaktiv" : "Aktiv";
+        var success = await UserService.UpdateUserStatusAsync(user.Id, newStatus);
+
+        if (success)
+        {
+            users = await UserService.GetAllUsersAsync();
+        }
+
+        activeActionMenuUserId = null;
+    }
+
 }

@@ -68,4 +68,12 @@ public class UserRepository : IUserRepository
         return await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<bool> UpdateStatusAsync(int id, string newStatus)
+    {
+        var filter = Builders<User>.Filter.Eq(u => u.Id, id);
+        var update = Builders<User>.Update.Set(u => u.Status, newStatus);
+
+        var result = await _users.UpdateOneAsync(filter, update);
+        return result.ModifiedCount > 0;
+    }
 }

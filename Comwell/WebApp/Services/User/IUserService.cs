@@ -14,5 +14,5 @@ public interface IUserService
     Task<User?> GetCurrentUserAsync();
     Task<bool> DeleteUserAsync(int userId);
     Task<User?> GetUserByIdAsync(int id);
-
+    Task<bool> UpdateUserStatusAsync(int userId, string newStatus);
 }

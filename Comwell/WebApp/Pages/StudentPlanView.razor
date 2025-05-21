@@ -114,20 +114,37 @@ else
                                 <ul>
                                     @foreach (var subtask in goal.Subtasks)
                                     {
-                                        <li>
+                                        <li class="d-flex align-items-center gap-2">
                                             <input type="checkbox"
-                                                   checked="@subtask.IsCompleted"
+                                                   disabled="@((subtask.Status == "Ikke startet"))"
+                                                   checked="@(subtask.Status == "Fuldført")"
                                                    @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)" />
+                                            
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                    @onclick="() => StartSubtask(plan, goal, subtask)">
+                                                Start
+                                            </button>
 
                                             @subtask.Text
 
-                                            @if (subtask.IsRequestedCompleted && !subtask.IsCompleted)
+                                            @if (subtask.Status == "Ikke startet")
                                             {
-                                                <span class="badge bg-warning text-dark ms-2">Elev har anmodet</span>
+                                                <span class="badge bg-secondary">Ikke startet</span>
                                             }
-                                            @if (subtask.IsCompleted)
+
+                                            @if (subtask.Status == "I gang")
                                             {
-                                                <span class="badge bg-success ms-2">Fuldført</span>
+                                                <span class="badge bg-warning text-dark">I gang</span>
+                                            }
+
+                                            @if (subtask.Status == "Fuldført")
+                                            {
+                                                <span class="badge bg-success">Fuldført</span>
+                                            }
+                                            
+                                            @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
+                                            {
+                                                <span class="badge bg-warning text-dark ms-2">Anmodet</span>
                                             }
                                         </li>
                                     }
@@ -293,7 +310,7 @@ else
         editableGoalTitle = goal.Title;
         editableGoalCategory = goal.Category;
         editableSubtasks = goal.Subtasks.Select(s => s.Text).ToList();
-        editableSubtasksCompleted = goal.Subtasks.Select(s => s.IsCompleted).ToList();
+        editableSubtasksCompleted = goal.Subtasks.Select(s => s.Status == "Fuldført").ToList();
     }
 
     private void CancelEditing()
@@ -330,7 +347,7 @@ else
 
         goalToUpdate.Title = editableGoalTitle;
         goalToUpdate.Category = editableGoalCategory;
-        
+
         goalToUpdate.Subtasks = new List<Subtask>();
         for (int i = 0; i < editableSubtasks.Count; i++)
         {
@@ -339,25 +356,39 @@ else
                 goalToUpdate.Subtasks.Add(new Subtask
                 {
                     Text = editableSubtasks[i],
-                    IsCompleted = editableSubtasksCompleted[i]
+                    Status = editableSubtasksCompleted[i] ? "Fuldført" : "Ikke startet"
                 });
             }
         }
 
+        // Evt. opdater målstatus hvis ønsket
+        if (goalToUpdate.Subtasks.All(s => s.Status == "Fuldført"))
+        {
+            goalToUpdate.Status = "Fuldført";
+        }
+        else if (goalToUpdate.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+        {
+            goalToUpdate.Status = "I gang";
+        }
+        else
+        {
+            goalToUpdate.Status = "Ikke startet";
+        }
+
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
-        CancelEditing();
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
 
     private async Task ToggleSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask, bool isCompleted)
     {
-        subtask.IsCompleted = isCompleted;
-        // Opdater status automatisk hvis alle subtasks er fuldført
-        if (goal.Subtasks.All(s => s.IsCompleted))
+        subtask.Status = isCompleted ? "Fuldført" : "Ikke startet";
+
+        // Opdater status for hele målet baseret på subtasks
+        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
         {
             goal.Status = "Fuldført";
         }
-        else if (goal.Subtasks.Any(s => s.IsCompleted))
+        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
         {
             goal.Status = "I gang";
         }
@@ -365,14 +396,15 @@ else
         {
             goal.Status = "Ikke startet";
         }
+
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
-
+    
     private string GetGoalStatusText(Goal goal)
     {
         int total = goal.Subtasks.Count;
-        int completed = goal.Subtasks.Count(s => s.IsCompleted);
+        int completed = goal.Subtasks.Count(s => s.Status == "Fuldført");
 
         if (total == 0) return "Ingen delopgaver";
         if (completed == 0) return "Ikke startet";
@@ -524,5 +556,20 @@ else
     {
         activeActionMenuPlanId = activeActionMenuPlanId == planId ? -1 : planId;
     }
+    
+    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.Status = "I gang";
 
+        // Opdater goal-status
+        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
+            goal.Status = "Fuldført";
+        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+            goal.Status = "I gang";
+        else
+            goal.Status = "Ikke startet";
+
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
 }

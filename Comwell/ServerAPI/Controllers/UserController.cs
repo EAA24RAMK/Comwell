@@ -72,5 +72,12 @@ public class UserController : ControllerBase
         if (user == null) return NotFound();
         return Ok(user);
     }
-
+    
+    [HttpPut("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] string newStatus)
+    {
+        var updated = await _repo.UpdateStatusAsync(id, newStatus);
+        if (!updated) return NotFound();
+        return NoContent();
+    }
 }
