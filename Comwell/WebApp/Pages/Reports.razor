@@ -88,16 +88,17 @@
                     {
                         var selectedGoals = allGoals.Where(g => g.Title == selectedGoalTitle).ToList();
                         int total = selectedGoals.Count;
-                        int done = selectedGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
+                        int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
                         percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
                     }
                     else
                     {
                         int total = allGoals.Count;
-                        int done = allGoals.Count(g => g.Subtasks.All(s => s.IsCompleted));
+                        int done = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
                         percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
                     }
                 }
+
 
                 <tr>
                     <td>@user.Name</td>
