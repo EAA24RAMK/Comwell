@@ -4,6 +4,7 @@
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
 @inject ITemplateService TemplateService
+@inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
 @if (currentUser != null)
@@ -77,6 +78,15 @@ else
                                         {
                                             <span class="badge bg-warning text-dark ms-2">Anmodet om fuldførelse</span>
                                         }
+
+                                        @* Læringsmateriale knap *@
+                                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                                        {
+                                            <button class="btn btn-sm btn-info ms-2"
+                                                    @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
+                                                Læringsmateriale
+                                            </button>
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -134,12 +144,15 @@ else
     private int addingNoteForPlanId = -1;
     private Dictionary<int, string> newNoteTexts = new();
 
+    private List<LearningMaterial> allMaterials = new();
+
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser is null) return;
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        allMaterials = await MaterialService.GetAllAsync(); // henter alle læringsmaterialer
         templates = await TemplateService.GetAllTemplatesAsync();
 
         if (currentUser.Role != "Elev")

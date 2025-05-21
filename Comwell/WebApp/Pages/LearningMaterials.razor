@@ -1,9 +1,12 @@
 @page "/learningmaterials"
+@using System.Web
+@using Microsoft.AspNetCore.Components
 @using Core.Models
 @using WebApp.Services
 @inject ILearningMaterialService MaterialService
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
+@inject NavigationManager Nav
 
 <h3>Læringsmateriale</h3>
 
@@ -16,34 +19,37 @@
     <p style="color: red">@ErrorMessage</p>
 }
 
-<hr />
-<h4>Upload dokument</h4>
-<InputFile OnChange="HandleFileSelected" />
-<input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control" />
-<select class="form-select mt-1" @bind="UploadSubtaskId">
-    <option value="">-- Vælg delmål --</option>
-    @foreach (var s in subtasks)
-    {
-        <option value="@s.Id">@s.Text</option>
-    }
-</select>
-<button class="btn btn-primary mt-2" @onclick="UploadFile">Upload</button>
+@if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+{
+    <hr />
+    <h4>Upload dokument</h4>
+    <InputFile OnChange="HandleFileSelected" />
+    <input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control" />
+    <select class="form-select mt-1" @bind="UploadSubtaskId">
+        <option value="">-- Vælg delmål --</option>
+        @foreach (var s in subtasks)
+        {
+            <option value="@s.Id">@s.Text</option>
+        }
+    </select>
+    <button class="btn btn-primary mt-2" @onclick="UploadFile">Upload</button>
 
-<hr />
-<h4>Tilføj link</h4>
-<input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
-<input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-1" />
-<select class="form-select mt-1" @bind="LinkSubtaskId">
-    <option value="">-- Vælg delmål --</option>
-    @foreach (var s in subtasks)
-    {
-        <option value="@s.Id">@s.Text</option>
-    }
-</select>
-<button class="btn btn-success mt-2" @onclick="AddLink">Tilføj link</button>
+    <hr />
+    <h4>Tilføj link</h4>
+    <input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
+    <input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-1" />
+    <select class="form-select mt-1" @bind="LinkSubtaskId">
+        <option value="">-- Vælg delmål --</option>
+        @foreach (var s in subtasks)
+        {
+            <option value="@s.Id">@s.Text</option>
+        }
+    </select>
+    <button class="btn btn-success mt-2" @onclick="AddLink">Tilføj link</button>
 
-<hr />
-<h4>Alle materialer</h4>
+    <hr />
+}
+
 @if (materials.Count == 0)
 {
     <p>Ingen materialer endnu.</p>
@@ -51,7 +57,8 @@
 else
 {
     <ul class="list-group">
-        @foreach (var mat in materials)
+        @foreach (var mat in materials.Where(m => !filteredSubtaskId.HasValue || m.SubtaskId == filteredSubtaskId))
+
         {
             var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
             <li class="list-group-item">
@@ -69,9 +76,14 @@ else
             </li>
         }
     </ul>
+    
+    <hr />
 }
 
 @code {
+    // Gemmer brugeren i en variabel
+    private User? currentUser;
+    
     private List<LearningMaterial> materials = new();
     private List<Subtask> subtasks = new();
 
@@ -86,17 +98,29 @@ else
     private string? SuccessMessage;
     private string? ErrorMessage;
 
+    // Til at vise læringsmateriale
+    private int? filteredSubtaskId;
+
     protected override async Task OnInitializedAsync()
     {
-        var user = await UserService.GetCurrentUserAsync(); // Du skal have denne metode i IUserService
+        var user = await UserService.GetCurrentUserAsync(); // Henter logget ind bruger
+        currentUser = await UserService.GetCurrentUserAsync();
         var plans = await StudentPlanService.GetPlansByUserAsync(user);
         var plan = plans.FirstOrDefault();
 
         if (plan != null)
-        {
             subtasks = plan.Goals.SelectMany(g => g.Subtasks).ToList();
-        }
 
+        // Læs subtaskId direkte fra URL
+        var uri = new Uri(Nav.Uri); //url hentes med Nav.Uri og laver den til et uri objekt
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query); //querystring bliver parset
+        var subtaskIdString = query.Get("subtaskId");
+
+        if (int.TryParse(subtaskIdString, out var sid)) // henter subtaskID, hvis den findes filtreres materials i markuppen (foreach løkken)
+        {
+            filteredSubtaskId = sid;
+        }
+        
         materials = await MaterialService.GetAllAsync();
     }
 
