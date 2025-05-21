@@ -67,5 +67,11 @@ public class UserService : IUserService
     {
         return await _http.GetFromJsonAsync<User>($"api/user/id/{id}");
     }
+    
+    public async Task<bool> UpdateUserStatusAsync(int userId, string newStatus)
+    {
+        var response = await _http.PutAsJsonAsync($"api/user/{userId}/status", newStatus);
+        return response.IsSuccessStatusCode;
+    }
 
 }

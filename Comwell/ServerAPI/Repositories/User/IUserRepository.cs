@@ -11,5 +11,6 @@ public interface IUserRepository
     Task<List<User>> GetByHotelAsync(string hotel);
     Task<bool> DeleteAsync(int id);
     Task<User?> GetUserByIdAsync(int id);
+    Task<bool> UpdateStatusAsync(int id, string newStatus);
 
 }
