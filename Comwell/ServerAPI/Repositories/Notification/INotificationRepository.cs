@@ -9,7 +9,8 @@ public interface INotificationRepository
     Task AddAsync(Notification notification);
     Task UpdateAsync(Notification notification);
     Task DeleteAsync(int id);
-    Task DeleteAllForGoalAsync(int planId, int goalId);
+    Task RemoveGoalNotificationForAllUsersAsync(int planId, int goalId);
+    Task MarkAsDeletedForUserAsync(int notificationId, int userId);
 
     Task CreateNotificationAsync(StudentPlan plan, Goal goal, List<User> allUsers);
 }

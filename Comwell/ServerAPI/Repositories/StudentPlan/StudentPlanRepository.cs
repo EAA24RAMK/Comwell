@@ -8,6 +8,7 @@ public class StudentPlanRepository : IStudentPlanRepository
 {
     private readonly IMongoCollection<StudentPlan> _studentPlan;
     private readonly ITemplateRepository _templateRepo;
+    private readonly INotificationRepository _notificationRepo;
 
     public StudentPlanRepository(IConfiguration config)
     {
@@ -16,6 +17,7 @@ public class StudentPlanRepository : IStudentPlanRepository
         _studentPlan = db.GetCollection<StudentPlan>("studentplan");
         
         _templateRepo = new TemplateRepository(config);
+        _notificationRepo = new NotificationRepository(config);
     }
     
     // Finder højeste ID og plusser med en, og giver den ID til ny plan
@@ -98,6 +100,25 @@ public class StudentPlanRepository : IStudentPlanRepository
 
     public async Task UpdateStudentPlanAsync(StudentPlan updatedPlan)
     {
+        var existingPlan = await _studentPlan.Find(p => p.Id == updatedPlan.Id).FirstOrDefaultAsync();
+
+        if (existingPlan != null)
+        {
+            foreach (var updatedGoal in updatedPlan.Goals)
+            {
+                var previousGoal = existingPlan.Goals.FirstOrDefault(g => g.Id == updatedGoal.Id);
+
+                // Hvis status er ændret til "Fuldført"
+                if (previousGoal != null &&
+                    previousGoal.Status != "Fuldført" &&
+                    updatedGoal.Status == "Fuldført")
+                {
+                    Console.WriteLine($"🧹 Sletter notifikation for PlanId={updatedPlan.Id}, GoalId={updatedGoal.Id}");
+                    await _notificationRepo.RemoveGoalNotificationForAllUsersAsync(updatedPlan.Id, updatedGoal.Id);
+                }
+            }
+        }
+
         await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan);
     }
     

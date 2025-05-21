@@ -52,6 +52,11 @@
                                                     🔗 Gå til mål
                                                 </button>
                                             }
+                                            <!-- 🗑️ Slet-knap -->
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    @onclick="() => DeleteNotification(note.Id)">
+                                                🗑️ Slet
+                                            </button>
                                         </li>
                                     }
                                 }
@@ -144,5 +149,14 @@ else
         if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
         return string.Concat(parts[0][0], parts[^1][0]).ToUpper();
     }
+    
+    private async Task DeleteNotification(int notificationId)
+    {
+        if (currentUser == null) return;
 
+        await NotificationService.DeleteNotificationForUserAsync(notificationId, currentUser.Id);
+    
+        notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
+        StateHasChanged();
+    }
 }
