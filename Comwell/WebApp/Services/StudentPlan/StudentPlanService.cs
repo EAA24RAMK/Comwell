@@ -52,5 +52,12 @@ public class StudentPlanService : IStudentPlanService
         var response = await _http.DeleteAsync($"api/studentplan/{id}");
         return response.IsSuccessStatusCode;
     }
+    
+    public async Task ApprovePlanByChefAsync(int planId)
+    {
+        await _http.PutAsync($"api/studentplan/{planId}/approve-by-chef", null);
+    }
+
+
 
 }

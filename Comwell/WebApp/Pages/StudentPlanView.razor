@@ -59,6 +59,18 @@ else
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
+            @if (currentUser?.Role == "Køkkenchef" && !plan.IsApprovedByChef)
+            {
+                <button class="btn btn-success mt-2" @onclick="() => ApprovePlan(plan)">
+                    Godkend praktikperiode
+                </button>
+            }
+            else if (plan.IsApprovedByChef)
+            {
+                <p class="text-success mt-2">✔ Praktikperiode godkendt af køkkenchef</p>
+            }
+
+
             <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
                 Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
             </button>
@@ -572,4 +584,15 @@ else
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
+
+        private StudentPlan studentPlan;
+
+        private async Task ApprovePlan(StudentPlan plan)
+        {
+            await StudentPlanService.ApprovePlanByChefAsync(plan.Id);
+            plan.IsApprovedByChef = true;
+        }
+
+    }
+
 }

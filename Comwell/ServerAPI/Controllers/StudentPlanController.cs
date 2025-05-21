@@ -70,4 +70,18 @@ public class StudentPlanController : ControllerBase
         return Ok("Plan slettet");
     }
     
+    [HttpPut("{id}/approve-by-chef")]
+    public async Task<IActionResult> ApproveByChef(int id)
+    {
+        var plan = await _studentPlanRepo.GetPlanByIdAsync(id);
+        if (plan == null) return NotFound();
+
+        plan.IsApprovedByChef = true;
+        await _studentPlanRepo.UpdateStudentPlanAsync(plan);
+
+        return Ok(plan);
+    }
+
+
+    
 }

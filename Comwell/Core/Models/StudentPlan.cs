@@ -10,4 +10,5 @@ public class StudentPlan
     public DateTime PeriodEnd { get; set; }
     public List<Goal> Goals { get; set; } = new();
     public List<Note> Notes { get; set; } = new();
+    public bool IsApprovedByChef { get; set; } = false;
 }

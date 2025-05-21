@@ -13,5 +13,7 @@ public interface IStudentPlanService
 
     Task UpdateStudentPlanAsync(StudentPlan plan);
     Task<bool> DeleteStudentPlanAsync(int id);
+    
+    Task ApprovePlanByChefAsync(int planId);
 
 }
