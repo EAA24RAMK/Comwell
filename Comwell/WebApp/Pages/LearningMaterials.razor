@@ -1,0 +1,182 @@
+@page "/learningmaterials"
+@using Core.Models
+@using WebApp.Services
+@inject ILearningMaterialService MaterialService
+@inject IStudentPlanService StudentPlanService
+@inject IUserService UserService
+
+<h3>Læringsmateriale</h3>
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <p style="color: green">@SuccessMessage</p>
+}
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <p style="color: red">@ErrorMessage</p>
+}
+
+<hr />
+<h4>Upload dokument</h4>
+<InputFile OnChange="HandleFileSelected" />
+<input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control" />
+<select class="form-select mt-1" @bind="UploadSubtaskId">
+    <option value="">-- Vælg delmål --</option>
+    @foreach (var s in subtasks)
+    {
+        <option value="@s.Id">@s.Text</option>
+    }
+</select>
+<button class="btn btn-primary mt-2" @onclick="UploadFile">Upload</button>
+
+<hr />
+<h4>Tilføj link</h4>
+<input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
+<input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-1" />
+<select class="form-select mt-1" @bind="LinkSubtaskId">
+    <option value="">-- Vælg delmål --</option>
+    @foreach (var s in subtasks)
+    {
+        <option value="@s.Id">@s.Text</option>
+    }
+</select>
+<button class="btn btn-success mt-2" @onclick="AddLink">Tilføj link</button>
+
+<hr />
+<h4>Alle materialer</h4>
+@if (materials.Count == 0)
+{
+    <p>Ingen materialer endnu.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var mat in materials)
+        {
+            var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
+            <li class="list-group-item">
+                <strong>@mat.Title</strong><br />
+                <em>Delmål:</em> @subtaskName<br />
+                @if (mat.IsLink)
+                {
+                    <a href="@mat.LinkUrl" target="_blank">[Åbn link]</a>
+                }
+                else
+                {
+                    <a href="@($"api/LearningMaterial/download/{mat.FileId}")" download>[Download]</a>
+                }
+                <button class="btn btn-sm btn-danger float-end" @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private List<LearningMaterial> materials = new();
+    private List<Subtask> subtasks = new();
+
+    private IBrowserFile? selectedFile;
+    private string UploadTitle = string.Empty;
+    private int? UploadSubtaskId;
+
+    private string LinkTitle = string.Empty;
+    private string LinkUrl = string.Empty;
+    private int? LinkSubtaskId;
+
+    private string? SuccessMessage;
+    private string? ErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserService.GetCurrentUserAsync(); // Du skal have denne metode i IUserService
+        var plans = await StudentPlanService.GetPlansByUserAsync(user);
+        var plan = plans.FirstOrDefault();
+
+        if (plan != null)
+        {
+            subtasks = plan.Goals.SelectMany(g => g.Subtasks).ToList();
+        }
+
+        materials = await MaterialService.GetAllAsync();
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task UploadFile()
+    {
+        if (selectedFile == null || string.IsNullOrWhiteSpace(UploadTitle) || UploadSubtaskId is null)
+        {
+            ErrorMessage = "Udfyld titel, vælg fil og delmål.";
+            return;
+        }
+
+        using var stream = selectedFile.OpenReadStream(long.MaxValue);
+        var result = await MaterialService.UploadFileAsync(stream, selectedFile.Name, UploadTitle, UploadSubtaskId.Value);
+
+        if (result != null)
+        {
+            materials.Add(result);
+            UploadTitle = string.Empty;
+            UploadSubtaskId = null;
+            SuccessMessage = "Fil uploadet!";
+            ErrorMessage = null;
+        }
+        else
+        {
+            ErrorMessage = "Noget gik galt under upload.";
+            SuccessMessage = null;
+        }
+    }
+
+    private async Task AddLink()
+    {
+        if (string.IsNullOrWhiteSpace(LinkTitle) || string.IsNullOrWhiteSpace(LinkUrl) || LinkSubtaskId is null)
+        {
+            ErrorMessage = "Udfyld titel, link og vælg delmål.";
+            return;
+        }
+
+        var link = new LearningMaterial
+        {
+            Title = LinkTitle,
+            SubtaskId = LinkSubtaskId.Value,
+            IsLink = true,
+            LinkUrl = LinkUrl
+        };
+
+        var result = await MaterialService.AddLinkAsync(link);
+        if (result != null)
+        {
+            materials.Add(result);
+            LinkTitle = string.Empty;
+            LinkUrl = string.Empty;
+            LinkSubtaskId = null;
+            SuccessMessage = "Link tilføjet!";
+            ErrorMessage = null;
+        }
+        else
+        {
+            ErrorMessage = "Kunne ikke tilføje link.";
+            SuccessMessage = null;
+        }
+    }
+
+    private async Task DeleteMaterial(int id)
+    {
+        var confirmed = await MaterialService.DeleteAsync(id);
+        if (confirmed)
+        {
+            materials = materials.Where(m => m.Id != id).ToList();
+            SuccessMessage = "Materiale slettet.";
+            ErrorMessage = null;
+        }
+        else
+        {
+            ErrorMessage = "Sletning fejlede.";
+            SuccessMessage = null;
+        }
+    }
+}
