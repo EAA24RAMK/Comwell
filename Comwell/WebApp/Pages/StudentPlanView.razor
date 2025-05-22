@@ -62,7 +62,7 @@ else
 
             @if (currentUser?.Role == "Køkkenchef" && !plan.IsApprovedByChef)
             {
-                <button class="btn btn-success mt-2" @onclick="() => ApprovePlan(plan)">
+                <button @onclick="() => ApprovePlan(plan)">
                     Godkend praktikperiode
                 </button>
             }
@@ -208,7 +208,7 @@ else
 
             @foreach (var school in plan.SchoolPeriods)
             {
-                <div class="mb-4 p-3 border rounded">
+                <div class="mb-4 p-3 border rounded" style="margin-top: 2rem;">
                     <h5>@school.Title</h5>
 
                     <label>Startdato:</label>
@@ -217,7 +217,7 @@ else
                         <label>Startdato:</label>
                         <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
 
-                        <button class="btn btn-primary"
+                        <button
                                 @onclick="() => SaveSchoolPeriodDate(plan, school)">
                             Gem dato
                         </button>
@@ -241,7 +241,7 @@ else
                          
                             @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
                             {
-                                <button class="btn btn-success mt-2" @onclick="() => ApproveSchoolPeriod(plan, school)">
+                                <button @onclick="() => ApproveSchoolPeriod(plan, school)">
                                     Godkend skoleperiode
                                 </button>
                             }

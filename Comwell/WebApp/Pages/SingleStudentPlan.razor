@@ -94,6 +94,33 @@ else
                     </div>
                 }
             }
+            
+            @foreach (var school in plan.SchoolPeriods)
+            {
+                <div class="mb-4 p-3 border rounded">
+                    <h5>@school.Title</h5>
+
+                    @if (school.StartDate.HasValue && school.IsDateConfirmed)
+                    {
+                        var start = school.StartDate.Value;
+                        var end = start.AddDays(7 * school.DurationWeeks);
+                        <p><strong>Dato:</strong> @start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted"><em>Dato ikke valgt endnu</em></p>
+                    }
+
+                    <span class="badge @(school.Status == "Fuldført" ? "bg-success" : school.Status == "I gang" ? "bg-warning text-dark" : "bg-secondary")">
+                        @school.Status
+                    </span>
+
+                    @if (school.IsApproved)
+                    {
+                        <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
+                    }
+                </div>
+            }
 
             <h5>
                 <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">

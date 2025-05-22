@@ -194,3 +194,19 @@ section {
         gap: 0.7rem;
     }
 }
+
+.btn-confirm {
+    background-color: #aab78a; /* samme grønne nuance */
+    color: white;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.btn-confirm:hover {
+    background-color: #96a574;
+}
