@@ -9,6 +9,7 @@
 @inject NavigationManager Nav
 
 <h3>Læringsmateriale</h3>
+<p></p>
 
 @if (!string.IsNullOrEmpty(SuccessMessage))
 {
@@ -21,63 +22,68 @@
 
 @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
 {
-    <hr />
-    <h4>Upload dokument</h4>
-    <InputFile OnChange="HandleFileSelected" />
-    <input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control" />
-    <select class="form-select mt-1" @bind="UploadSubtaskId">
-        <option value="">-- Vælg delmål --</option>
-        @foreach (var s in subtasks)
-        {
-            <option value="@s.Id">@s.Text</option>
-        }
-    </select>
-    <button class="btn btn-primary mt-2" @onclick="UploadFile">Upload</button>
+    <div class="section-card">
+        <h4>Upload dokument</h4>
+        <InputFile OnChange="HandleFileSelected" />
+        <input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control mt-2" />
+        <select class="form-select mt-2" @bind="UploadSubtaskId">
+            <option value="">Vælg delmål</option>
+            @foreach (var s in subtasks)
+            {
+                <option value="@s.Id">@s.Text</option>
+            }
+        </select>
+        <div class="filters mt-3">
+            <button @onclick="UploadFile">Upload</button>
+        </div>
+    </div>
 
-    <hr />
-    <h4>Tilføj link</h4>
-    <input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
-    <input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-1" />
-    <select class="form-select mt-1" @bind="LinkSubtaskId">
-        <option value="">-- Vælg delmål --</option>
-        @foreach (var s in subtasks)
-        {
-            <option value="@s.Id">@s.Text</option>
-        }
-    </select>
-    <button class="btn btn-success mt-2" @onclick="AddLink">Tilføj link</button>
-
-    <hr />
+    <div class="section-card">
+        <h4>Tilføj link</h4>
+        <input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
+        <input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-2" />
+        <select class="form-select mt-2" @bind="LinkSubtaskId">
+            <option value="">Vælg delmål</option>
+            @foreach (var s in subtasks)
+            {
+                <option value="@s.Id">@s.Text</option>
+            }
+        </select>
+        <div class="filters mt-3">
+            <button @onclick="AddLink">Tilføj link</button>
+        </div>
+    </div>
 }
 
+<h4>Materialer</h4>
 @if (materials.Count == 0)
 {
     <p>Ingen materialer endnu.</p>
 }
 else
 {
-    <ul class="list-group">
-        @foreach (var mat in materials.Where(m => !filteredSubtaskId.HasValue || m.SubtaskId == filteredSubtaskId))
+    @foreach (var mat in materials.Where(m => !filteredSubtaskId.HasValue || m.SubtaskId == filteredSubtaskId))
+    {
+        var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
 
-        {
-            var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
-            <li class="list-group-item">
-                <strong>@mat.Title</strong><br />
-                <em>Delmål:</em> @subtaskName<br />
-                @if (mat.IsLink)
-                {
-                    <a href="@mat.LinkUrl" target="_blank">[Åbn link]</a>
-                }
-                else
-                {
-                    <a href="@($"api/LearningMaterial/download/{mat.FileId}")" download>[Download]</a>
-                }
-                <button class="btn btn-sm btn-danger float-end" @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
-            </li>
-        }
-    </ul>
-    
-    <hr />
+        <div class="material-card">
+            <div class="material-title">@mat.Title</div>
+            <div class="material-subtask">Delmål: @subtaskName</div>
+
+            @if (mat.IsLink)
+            {
+                <a href="@mat.LinkUrl" target="_blank">[Åbn link]</a>
+            }
+            else
+            {
+                <a href="@($"api/LearningMaterial/download/{mat.FileId}")" download>[Download]</a>
+            }
+
+            <div class="filters material-delete">
+                <button @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
+            </div>
+        </div>
+    }
 }
 
 @code {

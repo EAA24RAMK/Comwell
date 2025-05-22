@@ -1,0 +1,57 @@
+h3 {
+    font-size: 1.6rem;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+    margin-top: 0.5rem;
+}
+
+.section-card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.material-card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.material-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+}
+
+.material-subtask {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.material-delete {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+}
+
+.filters button {
+    background-color: #a6af87;
+    border: none;
+    padding: 0.5rem 1rem;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.filters button:hover {
+    background-color: #8f976e;
+}
