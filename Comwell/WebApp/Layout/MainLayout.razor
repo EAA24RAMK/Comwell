@@ -45,13 +45,6 @@
                                         <li class="mb-2 border-bottom pb-2">
                                             <div>@note.Message</div>
                                             <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br/>
-                                            @if (note.PlanId != null && note.GoalId != null)
-                                            {
-                                                <button class="btn btn-sm btn-outline-primary mt-1"
-                                                        @onclick="@(() => NavigateToGoal(note.PlanId.Value, note.GoalId.Value))">
-                                                    🔗 Gå til mål
-                                                </button>
-                                            }
                                             <!-- 🗑️ Slet-knap -->
                                             <button class="btn btn-sm btn-outline-danger"
                                                     @onclick="() => DeleteNotification(note.Id)">
@@ -134,12 +127,6 @@ else
             
             StateHasChanged(); // Opdater UI
         }
-    }
-    
-    private void NavigateToGoal(int planId, int goalId)
-    {
-        showNotifications = false;
-        NavManager.NavigateTo($"/elevplaner?planId={planId}&goalId={goalId}");
     }
 
     private string GetInitials(string? fullName)
