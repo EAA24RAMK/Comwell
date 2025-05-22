@@ -132,18 +132,12 @@
             {
                 Id = goal.Id,
                 Title = goal.Title,
-                Description = goal.Description,
                 Category = goal.Category,
                 Deadline = start.AddDays(dayOffset),
                 Status = "Ikke startet",
-                Responsible = goal.Responsible,
                 InitiatedBy = goal.InitiatedBy,
                 CheckedOff = false,
-                Location = goal.Location,
                 Subtasks = goal.Subtasks.ToList(),
-                Comments = new(),
-                StudentNotes = new(),
-                Attachments = new()
             };
 
             adjustedGoals.Add(adjustedGoal);

@@ -96,7 +96,8 @@ public class StudentPlanRepository : IStudentPlanRepository
                 TemplateId = createPlan.TemplateId,
                 DurationWeeks = 7
             });
-
+        }
+        else if (title.Contains("afslutning"))
             createPlan.SchoolPeriods.Add(new SchoolPeriod
             {
                 Id = maxSchoolId + 2,
@@ -104,7 +105,6 @@ public class StudentPlanRepository : IStudentPlanRepository
                 TemplateId = null,
                 DurationWeeks = 2
             });
-        }
 
         await _studentPlan.InsertOneAsync(createPlan);
     }
