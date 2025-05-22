@@ -39,18 +39,7 @@
                 }
             </select>
         </div>
-
-        <div class="form-group">
-            <label>Vælg lokation:</label>
-            <select @bind="location">
-                <option value="">Vælg lokation</option>
-                @foreach (var hotel in hotelLocations)
-                {
-                    <option value="@hotel">@hotel</option>
-                }
-            </select>
-        </div>
-
+        
         <div class="form-group">
             <label>Startdato:</label>
             <InputDate @bind-Value="planModel.PeriodStart" />
