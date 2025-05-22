@@ -94,6 +94,17 @@
                 <option value="Inaktiv">Inaktiv</option>
             </select>
 
+            @if (newUser.Role == "Elev")
+            {
+                <select @bind="newUser.SchoolType">
+                    <option disabled selected value="">Vælg skole</option>
+                    <option value="EUX">EUX</option>
+                    <option value="EUV">EUV</option>
+                    <option value="Voksenelev">Voksenelev</option>
+                    <option value="Ordinær">Ordinær</option>
+                </select>
+            }
+
             <button @onclick="SaveUserAsync">Gem</button>
             <button @onclick="CloseCreateModal">Luk</button>
 
@@ -210,5 +221,4 @@
 
         activeActionMenuUserId = null;
     }
-
 }

@@ -10,4 +10,5 @@ public class User // Referencing, bruges på tværs af hele systemet
     public string Hotel { get; set; }
     public string Status { get; set; }
     public DateTime CreatedAt { get; set; }
+    public string? SchoolType { get; set; }
 }
