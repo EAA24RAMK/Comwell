@@ -59,6 +59,52 @@ public class StudentPlanRepository : IStudentPlanRepository
             maxId = allPlans.Max(t => t.Id);
         }
         createPlan.Id = maxId + 1;
+        
+        createPlan.SchoolPeriods = new List<SchoolPeriod>();
+
+        // Find næste SchoolPeriod ID
+        int maxSchoolId = allPlans.SelectMany(p => p.SchoolPeriods ?? new List<SchoolPeriod>())
+            .DefaultIfEmpty()
+            .Max(sp => sp?.Id ?? 0);
+
+        if (title.Contains("1. praktikperiode"))
+        {
+            createPlan.SchoolPeriods.Add(new SchoolPeriod
+            {
+                Id = maxSchoolId + 1,
+                Title = "1. skoleperiode (10 uger)",
+                TemplateId = createPlan.TemplateId,
+                DurationWeeks = 10
+            });
+        }
+        else if (title.Contains("2. praktikperiode"))
+        {
+            createPlan.SchoolPeriods.Add(new SchoolPeriod
+            {
+                Id = maxSchoolId + 1,
+                Title = "2. skoleperiode (10 uger)",
+                TemplateId = createPlan.TemplateId,
+                DurationWeeks = 10
+            });
+        }
+        else if (title.Contains("3. praktikperiode"))
+        {
+            createPlan.SchoolPeriods.Add(new SchoolPeriod
+            {
+                Id = maxSchoolId + 1,
+                Title = "3. skoleperiode (7 uger)",
+                TemplateId = createPlan.TemplateId,
+                DurationWeeks = 7
+            });
+
+            createPlan.SchoolPeriods.Add(new SchoolPeriod
+            {
+                Id = maxSchoolId + 2,
+                Title = "Fagprøve",
+                TemplateId = null,
+                DurationWeeks = 2
+            });
+        }
 
         await _studentPlan.InsertOneAsync(createPlan);
     }
@@ -166,7 +212,6 @@ public class StudentPlanRepository : IStudentPlanRepository
         var result = await _studentPlan.DeleteOneAsync(p => p.Id == id);
         return result.DeletedCount > 0;
     }
-
 }
 
     
