@@ -209,24 +209,46 @@ else
             @foreach (var school in plan.SchoolPeriods)
             {
                 <div class="mb-4 p-3 border rounded">
-                    <h5>@school.Title (@school.DurationWeeks uger)</h5>
+                    <h5>@school.Title</h5>
 
                     <label>Startdato:</label>
-                    <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
+                    @if (!school.IsDateConfirmed)
+                    {
+                        <label>Startdato:</label>
+                        <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
+
+                        <button class="btn btn-primary"
+                                @onclick="() => SaveSchoolPeriodDate(plan, school)">
+                            Gem dato
+                        </button>
+                    }
+                    else
+                    {
+                        @if (school.StartDate.HasValue)
+                        {
+                            var start = school.StartDate.Value;
+                            var end = start.AddDays(7 * school.DurationWeeks);
+                            <p><strong>Dato:</strong> @start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
+                        }
+                        else
+                        {
+                            <p><strong>Dato:</strong> Ikke angivet</p>
+                        }
+                    }
 
                     <ul>
                         <li class="d-flex align-items-center gap-2">
-                            <input type="checkbox"
-                                   disabled="@((school.Status == "Ikke startet") || school.Status == null)"
-                                   checked="@(school.Status == "Fuldført")"
-                                   @onchange="e => ToggleSchoolPeriodCompletion(plan, school, (bool)e.Value)" />
-
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    @onclick="() => StartSchoolPeriod(plan, school)">
-                                Start
-                            </button>
-
-                            @school.Title
+                         
+                            @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
+                            {
+                                <button class="btn btn-success mt-2" @onclick="() => ApproveSchoolPeriod(plan, school)">
+                                    Godkend skoleperiode
+                                </button>
+                            }
+                            else if (school.IsApproved)
+                            {
+                                <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
+                            }
 
                             @if (school.Status == "Ikke startet")
                             {
@@ -242,15 +264,6 @@ else
                             }
                         </li>
                     </ul>
-
-                    @if (school.IsApproved)
-                    {
-                        <p style="color: green;">✅ Godkendt</p>
-                    }
-                    else
-                    {
-                        <p style="color: orange;">⏳ Afventer godkendelse</p>
-                    }
                 </div>
             }
             
@@ -350,10 +363,26 @@ else
         
         foreach (var plan in plans)
         {
+            // Bevar eksisterende funktionalitet
             if (!userNamesById.ContainsKey(plan.StudentId))
             {
                 var user = await UserService.GetUserByIdAsync(plan.StudentId);
                 userNamesById[plan.StudentId] = user?.Name ?? "(Ukendt)";
+            }
+            
+            bool updated = false;
+            foreach (var school in plan.SchoolPeriods)
+            {
+                if (school.Status == "Ikke startet" && school.StartDate <= DateTime.Today)
+                {
+                    school.Status = "I gang";
+                    updated = true;
+                }
+            }
+
+            if (updated)
+            {
+                await StudentPlanService.UpdateStudentPlanAsync(plan);
             }
         }
     }
@@ -659,11 +688,54 @@ else
             await StudentPlanService.UpdateStudentPlanAsync(plan);
             plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         }
-
-        private async Task ToggleSchoolPeriodCompletion(StudentPlan plan, SchoolPeriod sp, bool isCompleted)
+        
+        private async Task ApproveSchoolPeriod(StudentPlan plan, SchoolPeriod school)
         {
-            sp.Status = isCompleted ? "Fuldført" : "Ikke startet";
+            school.IsApproved = true;
+            school.Status = "Fuldført";
             await StudentPlanService.UpdateStudentPlanAsync(plan);
             plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         }
+        
+        private async Task OnSchoolPeriodDateChanged(StudentPlan plan)
+        {
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+
+            // Tjek om nogen skoleperioder i planen nu skal være i gang
+            bool updated = false;
+            foreach (var school in plan.SchoolPeriods)
+            {
+                if (school.Status == "Ikke startet" && school.StartDate <= DateTime.Today)
+                {
+                    school.Status = "I gang";
+                    updated = true;
+                }
+            }
+
+            if (updated)
+            {
+                await StudentPlanService.UpdateStudentPlanAsync(plan);
+            }
+
+            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        }
+        
+        private async Task SaveSchoolPeriodDate(StudentPlan plan, SchoolPeriod school)
+        {
+            var index = plan.SchoolPeriods.FindIndex(sp => sp.Id == school.Id);
+            if (index == -1) return;
+
+            var targetSchool = plan.SchoolPeriods[index];
+
+            if (targetSchool.StartDate <= DateTime.Today && targetSchool.Status == "Ikke startet")
+            {
+                targetSchool.Status = "I gang";
+            }
+
+            targetSchool.IsDateConfirmed = true;
+
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+            StateHasChanged();
+        }
+
 }

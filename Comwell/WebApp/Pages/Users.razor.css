@@ -1,3 +1,4 @@
+/* FILTER SEKTION */
 .filters {
     display: flex;
     flex-wrap: wrap;
@@ -28,6 +29,7 @@
     background-color: #8f976e;
 }
 
+/* BRUGERLISTE */
 .user-list {
     display: flex;
     flex-direction: column;
@@ -35,15 +37,20 @@
     margin-top: 1.5rem;
 }
 
-.user-card {
+/* KORT + HEADER */
+.user-card,
+.user-header {
     display: grid;
-    grid-template-columns: 48px 1fr 1fr 1fr 32px;
+    grid-template-columns: 48px 1fr 1fr 1fr 1fr 32px; /* Avatar | Bruger | Skole | Lokation | Status | ⋮ */
     align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.user-card {
     background: white;
     border-radius: 12px;
-    padding: 1rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-    gap: 1rem;
     position: relative;
 }
 
@@ -60,6 +67,7 @@
     align-self: end;
 }
 
+/* FELTER */
 .avatar {
     width: 42px;
     height: 42px;
@@ -88,6 +96,7 @@
     color: #6b7280;
 }
 
+.user-school,
 .user-location {
     font-size: 0.85rem;
     color: #4b5563;
@@ -100,6 +109,7 @@
     font-weight: 500;
     text-align: center;
     min-width: 65px;
+    width: fit-content;
 }
 
 .user-status.active {
@@ -112,6 +122,7 @@
     color: #6b7280;
 }
 
+/* HANDLINGER */
 .user-actions {
     position: relative;
 }
@@ -131,25 +142,42 @@
     background-color: white;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     border-radius: 6px;
-    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 0;
+    width: 120px;
+    z-index: 100;
+}
+
+.action-button {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    color: #444;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.action-button:hover {
+    background-color: #f2f2f2;
+}
+
+.action-button + .action-button {
+    border-top: 1px solid #e0e0e0;
 }
 
 .delete-button {
-    background: none;
-    border: none;
-    color: #dc2626;
-    padding: 0.5rem 1rem;
-    width: 100%;
-    text-align: left;
-    font-size: 0.85rem;
-    cursor: pointer;
+    color: #d9534f;
+    font-weight: 500;
 }
 
 .delete-button:hover {
     background-color: #fef2f2;
 }
 
-/* Modal styling (uændret) */
+/* MODAL */
 .modal-background {
     position: fixed;
     top: 0;
@@ -212,41 +240,3 @@
 .modal-box button:last-of-type:hover {
     background-color: #d1d5db;
 }
-
-.action-menu {
-    display: flex;
-    flex-direction: column;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    padding: 4px 0;
-    width: 120px;
-    z-index: 100;
-}
-
-.action-button {
-    background: none;
-    border: none;
-    text-align: left;
-    padding: 4px 10px; /* lidt mindre padding */
-    font-size: 0.5rem; /* 🔻 endnu mindre skrift */
-    color: #444;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.action-button:hover {
-    background-color: #f2f2f2;
-}
-
-/* Linje mellem knapper */
-.action-button + .action-button {
-    border-top: 1px solid #e0e0e0;
-}
-
-.delete-button {
-    color: #d9534f;
-    font-weight: 500;
-}
-
-
