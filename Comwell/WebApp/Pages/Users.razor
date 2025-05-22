@@ -32,8 +32,9 @@
 <div class="user-list">
     <!-- Header -->
     <div class="user-card user-header">
+        <div></div> <!-- Avatar placeholder -->
         <div class="header-label">Bruger</div>
-        <div></div>
+        <div class="header-label">Skole</div>
         <div class="header-label">Lokation</div>
         <div class="header-label">Status</div>
         <div></div>
@@ -44,14 +45,38 @@
     {
         <div class="user-card">
             <div class="avatar">@GetInitials(user.Name)</div>
+
             <div class="user-info">
                 <div class="user-name">@user.Name</div>
                 <div class="user-role">@user.Role</div>
             </div>
-            <div class="user-location">@user.Hotel</div>
+
+            <div class="user-school">
+                @if (!string.IsNullOrWhiteSpace(user.SchoolType))
+                {
+                    @user.SchoolType
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+
+            <div class="user-location">
+                @if (!string.IsNullOrWhiteSpace(user.Hotel))
+                {
+                    @user.Hotel
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+
             <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
                 @user.Status
             </div>
+
             <div class="user-actions">
                 <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
                 @if (activeActionMenuUserId == user.Id)
@@ -68,6 +93,7 @@
             </div>
         </div>
     }
+
 </div>
 
 @if (showCreateModal)

@@ -18,10 +18,16 @@ public class LearningMaterialController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string title, [FromForm] int subtaskId)
     {
-        if (file == null || file.Length == 0) return BadRequest("Filen er tom");
+        if (file == null || file.Length == 0)
+            return BadRequest("Filen er tom");
 
-        using var stream = file.OpenReadStream();
-        var fileId = await _repo.UploadFileAsync(stream, file.FileName);
+        // Kopiér IFormFile til MemoryStream
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        // Upload til GridFS
+        var fileId = await _repo.UploadFileAsync(memoryStream, file.FileName);
 
         var material = new LearningMaterial
         {
@@ -35,6 +41,7 @@ public class LearningMaterialController : ControllerBase
         var created = await _repo.CreateAsync(material);
         return Ok(created);
     }
+
 
     [HttpPost("link")]
     public async Task<IActionResult> AddLink([FromBody] LearningMaterial link)
