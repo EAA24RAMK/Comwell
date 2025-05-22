@@ -79,9 +79,12 @@ else
                 <a href="@($"api/LearningMaterial/download/{mat.FileId}")" download>[Download]</a>
             }
 
-            <div class="filters material-delete">
-                <button @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
-            </div>
+            @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+            {
+                <div class="filters material-delete">
+                    <button @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
+                </div>
+            }
         </div>
     }
 }
