@@ -682,41 +682,11 @@ else
             plan.IsApprovedByChef = true;
         }
         
-        private async Task StartSchoolPeriod(StudentPlan plan, SchoolPeriod sp)
-        {
-            sp.Status = "I gang";
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-        }
-        
         private async Task ApproveSchoolPeriod(StudentPlan plan, SchoolPeriod school)
         {
             school.IsApproved = true;
             school.Status = "Fuldført";
             await StudentPlanService.UpdateStudentPlanAsync(plan);
-            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-        }
-        
-        private async Task OnSchoolPeriodDateChanged(StudentPlan plan)
-        {
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-
-            // Tjek om nogen skoleperioder i planen nu skal være i gang
-            bool updated = false;
-            foreach (var school in plan.SchoolPeriods)
-            {
-                if (school.Status == "Ikke startet" && school.StartDate <= DateTime.Today)
-                {
-                    school.Status = "I gang";
-                    updated = true;
-                }
-            }
-
-            if (updated)
-            {
-                await StudentPlanService.UpdateStudentPlanAsync(plan);
-            }
-
             plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         }
         
