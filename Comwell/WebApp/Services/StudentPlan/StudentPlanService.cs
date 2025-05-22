@@ -25,11 +25,11 @@ public class StudentPlanService : IStudentPlanService
     
     public async Task<List<StudentPlan>> GetPlansByUserAsync(User user)
     {
-        if (user.Role == "HR" || user.Role == "Afdelingsleder")
+        if (user.Role == "HR")
         {
             return await _http.GetFromJsonAsync<List<StudentPlan>>("api/studentplan") ?? new();
         }
-        else if (user.Role == "Køkkenchef")
+        else if (user.Role == "Køkkenchef" || user.Role == "Kok")
         {
             return await _http.GetFromJsonAsync<List<StudentPlan>>($"api/studentplan/hotel/{user.Hotel}") ?? new();
         }

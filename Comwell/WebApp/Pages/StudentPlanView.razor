@@ -343,8 +343,8 @@ else
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser is null) return;
         
-        // Hvis rolle ikke er HR eller køkkenchef ingen adgang
-        if (currentUser == null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef"))
+        // Hvis rolle ikke er HR, kok eller køkkenchef ingen adgang
+        if (currentUser == null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef" && currentUser.Role != "Kok"))
         {
             Nav.NavigateTo("/");
         }
