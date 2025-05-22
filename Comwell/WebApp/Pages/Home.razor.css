@@ -90,6 +90,151 @@
     background-color: #888;
 }
 
+/* Styling til eksterne lærringsportaler */
+
+.external-links-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    max-width: 600px;
+    margin-bottom: 2rem;
+}
+
+.external-links-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+
+.external-links-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.external-links-section li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.external-links-section i {
+    color: #888;
+    font-size: 1rem;
+    margin-right: 0.6rem;
+}
+
+.external-links-section a {
+    text-decoration: none;
+    color: #0078d4;
+    font-weight: 500;
+}
+
+.external-links-section a:hover {
+    text-decoration: underline;
+}
+
+/* Afsnit af post i oversigten */
+.recent-posts-section {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    max-width: 600px;
+    margin-top: 2rem;
+}
+
+.recent-posts-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.recent-posts-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.recent-posts-section li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.recent-posts-section i {
+    color: #888;
+    font-size: 1.2rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.post-snippet {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.dashboard-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+
+.left-column {
+    flex: 1 1 60%;
+    min-width: 300px;
+}
+
+.right-column {
+    flex: 1 1 35%;
+    min-width: 280px;
+    align-self: flex-start;
+}
+
+.left-column-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+
+.dashboard-top-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.dashboard-top-row .goal-grid {
+    flex: 1 1 60%;
+    min-width: 300px;
+}
+
+.dashboard-top-row .recent-posts-section {
+    flex: 1 1 35%;
+    min-width: 280px;
+}
+
+
+
 /* Responsivt layout til mobil */
 @media (max-width: 768px) {
     .goal-grid {
