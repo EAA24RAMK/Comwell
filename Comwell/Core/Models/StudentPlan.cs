@@ -11,4 +11,5 @@ public class StudentPlan
     public List<Goal> Goals { get; set; } = new();
     public List<Note> Notes { get; set; } = new();
     public bool IsApprovedByChef { get; set; } = false;
+    public List<SchoolPeriod> SchoolPeriods { get; set; } = new();
 }
