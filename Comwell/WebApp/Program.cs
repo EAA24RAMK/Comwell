@@ -14,7 +14,7 @@ builder.Services.AddScoped<IStudentPlanService, StudentPlanService>();
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
+builder.Services.AddScoped<ILearningMaterialService, LearningMaterialService>();
 
 builder.Services.AddScoped(sp =>
     new HttpClient { BaseAddress = new Uri("http://localhost:5079/") }

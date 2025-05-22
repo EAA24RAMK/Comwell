@@ -4,6 +4,7 @@
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
 @inject ITemplateService TemplateService
+@inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
 <h3>Elevplaner</h3>
@@ -158,6 +159,14 @@ else
                                             {
                                                 <span class="badge bg-warning text-dark ms-2">Anmodet</span>
                                             }
+                                            @* Læringsmateriale knap *@
+                                            @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                                            {
+                                                <button class="btn btn-sm btn-info ms-2"
+                                                        @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
+                                                    Læringsmateriale
+                                                </button>
+                                            }
                                         </li>
                                     }
                                 </ul>
@@ -197,6 +206,54 @@ else
                 }
             }
 
+            @foreach (var school in plan.SchoolPeriods)
+            {
+                <div class="mb-4 p-3 border rounded">
+                    <h5>@school.Title (@school.DurationWeeks uger)</h5>
+
+                    <label>Startdato:</label>
+                    <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
+
+                    <ul>
+                        <li class="d-flex align-items-center gap-2">
+                            <input type="checkbox"
+                                   disabled="@((school.Status == "Ikke startet") || school.Status == null)"
+                                   checked="@(school.Status == "Fuldført")"
+                                   @onchange="e => ToggleSchoolPeriodCompletion(plan, school, (bool)e.Value)" />
+
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    @onclick="() => StartSchoolPeriod(plan, school)">
+                                Start
+                            </button>
+
+                            @school.Title
+
+                            @if (school.Status == "Ikke startet")
+                            {
+                                <span class="badge bg-secondary">Ikke startet</span>
+                            }
+                            else if (school.Status == "I gang")
+                            {
+                                <span class="badge bg-warning text-dark">I gang</span>
+                            }
+                            else if (school.Status == "Fuldført")
+                            {
+                                <span class="badge bg-success">Fuldført</span>
+                            }
+                        </li>
+                    </ul>
+
+                    @if (school.IsApproved)
+                    {
+                        <p style="color: green;">✅ Godkendt</p>
+                    }
+                    else
+                    {
+                        <p style="color: orange;">⏳ Afventer godkendelse</p>
+                    }
+                </div>
+            }
+            
             <h5>
                 <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
                     Noter @if (openNotePlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
@@ -265,6 +322,8 @@ else
     
     // tre prikker til slet knappen
     private int activeActionMenuPlanId = -1;
+    
+    private List<LearningMaterial> allMaterials = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -286,6 +345,7 @@ else
             .ToList();
 
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        allMaterials = await MaterialService.GetAllAsync();
         templates = await TemplateService.GetAllTemplatesAsync();
         
         foreach (var plan in plans)
@@ -592,5 +652,18 @@ else
             await StudentPlanService.ApprovePlanByChefAsync(plan.Id);
             plan.IsApprovedByChef = true;
         }
+        
+        private async Task StartSchoolPeriod(StudentPlan plan, SchoolPeriod sp)
+        {
+            sp.Status = "I gang";
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        }
 
+        private async Task ToggleSchoolPeriodCompletion(StudentPlan plan, SchoolPeriod sp, bool isCompleted)
+        {
+            sp.Status = isCompleted ? "Fuldført" : "Ikke startet";
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        }
 }
