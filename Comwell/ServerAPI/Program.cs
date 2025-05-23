@@ -22,7 +22,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5229") // WebApp URL
+        policy.WithOrigins("https://comwelltpapi.azurewebsites.net") // WebApp URL
             .AllowAnyMethod()
             .AllowAnyHeader();
     });

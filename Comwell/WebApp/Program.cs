@@ -17,7 +17,7 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningMaterialService, LearningMaterialService>();
 
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("http://localhost:5079/") }
+    new HttpClient { BaseAddress = new Uri("https://comwelltp.azurewebsites.net") }
 );
 
 await builder.Build().RunAsync();
