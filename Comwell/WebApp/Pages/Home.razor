@@ -20,93 +20,97 @@ else
 
     <div class="dashboard-wrapper">
 
-        <!-- Øverste række: mål + seneste beskeder -->
-        <div class="dashboard-top-row">
-            <!-- Mål -->
-            <div class="goal-grid">
-                <div class="goal-card total">
-                    <div class="goal-icon icon-green">
-                        <i class="fas fa-chart-line"></i>
+        <!-- FLEX LAYOUT -->
+        <div class="dashboard-columns">
+            <!-- VENSTRE -->
+            <div class="left-content">
+                <div class="goal-grid">
+                    <div class="goal-card total">
+                        <div class="goal-icon icon-green">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="goal-content">
+                            <span class="goal-label">Mål i alt</span>
+                            <span class="goal-value">@goals.Count()</span>
+                        </div>
                     </div>
-                    <div class="goal-content">
-                        <span class="goal-label">Mål i alt</span>
-                        <span class="goal-value">@goals.Count()</span>
+
+                    <div class="goal-card completed">
+                        <div class="goal-icon icon-beige">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="goal-content">
+                            <span class="goal-label">Færdigt</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span>
+                        </div>
+                    </div>
+
+                    <div class="goal-card in-progress">
+                        <div class="goal-icon icon-orange">
+                            <i class="fas fa-spinner"></i>
+                        </div>
+                        <div class="goal-content">
+                            <span class="goal-label">I gang</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span>
+                        </div>
+                    </div>
+
+                    <div class="goal-card attention">
+                        <div class="goal-icon icon-dark">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="goal-content">
+                            <span class="goal-label">Vær opmærksom på</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="goal-card completed">
-                    <div class="goal-icon icon-beige">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="goal-content">
-                        <span class="goal-label">Færdigt</span>
-                        <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span>
-                    </div>
-                </div>
-
-                <div class="goal-card in-progress">
-                    <div class="goal-icon icon-orange">
-                        <i class="fas fa-spinner"></i>
-                    </div>
-                    <div class="goal-content">
-                        <span class="goal-label">I gang</span>
-                        <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span>
-                    </div>
-                </div>
-
-                <div class="goal-card attention">
-                    <div class="goal-icon icon-dark">
-                        <i class="fas fa-exclamation-circle"></i>
-                    </div>
-                    <div class="goal-content">
-                        <span class="goal-label">Vær opmærksom på</span>
-                        <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seneste beskeder -->
-            <div class="recent-posts-section">
-                <h2>
-                    <i class="bi bi-chat-left-text" style="margin-right: 0.5rem;"></i>
-                    Seneste beskeder
-                </h2>
-
-                @if (recentPosts.Any())
-                {
+                <!-- LÆRINGSPORTALER UNDER MÅL -->
+                <div class="external-links-section">
+                    <h2>
+                        <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
+                        Andre læringsportaler
+                    </h2>
                     <ul>
-                        @foreach (var post in recentPosts)
-                        {
-                            <li>
-                                <i class="bi bi-envelope-open" aria-hidden="true"></i>
-                                <div>
-                                    <strong>@post.Title</strong><br />
-                                    <span class="post-snippet">
-                                        @post.Content?.Substring(0, Math.Min(80, post.Content.Length))...
-                                    </span>
-                                </div>
-                            </li>
-                        }
+                        <li><i class="bi bi-journal-code"></i><a href="#">Læringsportal A</a></li>
+                        <li><i class="bi bi-globe2"></i><a href="#">Læringsportal B</a></li>
+                        <li><i class="bi bi-mortarboard"></i><a href="#">Læringsportal C</a></li>
                     </ul>
-                }
-                else
-                {
-                    <p>Ingen beskeder fundet.</p>
-                }
+                </div>
             </div>
-        </div>
 
-        <!-- Eksterne portaler -->
-        <div class="external-links-section">
-            <h2>
-                <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
-                Andre læringsportaler
-            </h2>
-            <ul>
-                <li><i class="bi bi-journal-code"></i><a href="https://placeholder1.dk" target="_blank">Læringsportal A</a></li>
-                <li><i class="bi bi-globe2"></i><a href="https://placeholder2.dk" target="_blank">Læringsportal B</a></li>
-                <li><i class="bi bi-mortarboard"></i><a href="https://placeholder3.dk" target="_blank">Læringsportal C</a></li>
-            </ul>
+            <!-- HØJRE -->
+            <div class="right-content">
+                <div class="recent-posts-section">
+                    <h2>
+                        <i class="bi bi-chat-left-text" style="margin-right: 0.5rem;"></i>
+                        Seneste beskeder
+                    </h2>
+
+                    @if (recentPosts.Any())
+                    {
+                        <ul>
+                            @foreach (var post in recentPosts)
+                            {
+                                <li>
+                                    <i class="bi bi-envelope-open" aria-hidden="true"></i>
+                                    <div>
+                                        <strong>@post.Title</strong><br />
+                                        <span class="post-snippet">
+                                            @post.Content?.Substring(0, Math.Min(80, post.Content.Length))...
+                                        </span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>Ingen beskeder fundet.</p>
+                    }
+                </div>
+            </div>
         </div>
 
     </div>
