@@ -22,7 +22,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://comwelltpapi.azurewebsites.net") // WebApp URL
+        policy.WithOrigins("https://comwelltp.azurewebsites.net") // WebApp URL
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
