@@ -78,8 +78,11 @@
             </div>
 
             <div class="user-actions">
-                <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
-                @if (activeActionMenuUserId == user.Id)
+                @if (currentUser?.Role == "HR")
+                {
+                    <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
+                }
+                @if (activeActionMenuUserId == user.Id && currentUser?.Role == "HR")
                 {
                     <div class="action-menu">
                         <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
