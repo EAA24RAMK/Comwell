@@ -10,11 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
-builder.Services.AddSingleton<ITemplateRepository, TemplateRepository>();
-builder.Services.AddSingleton<IStudentPlanRepository, StudentPlanRepository>();
-builder.Services.AddSingleton<IPostRepository, PostRepository>();
+builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
+builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
+builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<ILearningMaterialRepository, LearningMaterialRepository>();
 
