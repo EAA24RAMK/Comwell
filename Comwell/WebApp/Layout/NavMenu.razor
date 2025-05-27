@@ -20,7 +20,7 @@
             </NavLink>
         </div>
 
-        @if (currentUser != null && currentUser.Role != "Elev")
+        @if (currentUser != null && currentUser.Role != "Elev" && currentUser.Role != "Kok")
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="opret-plan" @onclick="HandleLinkClick">
