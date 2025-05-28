@@ -1,6 +1,4 @@
 @page "/learningmaterials"
-@using System.Web
-@using Microsoft.AspNetCore.Components
 @using Core.Models
 @using WebApp.Services
 @inject ILearningMaterialService MaterialService
@@ -9,15 +7,14 @@
 @inject NavigationManager Nav
 
 <h3>Læringsmateriale</h3>
-<p></p>
 
-@if (!string.IsNullOrEmpty(SuccessMessage))
+@if (!string.IsNullOrEmpty(successMessage))
 {
-    <p style="color: green">@SuccessMessage</p>
+    <p style="color: green">@successMessage</p>
 }
-@if (!string.IsNullOrEmpty(ErrorMessage))
+@if (!string.IsNullOrEmpty(errorMessage))
 {
-    <p style="color: red">@ErrorMessage</p>
+    <p style="color: red">@errorMessage</p>
 }
 
 @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
@@ -25,8 +22,8 @@
     <div class="section-card">
         <h4>Upload dokument</h4>
         <InputFile OnChange="HandleFileSelected" />
-        <input type="text" @bind="UploadTitle" placeholder="Titel" class="form-control mt-2" />
-        <select class="form-select mt-2" @bind="UploadSubtaskId">
+        <input type="text" @bind="uploadTitle" placeholder="Titel" class="form-control mt-2" />
+        <select class="form-select mt-2" @bind="uploadSubtaskId">
             <option value="">Vælg delmål</option>
             @foreach (var s in subtasks)
             {
@@ -40,9 +37,9 @@
 
     <div class="section-card">
         <h4>Tilføj link</h4>
-        <input type="text" @bind="LinkTitle" placeholder="Titel" class="form-control" />
-        <input type="text" @bind="LinkUrl" placeholder="https://..." class="form-control mt-2" />
-        <select class="form-select mt-2" @bind="LinkSubtaskId">
+        <input type="text" @bind="linkTitle" placeholder="Titel" class="form-control" />
+        <input type="text" @bind="linkUrl" placeholder="https://..." class="form-control mt-2" />
+        <select class="form-select mt-2" @bind="linkSubtaskId">
             <option value="">Vælg delmål</option>
             @foreach (var s in subtasks)
             {
@@ -97,24 +94,23 @@ else
     private List<Subtask> subtasks = new();
 
     private IBrowserFile? selectedFile;
-    private string UploadTitle = string.Empty;
-    private int? UploadSubtaskId;
+    private string uploadTitle = string.Empty;
+    private int? uploadSubtaskId;
 
-    private string LinkTitle = string.Empty;
-    private string LinkUrl = string.Empty;
-    private int? LinkSubtaskId;
+    private string linkTitle = string.Empty;
+    private string linkUrl = string.Empty;
+    private int? linkSubtaskId;
 
-    private string? SuccessMessage;
-    private string? ErrorMessage;
+    private string? successMessage;
+    private string? errorMessage;
 
     // Til at vise læringsmateriale
     private int? filteredSubtaskId;
 
     protected override async Task OnInitializedAsync()
     {
-        var user = await UserService.GetCurrentUserAsync(); // Henter logget ind bruger
         currentUser = await UserService.GetCurrentUserAsync();
-        var plans = await StudentPlanService.GetPlansByUserAsync(user);
+        var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         var plan = plans.FirstOrDefault();
 
         if (plan != null)
@@ -140,60 +136,60 @@ else
 
     private async Task UploadFile()
     {
-        if (selectedFile == null || string.IsNullOrWhiteSpace(UploadTitle) || UploadSubtaskId is null)
+        if (selectedFile == null || string.IsNullOrWhiteSpace(uploadTitle) || uploadSubtaskId is null)
         {
-            ErrorMessage = "Udfyld titel, vælg fil og delmål.";
+            errorMessage = "Udfyld titel, vælg fil og delmål.";
             return;
         }
 
         using var stream = selectedFile.OpenReadStream(long.MaxValue);
-        var result = await MaterialService.UploadFileAsync(stream, selectedFile.Name, UploadTitle, UploadSubtaskId.Value);
+        var result = await MaterialService.UploadFileAsync(stream, selectedFile.Name, uploadTitle, uploadSubtaskId.Value);
 
         if (result != null)
         {
             materials.Add(result);
-            UploadTitle = string.Empty;
-            UploadSubtaskId = null;
-            SuccessMessage = "Fil uploadet!";
-            ErrorMessage = null;
+            uploadTitle = string.Empty;
+            uploadSubtaskId = null;
+            successMessage = "Fil uploadet!";
+            errorMessage = null;
         }
         else
         {
-            ErrorMessage = "Noget gik galt under upload.";
-            SuccessMessage = null;
+            errorMessage = "Noget gik galt under upload.";
+            successMessage = null;
         }
     }
 
     private async Task AddLink()
     {
-        if (string.IsNullOrWhiteSpace(LinkTitle) || string.IsNullOrWhiteSpace(LinkUrl) || LinkSubtaskId is null)
+        if (string.IsNullOrWhiteSpace(linkTitle) || string.IsNullOrWhiteSpace(linkUrl) || linkSubtaskId is null)
         {
-            ErrorMessage = "Udfyld titel, link og vælg delmål.";
+            errorMessage = "Udfyld titel, link og vælg delmål.";
             return;
         }
 
         var link = new LearningMaterial
         {
-            Title = LinkTitle,
-            SubtaskId = LinkSubtaskId.Value,
+            Title = linkTitle,
+            SubtaskId = linkSubtaskId.Value,
             IsLink = true,
-            LinkUrl = LinkUrl
+            LinkUrl = linkUrl
         };
 
         var result = await MaterialService.AddLinkAsync(link);
         if (result != null)
         {
             materials.Add(result);
-            LinkTitle = string.Empty;
-            LinkUrl = string.Empty;
-            LinkSubtaskId = null;
-            SuccessMessage = "Link tilføjet!";
-            ErrorMessage = null;
+            linkTitle = string.Empty;
+            linkUrl = string.Empty;
+            linkSubtaskId = null;
+            successMessage = "Link tilføjet!";
+            errorMessage = null;
         }
         else
         {
-            ErrorMessage = "Kunne ikke tilføje link.";
-            SuccessMessage = null;
+            errorMessage = "Kunne ikke tilføje link.";
+            successMessage = null;
         }
     }
 
@@ -203,13 +199,13 @@ else
         if (confirmed)
         {
             materials = materials.Where(m => m.Id != id).ToList();
-            SuccessMessage = "Materiale slettet.";
-            ErrorMessage = null;
+            successMessage = "Materiale slettet.";
+            errorMessage = null;
         }
         else
         {
-            ErrorMessage = "Sletning fejlede.";
-            SuccessMessage = null;
+            errorMessage = "Sletning fejlede.";
+            successMessage = null;
         }
     }
 }
