@@ -1,0 +1,21 @@
+@using Core.Models
+
+@GoalStatusText
+
+@code {
+    [Parameter] public Goal Goal { get; set; } 
+
+    private string GoalStatusText
+    {
+        get
+        {
+            int total = Goal.Subtasks.Count;
+            int completed = Goal.Subtasks.Count(s => s.Status == "Fuldført");
+
+            if (total == 0) return "Ingen delopgaver";
+            if (completed == 0) return "Ikke startet";
+            if (completed == total) return "Fuldført";
+            return $"{completed}/{total} fuldført";
+        }
+    }
+}

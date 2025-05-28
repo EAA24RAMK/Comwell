@@ -1,5 +1,6 @@
 @page "/elevplan"
 @using WebApp.Services
+@using WebApp.Components
 @using Core.Models
 @inject IStudentPlanService StudentPlanService
 @inject IUserService UserService
@@ -39,7 +40,7 @@ else
                 {
                     <div style="margin-left: 1rem; margin-bottom: 1rem;">
                         <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-                            <strong>@goal.Title</strong> - @GetGoalStatusText(goal)
+                            <strong>@goal.Title</strong> - <GoalStatus Goal="goal" />
                             @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
                         </button>
 
@@ -206,6 +207,7 @@ else
             openNotePlanIds.Remove(planId);
     }
 
+    /* flyttet til component
     private string GetGoalStatusText(Goal goal)
     {
         int total = goal.Subtasks.Count;
@@ -216,6 +218,7 @@ else
         if (completed == total) return "Fuldført";
         return $"{completed}/{total} fuldført";
     }
+    */
 
     private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
     {

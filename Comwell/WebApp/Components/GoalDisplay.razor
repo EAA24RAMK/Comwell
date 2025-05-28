@@ -1,0 +1,254 @@
+@using Core.Models
+@using WebApp.Services
+@inject IStudentPlanService StudentPlanService
+@inject NavigationManager Nav
+
+<div style="margin-left: 1rem; margin-bottom: 1rem;">
+    <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
+        <strong>@goal.Title</strong> - <GoalStatus Goal="goal" />
+
+        @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+    </button>
+
+    @if (openGoalIds.Contains(goal.Id))
+    {
+        @if (editingGoalId == goal.Id)
+        {
+            <div>
+                <label>Titel:</label>
+                <InputText @bind-Value="editableGoalTitle" />
+
+                <label>Kategori:</label>
+                <select @bind="editableGoalCategory">
+                    <option value="Skole">Skole</option>
+                    <option value="Praktik">Praktik</option>
+                </select>
+            </div>
+
+            <ul>
+                @for (int i = 0; i < editableSubtasks.Count; i++)
+                {
+                    var index = i;
+                    <li @key="index">
+                        <input type="checkbox"
+                               checked="@editableSubtasksCompleted[index]"
+                               @onchange="e => editableSubtasksCompleted[index] = (bool)e.Value" />
+                        <input value="@editableSubtasks[index]"
+                               @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
+                        <button @onclick="() => RemoveSubtask(index)">Slet</button>
+                    </li>
+                }
+                <li>
+                    <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj delmål</button>
+                </li>
+            </ul>
+
+            <button @onclick="() => SaveGoalChanges(plan, goal)"> Gem</button>
+            <button @onclick="CancelEditing">Annuller</button>
+        }
+        else
+        {
+            <ul>
+                @foreach (var subtask in goal.Subtasks)
+                {
+                    <li class="d-flex align-items-center gap-2">
+                        <input type="checkbox"
+                               disabled="@((subtask.Status == "Ikke startet"))"
+                               checked="@(subtask.Status == "Fuldført")"
+                               @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)" />
+
+                        <button class="btn btn-sm btn-outline-secondary"
+                                @onclick="() => StartSubtask(plan, goal, subtask)">
+                            Start
+                        </button>
+
+                        @subtask.Text
+
+                        @if (subtask.Status == "Ikke startet")
+                        {
+                            <span class="badge bg-secondary">Ikke startet</span>
+                        }
+
+                        @if (subtask.Status == "I gang")
+                        {
+                            <span class="badge bg-warning text-dark">I gang</span>
+                        }
+
+                        @if (subtask.Status == "Fuldført")
+                        {
+                            <span class="badge bg-success">Fuldført</span>
+                        }
+
+                        @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
+                        {
+                            <span class="badge bg-warning text-dark ms-2">Anmodet</span>
+                        }
+                        @* Læringsmateriale knap *@
+                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                        {
+                            <button class="btn btn-sm btn-info ms-2"
+                                    @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
+                                Læringsmateriale
+                            </button>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <p>
+                <strong>Deadline:</strong>
+                <span style="color:@(goal.Deadline < DateTime.Today ? "red" : "black")">
+                    @goal.Deadline.ToString("dd-MM-yyyy")
+                </span>
+            </p>
+
+            <button class="bi bi-pencil-square" @onclick="() => StartEditing(goal)"> Rediger</button>
+            <button class="bi bi-trash" @onclick="() => DeleteGoal(plan, goal)"> ️Slet</button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public required Goal goal { get; set; }
+    [Parameter] public required List<StudentPlan> plans { get; set; }
+    [Parameter] public required StudentPlan plan { get; set; }
+    [Parameter] public required List<LearningMaterial> allMaterials { get; set; }
+    
+    private User? currentUser;
+    private HashSet<int> openGoalIds = new(); 
+
+    private int editingGoalId = -1;
+    private List<string> editableSubtasks = new();
+    private List<bool> editableSubtasksCompleted = new();
+    private string editableGoalTitle = "";
+    private string editableGoalCategory = "";
+    
+    private void ToggleGoal(int goalId)
+    {
+        if (!openGoalIds.Add(goalId))
+            openGoalIds.Remove(goalId);
+    }
+    
+    private void RemoveSubtask(int index)
+    {
+        if (index >= 0 && index < editableSubtasks.Count)
+        {
+            editableSubtasks.RemoveAt(index);
+            editableSubtasksCompleted.RemoveAt(index);
+        }
+    }
+    
+    private void AddSubtask()
+    {
+        editableSubtasks.Add(string.Empty);
+        editableSubtasksCompleted.Add(false);
+    }
+    
+    private async Task SaveGoalChanges(StudentPlan plan, Goal goal)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        var goalToUpdate = planToUpdate.Goals.FirstOrDefault(g => g.Id == goal.Id);
+        if (goalToUpdate == null) return;
+
+        goalToUpdate.Title = editableGoalTitle;
+        goalToUpdate.Category = editableGoalCategory;
+
+        goalToUpdate.Subtasks = new List<Subtask>();
+        for (int i = 0; i < editableSubtasks.Count; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(editableSubtasks[i]))
+            {
+                goalToUpdate.Subtasks.Add(new Subtask
+                {
+                    Text = editableSubtasks[i],
+                    Status = editableSubtasksCompleted[i] ? "Fuldført" : "Ikke startet"
+                });
+            }
+        }
+
+        // Evt. opdater målstatus hvis ønsket
+        if (goalToUpdate.Subtasks.All(s => s.Status == "Fuldført"))
+        {
+            goalToUpdate.Status = "Fuldført";
+        }
+        else if (goalToUpdate.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+        {
+            goalToUpdate.Status = "I gang";
+        }
+        else
+        {
+            goalToUpdate.Status = "Ikke startet";
+        }
+
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+    
+    private void CancelEditing()
+    {
+        editingGoalId = -1;
+        editableSubtasks.Clear();
+        editableSubtasksCompleted.Clear();
+        editableGoalTitle = "";
+        editableGoalCategory = "";
+    }
+    
+    private async Task ToggleSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask, bool isCompleted)
+    {
+        subtask.Status = isCompleted ? "Fuldført" : "Ikke startet";
+
+        // Opdater status for hele målet baseret på subtasks
+        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
+        {
+            goal.Status = "Fuldført";
+        }
+        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+        {
+            goal.Status = "I gang";
+        }
+        else
+        {
+            goal.Status = "Ikke startet";
+        }
+
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+    
+    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
+    {
+        subtask.Status = "I gang";
+
+        // Opdater goal-status
+        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
+            goal.Status = "Fuldført";
+        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+            goal.Status = "I gang";
+        else
+            goal.Status = "Ikke startet";
+
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+    
+    private void StartEditing(Goal goal)
+    {
+        editingGoalId = goal.Id;
+        editableGoalTitle = goal.Title;
+        editableGoalCategory = goal.Category;
+        editableSubtasks = goal.Subtasks.Select(s => s.Text).ToList();
+        editableSubtasksCompleted = goal.Subtasks.Select(s => s.Status == "Fuldført").ToList();
+    }
+    
+    private async Task DeleteGoal(StudentPlan plan, Goal goal)
+    {
+        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
+        if (planToUpdate == null) return;
+
+        planToUpdate.Goals.RemoveAll(g => g.Id == goal.Id);
+        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+    }
+}
