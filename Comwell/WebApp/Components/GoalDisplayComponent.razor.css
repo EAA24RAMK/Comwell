@@ -1,0 +1,197 @@
+/* Sideoverskrift og introduktion */
+h3 {
+    font-size: 1.6rem;
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+    margin-top: 0.5rem;
+}
+
+.welcome-text {
+    color: #555;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Dropdowns */
+.mb-3.d-flex {
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1.2rem;
+}
+
+.form-select {
+    min-width: 160px;
+    padding: 0.4rem 1.8rem 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #bbb;
+    background: #fff;
+    font-size: 1rem;
+}
+
+/* Plan-boks */
+.plan-box {
+    background: #fff;
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.plan-box h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.plan-box p {
+    margin: 0.2rem 0 0.2rem 0;
+    font-size: 1rem;
+}
+
+.plan-box strong {
+    font-weight: 600;
+}
+
+/* Fold-ud knapper */
+.fold-toggle {
+    background: none;
+    border: none;
+    color: #2b3a55;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    margin: 0.5rem 0 0.7rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fold-toggle span {
+    font-size: 1.1rem;
+}
+
+/* Mål og delopgaver */
+.plan-box ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.5rem 0 0.5rem 0;
+}
+
+.plan-box li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+}
+
+.plan-box input[type="checkbox"] {
+    accent-color: #2b3a55;
+    width: 1.1em;
+    height: 1.1em;
+}
+
+.plan-box input[type="text"] {
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    padding: 0.2rem 0.6rem;
+    font-size: 1rem;
+}
+
+.plan-box button {
+    background: #f7f7f7;
+    border: 1px solid #e3e3e3;
+    border-radius: 6px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.98rem;
+    margin-right: 0.3rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.plan-box button:hover {
+    background: #e8f0fe;
+    border-color: #bcd;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.18em 0.7em;
+    font-size: 0.93em;
+    border-radius: 15px;
+    font-weight: 500;
+    margin-left: 0.3em;
+    vertical-align: middle;
+}
+
+.bg-success {
+    background: #e5f8e7;
+    color: #ffffff;
+    border: 1px solid #b2dfdb;
+}
+
+.bg-warning {
+    background: #fffbe6;
+    color: #b8860b;
+    border: 1px solid #ffe082;
+}
+
+.text-dark {
+    color: #333 !important;
+}
+
+.ms-2 {
+    margin-left: 0.5rem;
+}
+
+/* Noter */
+.plan-box h5 {
+    font-size: 1.05rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.plan-box em {
+    color: #888;
+    font-size: 0.97em;
+}
+
+/* Divider */
+.plan-box hr {
+    margin: 2rem 0 0.5rem 0;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
+/* Rediger og slet knapper */
+.plan-box .fa, .plan-box .material-icons {
+    font-size: 1.1em;
+    vertical-align: middle;
+    margin-right: 0.2em;
+}
+
+/* Sektioner (accordion) */
+section {
+    background: #fafbfc;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    padding: 1.2rem 1.5rem;
+    border: 1px solid #e3e3e3;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+    .plan-box, section {
+        padding: 1rem;
+    }
+    .mb-3.d-flex {
+        flex-direction: column;
+        gap: 0.7rem;
+    }
+}
+
