@@ -8,16 +8,9 @@
 @inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
-@if (currentUser != null)
-{
-    <h3>@currentUser.Name elevplan</h3>
-}
-else
-{
-    <h3>Min elevplan</h3>
-}
+<h3>@(currentUser?.Name ?? "Min") elevplan</h3>
 
-@if (plans == null || !plans.Any())
+@if (plans?.Any() != true)
 {
     <p>Ingen planer fundet.</p>
 }
@@ -25,7 +18,7 @@ else
 {
     @foreach (var plan in plans)
     {
-        <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
+        <div class="plan-box">
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
@@ -51,7 +44,7 @@ else
                                 {
                                     <li class="d-flex align-items-center gap-2">
                                         <input type="checkbox"
-                                               disabled="@((subtask.Status == "Ikke startet"))"
+                                               disabled="@(subtask.Status == "Ikke startet")"
                                                checked="@(subtask.Status == "Fuldført")"
                                                @onchange="e => RequestSubtaskCompletion(plan, goal, subtask)" />
                                         
@@ -62,25 +55,15 @@ else
 
                                         @subtask.Text
 
-                                        @if (subtask.Status == "Ikke startet")
-                                        {
-                                            <span class="badge bg-secondary">Ikke startet</span>
-                                        }
-                                        else if (subtask.Status == "I gang")
-                                        {
-                                            <span class="badge bg-warning text-dark">I gang</span>
-                                        }
-                                        else if (subtask.Status == "Fuldført")
-                                        {
-                                            <span class="badge bg-success">Fuldført</span>
-                                        }
+                                        <span class="badge @GetStatusClass(subtask.Status)">
+                                            @subtask.Status
+                                        </span>
 
                                         @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
                                         {
                                             <span class="badge bg-warning text-dark ms-2">Anmodet om fuldførelse</span>
                                         }
 
-                                        @* Læringsmateriale knap *@
                                         @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
                                         {
                                             <button class="btn btn-sm btn-info ms-2"
@@ -100,7 +83,6 @@ else
             {
                 <div class="mb-4 p-3 border rounded">
                     <h5>@school.Title</h5>
-
                     @if (school.StartDate.HasValue && school.IsDateConfirmed)
                     {
                         var start = school.StartDate.Value;
@@ -112,7 +94,7 @@ else
                         <p class="text-muted"><em>Dato ikke valgt endnu</em></p>
                     }
 
-                    <span class="badge @(school.Status == "Fuldført" ? "bg-success" : school.Status == "I gang" ? "bg-warning text-dark" : "bg-secondary")">
+                    <span class="badge @GetStatusClass(school.Status)">
                         @school.Status
                     </span>
 
@@ -135,7 +117,6 @@ else
                 {
                     <div>
                         <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
-                        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
                     </div>
                 }
 
@@ -164,29 +145,35 @@ else
 @code {
     private List<StudentPlan> plans = new();
     private List<Template> templates = new();
+    private List<LearningMaterial> allMaterials = new();
     private User? currentUser;
+    
+    // UI State
     private HashSet<int> openPlanIds = new();
     private HashSet<int> openGoalIds = new();
     private HashSet<int> openNotePlanIds = new();
-
     private int addingNoteForPlanId = -1;
     private Dictionary<int, string> newNoteTexts = new();
-
-    private List<LearningMaterial> allMaterials = new();
 
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser is null) return;
-
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-        allMaterials = await MaterialService.GetAllAsync(); // henter alle læringsmaterialer
-        templates = await TemplateService.GetAllTemplatesAsync();
-
-        if (currentUser.Role != "Elev")
+        if (currentUser?.Role != "Elev")
         {
             Nav.NavigateTo("/");
+            return;
         }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        if (currentUser is null) return;
+        
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        allMaterials = await MaterialService.GetAllAsync();
+        templates = await TemplateService.GetAllTemplatesAsync();
     }
 
     private void TogglePlan(int planId)
@@ -207,31 +194,24 @@ else
             openNotePlanIds.Remove(planId);
     }
 
-    /* flyttet til component
-    private string GetGoalStatusText(Goal goal)
-    {
-        int total = goal.Subtasks.Count;
-        int completed = goal.Subtasks.Count(s => s.Status == "Fuldført");
-
-        if (total == 0) return "Ingen delopgaver";
-        if (completed == 0) return "Ikke startet";
-        if (completed == total) return "Fuldført";
-        return $"{completed}/{total} fuldført";
-    }
-    */
-
     private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
     {
-        subtask.IsRequestedCompleted = true;
-        await StudentPlanService.UpdateStudentPlanAsync(plan);
-        StateHasChanged();
+        if (subtask.Status == "I gang")
+        {
+            subtask.IsRequestedCompleted = true;
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+            await LoadData();
+        }
     }
 
-    private async Task CancelSubtaskRequest(StudentPlan plan, Goal goal, Subtask subtask)
+    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
     {
-        subtask.IsRequestedCompleted = false;
-        await StudentPlanService.UpdateStudentPlanAsync(plan);
-        StateHasChanged();
+        if (subtask.Status == "Ikke startet")
+        {
+            subtask.Status = "I gang";
+            await StudentPlanService.UpdateStudentPlanAsync(plan);
+            await LoadData();
+        }
     }
 
     private void StartAddNote(int planId)
@@ -243,10 +223,7 @@ else
         }
     }
 
-    private void CancelAddNote()
-    {
-        addingNoteForPlanId = -1;
-    }
+    private void CancelAddNote() => addingNoteForPlanId = -1;
 
     private async Task SaveNote(StudentPlan plan)
     {
@@ -262,36 +239,15 @@ else
 
         plan.Notes.Add(newNote);
         await StudentPlanService.UpdateStudentPlanAsync(plan);
-
         newNoteTexts[plan.Id] = string.Empty;
         addingNoteForPlanId = -1;
-        StateHasChanged();
+        await LoadData();
     }
 
-    private async Task DeleteNote(StudentPlan plan, int noteId)
+    private static string GetStatusClass(string status) => status switch
     {
-        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
-        if (planToUpdate == null) return;
-
-        planToUpdate.Notes.RemoveAll(n => n.Id == noteId);
-        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
-
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-    }
-    
-    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
-    {
-        subtask.Status = "I gang";
-
-        // Opdater goal-status
-        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
-            goal.Status = "Fuldført";
-        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
-            goal.Status = "I gang";
-        else
-            goal.Status = "Ikke startet";
-
-        await StudentPlanService.UpdateStudentPlanAsync(plan);
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-    }
+        "Fuldført" => "bg-success",
+        "I gang" => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 }

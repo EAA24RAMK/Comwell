@@ -2,7 +2,6 @@
 @using Core.Models
 @using WebApp.Services
 @inject IUserService UserService
-@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <h3>Brugere</h3>
@@ -11,7 +10,7 @@
     <input type="text" @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter bruger..." />
     <select @bind="selectedRole">
         <option value="">Alle roller</option>
-        @foreach (var role in roles)
+        @foreach (var role in Roles)
         {
             <option value="@role">@role</option>
         }
@@ -30,9 +29,8 @@
 </div>
 
 <div class="user-list">
-    <!-- Header -->
     <div class="user-card user-header">
-        <div></div> <!-- Avatar placeholder -->
+        <div></div>
         <div class="header-label">Bruger</div>
         <div class="header-label">Skole</div>
         <div class="header-label">Lokation</div>
@@ -40,63 +38,42 @@
         <div></div>
     </div>
 
-    <!-- Brugere -->
     @foreach (var user in FilteredUsers)
     {
         <div class="user-card">
             <div class="avatar">@GetInitials(user.Name)</div>
-
             <div class="user-info">
                 <div class="user-name">@user.Name</div>
                 <div class="user-role">@user.Role</div>
             </div>
-
             <div class="user-school">
-                @if (!string.IsNullOrWhiteSpace(user.SchoolType))
-                {
-                    @user.SchoolType
-                }
-                else
-                {
-                    <span>-</span>
-                }
+                @(string.IsNullOrWhiteSpace(user.SchoolType) ? "-" : user.SchoolType)
             </div>
-
             <div class="user-location">
-                @if (!string.IsNullOrWhiteSpace(user.Hotel))
-                {
-                    @user.Hotel
-                }
-                else
-                {
-                    <span>-</span>
-                }
+                @(string.IsNullOrWhiteSpace(user.Hotel) ? "-" : user.Hotel)
             </div>
-
             <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
                 @user.Status
             </div>
-
             <div class="user-actions">
                 @if (currentUser?.Role == "HR")
                 {
                     <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
-                }
-                @if (activeActionMenuUserId == user.Id && currentUser?.Role == "HR")
-                {
-                    <div class="action-menu">
-                        <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
-                            @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
-                        </button>
-                        <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
-                            Slet
-                        </button>
-                    </div>
+                    @if (activeActionMenuUserId == user.Id)
+                    {
+                        <div class="action-menu">
+                            <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
+                                @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
+                            </button>
+                            <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
+                                Slet
+                            </button>
+                        </div>
+                    }
                 }
             </div>
         </div>
     }
-
 </div>
 
 @if (showCreateModal)
@@ -108,21 +85,18 @@
             <input @bind="newUser.Email" placeholder="Email" />
             <input @bind="newUser.Password" placeholder="Adgangskode" type="password" />
             <input @bind="newUser.Hotel" placeholder="Hotel" />
-
             <select @bind="newUser.Role">
                 <option disabled selected>Vælg rolle</option>
-                <option value="Elev">Elev</option>
-                <option value="HR">HR</option>
-                <option value="Køkkenchef">Køkkenchef</option>
-                <option value="Kok">Kok</option>
+                @foreach (var role in Roles)
+                {
+                    <option value="@role">@role</option>
+                }
             </select>
-
             <select @bind="newUser.Status">
                 <option disabled selected value="">Vælg status</option>
                 <option value="Aktiv">Aktiv</option>
                 <option value="Inaktiv">Inaktiv</option>
             </select>
-
             @if (newUser.Role == "Elev")
             {
                 <select @bind="newUser.SchoolType">
@@ -133,52 +107,57 @@
                     <option value="Ordinær">Ordinær</option>
                 </select>
             }
-
             <button @onclick="SaveUserAsync">Gem</button>
             <button @onclick="CloseCreateModal">Luk</button>
-
-            <p>@createMessage</p>
+            @if (!string.IsNullOrEmpty(createMessage))
+            {
+                <p>@createMessage</p>
+            }
         </div>
     </div>
 }
 
 @code {
+    private static readonly List<string> Roles = new() { "Elev", "Køkkenchef", "HR", "Kok" };
+    private User? currentUser;
     private List<User> users = new();
+    private List<string> hotels = new();
+    
+    // Filter state
     private string searchTerm = "";
     private string selectedRole = "";
     private string selectedHotel = "";
-    private bool showCreateModal = false;
+    
+    // UI state
+    private int? activeActionMenuUserId;
+    private bool showCreateModal;
+    
+    // Create user state
     private User newUser = new();
     private string createMessage = "";
-    private User? currentUser;
-    private int? activeActionMenuUserId = null;
-
-    private List<string> roles = new() { "Elev", "Køkkenchef", "HR", "Kok" };
-    private List<string> hotels = new();
 
     private IEnumerable<User> FilteredUsers =>
-        users
-            .Where(u =>
-                (string.IsNullOrEmpty(searchTerm) || u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
-                (string.IsNullOrEmpty(selectedRole) || u.Role == selectedRole) &&
-                (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel)
-            );
+        users.Where(u =>
+            (string.IsNullOrEmpty(searchTerm) || u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedRole) || u.Role == selectedRole) &&
+            (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel));
 
     protected override async Task OnInitializedAsync()
     {
-        users = await UserService.GetAllUsersAsync();
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser?.Role == "Elev")
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
 
+        users = await UserService.GetAllUsersAsync();
         hotels = users
             .Select(u => u.Hotel)
+            .Where(h => !string.IsNullOrEmpty(h))
             .Distinct()
             .OrderBy(h => h)
             .ToList();
-
-        currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser != null && currentUser.Role == "Elev")
-        {
-            Nav.NavigateTo("/");
-        }
     }
 
     private void CreateUser()
@@ -188,66 +167,50 @@
         createMessage = "";
     }
 
-    private void CloseCreateModal()
-    {
-        showCreateModal = false;
-    }
+    private void CloseCreateModal() => showCreateModal = false;
 
     private async Task SaveUserAsync()
     {
         var result = await UserService.CreateUserAsync(newUser);
+        createMessage = result != null ? "Bruger oprettet!" : "Noget gik galt under oprettelsen";
+        
         if (result != null)
         {
-            createMessage = "Bruger oprettet!";
             users = await UserService.GetAllUsersAsync();
             showCreateModal = false;
-        }
-        else
-        {
-            createMessage = "Noget gik galt under oprettelsen";
         }
     }
 
     private async Task DeleteUserAsync(int userId)
     {
-        if (currentUser == null || currentUser.Role == "Elev") return;
-
-        var success = await UserService.DeleteUserAsync(userId);
-
-        if (success)
+        if (currentUser?.Role == "HR" && await UserService.DeleteUserAsync(userId))
         {
             users = await UserService.GetAllUsersAsync();
         }
-
         activeActionMenuUserId = null;
     }
 
-    private void ToggleActionMenu(int userId)
-    {
+    private void ToggleActionMenu(int userId) =>
         activeActionMenuUserId = activeActionMenuUserId == userId ? null : userId;
-    }
 
-    private string GetInitials(string fullName)
+    private static string GetInitials(string fullName)
     {
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length switch
         {
             0 => "",
-            1 => parts[0][0].ToString().ToUpper(),
-            _ => $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
         };
     }
     
     private async Task ToggleUserStatusAsync(User user)
     {
         var newStatus = user.Status == "Aktiv" ? "Inaktiv" : "Aktiv";
-        var success = await UserService.UpdateUserStatusAsync(user.Id, newStatus);
-
-        if (success)
+        if (await UserService.UpdateUserStatusAsync(user.Id, newStatus))
         {
             users = await UserService.GetAllUsersAsync();
         }
-
         activeActionMenuUserId = null;
     }
 }
