@@ -3,18 +3,17 @@
 @inject IStudentPlanService StudentPlanService
 @using Core.Models
 @using WebApp.Services
-@inject NavigationManager Nav
 
 <h3>Rapporter</h3>
-<p></p>
+
 <!-- Vælg lokation -->
 <div class="section">
     <label class="filter-label">Vælg lokation:</label>
     <select class="filter-select" @bind="selectedLocation">
         <option value="">Alle lokationer</option>
-        @foreach (var loc in locations)
+        @foreach (var location in locations)
         {
-            <option value="@loc">@loc</option>
+            <option value="@location">@location</option>
         }
     </select>
 </div>
@@ -29,7 +28,7 @@
         </div>
         @foreach (var role in roles)
         {
-            var count = filteredUsers.Count(u => u.Role == role);
+            int count = filteredUsers.Count(u => u.Role == role);
             if (count > 0)
             {
                 <div class="stat-card">
@@ -56,7 +55,7 @@
             <label class="filter-label">Vælg mål:</label>
             <select class="filter-select" @bind="selectedGoalTitle">
                 <option value="">Vælg mål</option>
-                @foreach (var title in allGoalTitles)
+                @foreach (var title in goalTitles)
                 {
                     <option value="@title">@title</option>
                 }
@@ -117,13 +116,15 @@
 }
 
 @code {
-    private List<StudentPlan> allPlans = new();
     private List<User> allUsers = new();
-    private List<string> roles = new();
-    private List<string> locations = new();
-    private List<string> allGoalTitles = new();
+    private List<StudentPlan> allPlans = new();
+
     private string selectedLocation = "";
     private string selectedGoalTitle = "";
+
+    private List<string> roles = new();
+    private List<string> locations = new();
+    private List<string> goalTitles = new();
 
     private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
         ? allUsers
@@ -136,6 +137,6 @@
 
         roles = allUsers.Select(u => u.Role).Distinct().OrderByDescending(r => r == "Elev").ToList();
         locations = allUsers.Select(u => u.Hotel).Where(h => !string.IsNullOrWhiteSpace(h)).Distinct().OrderBy(h => h).ToList();
-        allGoalTitles = allPlans.SelectMany(p => p.Goals).Select(g => g.Title).Distinct().OrderBy(t => t).ToList();
+        goalTitles = allPlans.SelectMany(p => p.Goals).Select(g => g.Title).Distinct().OrderBy(t => t).ToList();
     }
 } 
