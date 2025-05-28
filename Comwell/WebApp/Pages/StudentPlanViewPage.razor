@@ -81,7 +81,7 @@ else
             {
                 @foreach (var goal in plan.Goals)
                 {
-                  <GoalDisplay goal="goal" plans="plans" plan="plan" allMaterials="allMaterials"></GoalDisplay>
+                  <GoalDisplayComponent goal="goal" plans="plans" plan="plan" allMaterials="allMaterials" currentUser="currentUser"></GoalDisplayComponent>
                 }
 
                 <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)"> Tilføj nyt mål</button>

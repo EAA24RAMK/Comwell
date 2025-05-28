@@ -5,7 +5,7 @@
 
 <div style="margin-left: 1rem; margin-bottom: 1rem;">
     <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-        <strong>@goal.Title</strong> - <GoalStatus Goal="goal" />
+        <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal" />
 
         @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
     </button>
@@ -113,8 +113,8 @@
     [Parameter] public required List<StudentPlan> plans { get; set; }
     [Parameter] public required StudentPlan plan { get; set; }
     [Parameter] public required List<LearningMaterial> allMaterials { get; set; }
+    [Parameter] public required User currentUser { get; set; }
     
-    private User? currentUser;
     private HashSet<int> openGoalIds = new(); 
 
     private int editingGoalId = -1;

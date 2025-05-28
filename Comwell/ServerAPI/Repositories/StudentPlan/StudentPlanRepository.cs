@@ -159,7 +159,6 @@ public class StudentPlanRepository : IStudentPlanRepository
                     previousGoal.Status != "Fuldført" &&
                     updatedGoal.Status == "Fuldført")
                 {
-                    Console.WriteLine($"🧹 Sletter notifikation for PlanId={updatedPlan.Id}, GoalId={updatedGoal.Id}");
                     await _notificationRepo.RemoveGoalNotificationForAllUsersAsync(updatedPlan.Id, updatedGoal.Id);
                 }
             }

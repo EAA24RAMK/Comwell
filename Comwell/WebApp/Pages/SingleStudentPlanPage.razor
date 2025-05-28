@@ -40,7 +40,7 @@ else
                 {
                     <div style="margin-left: 1rem; margin-bottom: 1rem;">
                         <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-                            <strong>@goal.Title</strong> - <GoalStatus Goal="goal" />
+                            <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal" />
                             @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
                         </button>
 
