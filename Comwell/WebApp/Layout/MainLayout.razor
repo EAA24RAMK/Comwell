@@ -1,14 +1,15 @@
 ﻿@inherits LayoutComponentBase
-@inject WebApp.Services.IUserService UserService
+@inject IUserService UserService
 @inject NavigationManager NavManager
-@inject WebApp.Services.INotificationService NotificationService
+@inject INotificationService NotificationService
 @inject HttpClient Http
 @using Core.Models
+@using WebApp.Services
 
-@if (!IsLoginPage)
+@if (!NavManager.Uri.Contains("/login"))
 {
     <div class="layout">
-        <div class="@SidebarCssClass">
+        <div class="@(sidebarCollapsed ? "sidebar collapse" : "sidebar")">
             <NavMenu ToggleMenu="ToggleSidebar" />
         </div>
 
@@ -27,9 +28,9 @@
                         <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;"
                            @onclick="async () => await ToggleNotifications()"></i>
 
-                        @if (notificationCount > 0)
+                        @if (!hasSeenNotifications && notifications?.Count > 0)
                         {
-                            <span class="notification-badge">@notificationCount</span>
+                            <span class="notification-badge">@notifications.Count</span>
                         }
                     </div>
 
@@ -82,14 +83,10 @@ else
 
 @code {
     private User? currentUser;
-    private bool IsLoginPage => NavManager.Uri.Contains("/login");
     private bool showNotifications = false;
     private List<Notification> notifications = new();
     private bool hasSeenNotifications = false;
-    private int notificationCount => hasSeenNotifications ? 0 : notifications?.Count ?? 0;
-
     private bool sidebarCollapsed = true;
-    private string SidebarCssClass => sidebarCollapsed ? "sidebar collapse" : "sidebar";
 
     protected override async Task OnInitializedAsync()
     {
@@ -142,7 +139,6 @@ else
         if (currentUser == null) return;
 
         await NotificationService.DeleteNotificationForUserAsync(notificationId, currentUser.Id);
-    
         notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         StateHasChanged();
     }

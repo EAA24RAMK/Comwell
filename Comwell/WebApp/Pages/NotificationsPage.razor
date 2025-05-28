@@ -1,10 +1,10 @@
 @page "/notifikationer"
+@using Core.Models
+@using WebApp.Services
 @inject HttpClient Http
 @inject IUserService UserService
 @inject INotificationService NotificationService
 @inject NavigationManager Nav
-@using Core.Models
-@using WebApp.Services
 
 <h3>Notifikationer</h3>
 
@@ -22,16 +22,8 @@ else
         @foreach (var note in notifications.OrderByDescending(n => n.CreatedAt))
         {
             <li style="margin-bottom: 1rem;">
-                <strong>@(note.IsRead ? "" : "[NY] ")</strong>
                 @note.Message <br />
                 <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br />
-
-                @if (note.PlanId != null && note.GoalId != null)
-                {
-                    <button class="btn btn-sm btn-outline-primary" @onclick="() => GoToGoal(note.PlanId.Value, note.GoalId.Value)">
-                        🔗 Gå til mål
-                    </button>
-                }
             </li>
         }
     </ul>
@@ -52,10 +44,5 @@ else
 
         // Hent notifikationer for den aktuelle bruger
         notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
-    }
-    
-    private void GoToGoal(int planId, int goalId)
-    {
-        Nav.NavigateTo($"/elevplaner?planId={planId}&goalId={goalId}");
     }
 }
