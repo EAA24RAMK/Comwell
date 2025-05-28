@@ -169,7 +169,7 @@
                 });
             }
         }
-
+        
         // Evt. opdater målstatus hvis ønsket
         if (goalToUpdate.Subtasks.All(s => s.Status == "Fuldført"))
         {
@@ -183,9 +183,12 @@
         {
             goalToUpdate.Status = "Ikke startet";
         }
-
+        
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        
+        editingGoalId = -1; // <- nøglelinje
+        await refresh.InvokeAsync(); // <- så refreshes visningen bagefter
     }
     
     private void CancelEditing()
