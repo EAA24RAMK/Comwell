@@ -20,7 +20,7 @@
 
         <div class="form-group">
             <label>Vælg elev:</label>
-            <select @bind="selectedUserId">
+            <select @bind="planModel.StudentId">
                 <option value="">Vælg en elev</option>
                 @foreach (var user in students)
                 {
@@ -31,7 +31,7 @@
 
         <div class="form-group">
             <label>Vælg skabelon:</label>
-            <select @bind="SelectedTemplateId">
+            <select @onchange="OnTemplateChanged">
                 <option value="">Vælg en skabelon</option>
                 @foreach (var template in templates)
                 {
@@ -52,13 +52,7 @@
 @code {
     private string feedbackMessage = "";
     private List<User> students = new();
-    private List<User> kitchenChefs = new();
-    private int selectedUserId;
     private List<Template> templates = new();
-    private Template? selectedTemplate;
-    private string responsible = "";
-    private string location = "";
-    private List<string> hotelLocations = new();
     private User? currentUser;
     
     private StudentPlan planModel = new()
@@ -66,34 +60,11 @@
         PeriodStart = DateTime.Today
     };
 
-
-    private int selectedTemplateId;
-    private int SelectedTemplateId
-    {
-        get => selectedTemplateId;
-        set
-        {
-            if (selectedTemplateId != value)
-            {
-                selectedTemplateId = value;
-                LoadSelectedTemplate();
-            }
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await UserService.GetAllUsersAsync();
-        kitchenChefs = allUsers.Where(u => u.Role == "Køkkenchef").ToList();
         students = allUsers.Where(u => u.Role == "Elev").ToList();
         templates = await TemplateService.GetAllTemplatesAsync();
-        
-        // Henter alle hoteller fra brugerne
-        hotelLocations = allUsers
-            .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
-            .Select(u => u.Hotel)
-            .Distinct()
-            .ToList();
         
         currentUser = await UserService.GetCurrentUserAsync();
         if (currentUser != null && currentUser.Role == "Elev")
@@ -101,34 +72,28 @@
             Nav.NavigateTo("/");
         }
     }
-
-    private async void LoadSelectedTemplate()
+    
+    private async Task OnTemplateChanged(ChangeEventArgs e)
     {
-        selectedTemplate = await TemplateService.GetTemplateByIdAsync(selectedTemplateId);
-        StateHasChanged(); // Sørger for UI-opdatering
+        if (int.TryParse(e.Value?.ToString(), out int templateId))
+        {
+            planModel.TemplateId = templateId; // <- Tilføj dette!
+            var selectedTemplate = await TemplateService.GetTemplateByIdAsync(templateId);
+            if (selectedTemplate is not null)
+            {
+                await ApplyTemplateGoalsToPlan(selectedTemplate);
+            }
+        }
     }
 
-    private async Task HandleSubmit()
+    private async Task ApplyTemplateGoalsToPlan(Template selectedTemplate)
     {
-        if (selectedTemplate is null)
-        {
-            feedbackMessage = "Du skal vælge en skabelon.";
-            return;
-        }
-
-        planModel.StudentId = selectedUserId;
-        planModel.TemplateId = selectedTemplateId;
-
-        DateTime start = planModel.PeriodStart;
         var referenceDate = selectedTemplate.Goals.First().Deadline;
-
-        var adjustedGoals = new List<Goal>();
-
-        foreach (var goal in selectedTemplate.Goals)
+        var start = planModel.PeriodStart;
+        var adjustedGoals = selectedTemplate.Goals.Select(goal =>
         {
             var dayOffset = (goal.Deadline - referenceDate).Days;
-
-            var adjustedGoal = new Goal
+            return new Goal
             {
                 Id = goal.Id,
                 Title = goal.Title,
@@ -137,17 +102,23 @@
                 Status = "Ikke startet",
                 InitiatedBy = goal.InitiatedBy,
                 CheckedOff = false,
-                Subtasks = goal.Subtasks.ToList(),
+                Subtasks = goal.Subtasks.ToList()
             };
-
-            adjustedGoals.Add(adjustedGoal);
-        }
-
-        var currentUser = await UserService.GetCurrentUserAsync();
-        planModel.CreatedBy = currentUser.Name;
+        }).ToList();
 
         planModel.Goals = adjustedGoals;
         planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (planModel.TemplateId == 0)
+        {
+            feedbackMessage = "Du skal vælge en skabelon.";
+            return;
+        }
+        
+        planModel.CreatedBy = (await UserService.GetCurrentUserAsync())?.Name ?? "Ukendt";
         planModel.PeriodStart = planModel.PeriodStart.Date;
 
         await StudentPlanService.CreateStudentPlanAsync(planModel);
