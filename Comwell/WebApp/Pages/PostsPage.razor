@@ -143,17 +143,16 @@ else
     private List<Post> posts = new();
     private Post newPost = new();
     private User? currentUser;
-    private string searchTerm = "";
-    private int? confirmDeletePostId = null;
-    private bool showModal = false;
-
     private List<User> allUsers = new();
     private List<string> allHotels = new();
-    private string selectedHotel = "";
     private List<User> filteredUsers = new();
     private List<int> selectedUserIds = new();
-    private bool selectedAllUsers = false;
+    private string searchTerm = "";
+    private string selectedHotel = "";
     private string selectedTargetGroup = "";
+    private bool selectedAllUsers = false;
+    private bool showModal = false;
+    private int? confirmDeletePostId = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -171,6 +170,28 @@ else
     {
         if (currentUser == null) return;
         posts = await PostService.GetPostsForUserAsync(currentUser.Email, currentUser.Role);
+    }
+
+    private IEnumerable<Post> FilteredPosts =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? posts.Where(CanViewPost)
+            : posts.Where(p => CanViewPost(p) &&
+                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                 !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+
+    private bool CanViewPost(Post post)
+    {
+        if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+            return true;
+        return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
+    }
+
+    private bool CanDeletePost(Post post)
+    {
+        if (currentUser == null) return false;
+        if (currentUser.Role == "Elev")
+            return post.Author == currentUser.Name;
+        return true;
     }
 
     private async Task SubmitModal()
@@ -264,28 +285,6 @@ else
         }
         selectedHotel = "";
         filteredUsers = new();
-    }
-
-    private IEnumerable<Post> FilteredPosts =>
-        string.IsNullOrWhiteSpace(searchTerm)
-            ? posts.Where(CanViewPost)
-            : posts.Where(p => CanViewPost(p) &&
-                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                 !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
-
-    private bool CanViewPost(Post post)
-    {
-        if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-            return true;
-        return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
-    }
-
-    private bool CanDeletePost(Post post)
-    {
-        if (currentUser == null) return false;
-        if (currentUser.Role == "Elev")
-            return post.Author == currentUser.Name;
-        return true;
     }
 
     private string GetInitials(string? fullName)
