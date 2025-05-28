@@ -9,6 +9,6 @@ public class Notification
     public int? PlanId { get; set; } 
     public int? GoalId { get; set; } 
     public bool IsRead { get; set; } = false;
-    public List<int> DeletedByUserIds { get; set; } = new(); // 💡 NYT
+    public List<int> DeletedByUserIds { get; set; } = new(); 
     public List<int> NotifyUserId { get; set; } = new List<int>();
 }
