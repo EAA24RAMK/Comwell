@@ -17,16 +17,14 @@
             <option value="">Alle hoteller</option>
             @foreach (var hotel in allHotels)
             {
-                <option value="@hotel" selected="@(hotel == selectedHotel)">
-                    @hotel
-                </option>
+                <option value="@hotel" selected="@(hotel == selectedHotel)">@hotel</option>
             }
         </select>
     </div>
     <div>
         <select @onchange="OnStudentChanged" class="form-select">
             <option value="-1">Alle elever</option>
-            @foreach (var user in allUsers.Where(u => u.Role == "Elev" && (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel)))
+            @foreach (var user in FilteredUsers)
             {
                 <option value="@user.Id" selected="@(user.Id == selectedStudentId)">
                     @user.Name (@user.Hotel)
@@ -36,8 +34,7 @@
     </div>
 </div>
 
-
-@if (plans == null || !plans.Any())
+@if (plans?.Any() != true)
 {
     <p>Ingen planer fundet.</p>
 }
@@ -45,10 +42,9 @@ else
 {
     @foreach (var plan in FilteredPlans())
     {
-        <div class="plan-box" style="margin-bottom: 2rem; border: 1px solid #ccc; padding: 1rem;">
+        <div class="plan-box">
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
-            <!-- tre prikker til at slette studentplan -->
-            <div class="plan-actions" style="position: absolute; top: 0.5rem; right: 0.5rem;">
+            <div class="plan-actions">
                 <button @onclick="() => ToggleActionMenu(plan.Id)">⋮</button>
                 @if (activeActionMenuPlanId == plan.Id)
                 {
@@ -61,17 +57,21 @@ else
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
-            @if (currentUser?.Role == "Køkkenchef" && !plan.IsApprovedByChef)
+            @if (currentUser?.Role == "Køkkenchef")
             {
-                <button @onclick="() => ApprovePlan(plan)">
-                    Godkend praktikperiode
-                </button>
+                if (!plan.IsApprovedByChef)
+                {
+                    <button @onclick="() => ApprovePlan(plan)">Godkend praktikperiode</button>
+                }
+                else
+                {
+                    <p class="text-success mt-2">✔ Praktikperiode godkendt af køkkenchef</p>
+                }
             }
             else if (plan.IsApprovedByChef)
             {
                 <p class="text-success mt-2">✔ Praktikperiode godkendt af køkkenchef</p>
             }
-
 
             <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
                 Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
@@ -81,15 +81,20 @@ else
             {
                 @foreach (var goal in plan.Goals)
                 {
-                  <GoalDisplayComponent goal="goal" plans="plans" plan="plan" allMaterials="allMaterials" currentUser="currentUser"
-                                         refresh="() => StateHasChanged()"></GoalDisplayComponent>
+                    <GoalDisplayComponent 
+                        goal="goal"
+                        plans="plans"
+                        plan="plan"
+                        allMaterials="allMaterials"
+                        currentUser="currentUser"
+                        refresh="EventCallback.Factory.Create(this, () => StateHasChanged())" />
                 }
 
-                <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)"> Tilføj nyt mål</button>
+                <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)">Tilføj nyt mål</button>
 
                 @if (newGoalPlanId == plan.Id)
                 {
-                    <div style="margin-left: 1rem; margin-top: 1rem; border-top: 1px dashed #aaa; padding-top: 1rem;">
+                    <div class="new-goal-form">
                         <h5>Nyt mål</h5>
                         <label>Titel:</label>
                         <InputText @bind-Value="newGoalTitle" />
@@ -100,7 +105,7 @@ else
                             <option value="Praktik">Praktik</option>
                         </select>
 
-                        <button class="bi bi-plus" @onclick="() => ConfirmAddGoal(plan)"> Tilføj</button>
+                        <button class="bi bi-plus" @onclick="() => ConfirmAddGoal(plan)">Tilføj</button>
                         <button @onclick="CancelAddGoal">Annuller</button>
                     </div>
                 }
@@ -108,27 +113,23 @@ else
 
             @foreach (var school in plan.SchoolPeriods)
             {
-                <div class="mb-4 p-3 border rounded" style="margin-top: 2rem;">
+                <div class="school-period">
                     <h5>@school.Title</h5>
 
-                    <label>Startdato:</label>
                     @if (!school.IsDateConfirmed)
                     {
-                        <label>Startdato:</label>
-                        <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
-
-                        <button
-                                @onclick="() => SaveSchoolPeriodDate(plan, school)">
-                            Gem dato
-                        </button>
+                        <div>
+                            <label>Startdato:</label>
+                            <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
+                            <button @onclick="() => SaveSchoolPeriodDate(plan, school)">Gem dato</button>
+                        </div>
                     }
                     else
                     {
                         @if (school.StartDate.HasValue)
                         {
-                            var start = school.StartDate.Value;
-                            var end = start.AddDays(7 * school.DurationWeeks);
-                            <p><strong>Dato:</strong> @start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
+                            var end = school.StartDate.Value.AddDays(7 * school.DurationWeeks);
+                            <p><strong>Dato:</strong> @school.StartDate.Value.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
                         }
                         else
                         {
@@ -136,34 +137,20 @@ else
                         }
                     }
 
-                    <ul>
-                        <li class="d-flex align-items-center gap-2">
-                         
-                            @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
-                            {
-                                <button @onclick="() => ApproveSchoolPeriod(plan, school)">
-                                    Godkend skoleperiode
-                                </button>
-                            }
-                            else if (school.IsApproved)
-                            {
-                                <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
-                            }
+                    <div class="d-flex align-items-center gap-2">
+                        @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
+                        {
+                            <button @onclick="() => ApproveSchoolPeriod(plan, school)">
+                                Godkend skoleperiode
+                            </button>
+                        }
+                        else if (school.IsApproved)
+                        {
+                            <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
+                        }
 
-                            @if (school.Status == "Ikke startet")
-                            {
-                                <span class="badge bg-secondary">Ikke startet</span>
-                            }
-                            else if (school.Status == "I gang")
-                            {
-                                <span class="badge bg-warning text-dark">I gang</span>
-                            }
-                            else if (school.Status == "Fuldført")
-                            {
-                                <span class="badge bg-success">Fuldført</span>
-                            }
-                        </li>
-                    </ul>
+                        <span class="badge @GetStatusClass(school.Status)">@school.Status</span>
+                    </div>
                 </div>
             }
             
@@ -177,7 +164,7 @@ else
             {
                 @foreach (var note in plan.Notes)
                 {
-                    <div>
+                    <div class="note-item">
                         <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
                         <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
                     </div>
@@ -185,7 +172,7 @@ else
 
                 @if (addingNoteForPlanId == plan.Id)
                 {
-                    <div>
+                    <div class="note-form">
                         <textarea class="form-control mb-2"
                                   @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
                             @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
@@ -196,9 +183,7 @@ else
                 }
                 else
                 {
-                    <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">
-                        Tilføj note
-                    </button>
+                    <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">Tilføj note</button>
                 }
             }
         </div>
@@ -206,46 +191,53 @@ else
 }
 
 @code {
+    // Core Data
     private List<StudentPlan> plans = new();
     private List<Template> templates = new();
+    private List<LearningMaterial> allMaterials = new();
     private User? currentUser;
-    private HashSet<int> openPlanIds = new();
-    private HashSet<int> openNotePlanIds = new();
     private Dictionary<int, string> userNamesById = new();
 
-    private int editingGoalId = -1;
-    private string editableGoalTitle = "";
-    private string editableGoalCategory = "";
-
-    private int newGoalPlanId = -1;
-    private string newGoalTitle = "";
-    private string newGoalCategory = "";
-    
-    //hent alle brugere og lav lister til dropdowns
+    // Filter State
     private List<User> allUsers = new();
     private List<string> allHotels = new();
     private int selectedStudentId = -1;
     private string selectedHotel = "";
-    
+
+    // UI State
+    private HashSet<int> openPlanIds = new();
+    private HashSet<int> openNotePlanIds = new();
+    private int activeActionMenuPlanId = -1;
+
+    // Goal State
+    private int newGoalPlanId = -1;
+    private string newGoalTitle = "";
+    private string newGoalCategory = "";
+
+    // Note State
     private int addingNoteForPlanId = -1;
     private Dictionary<int, string> newNoteTexts = new();
-    
-    // tre prikker til slet knappen
-    private int activeActionMenuPlanId = -1;
-    
-    private List<LearningMaterial> allMaterials = new();
+
+    private IEnumerable<User> FilteredUsers => allUsers
+        .Where(u => u.Role == "Elev" && 
+               (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel))
+        .OrderBy(u => u.Name);
 
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser is null) return;
-        
-        // Hvis rolle ikke er HR, kok eller køkkenchef ingen adgang
-        if (currentUser == null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef" && currentUser.Role != "Kok"))
+        if (currentUser is null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef" && currentUser.Role != "Kok"))
         {
             Nav.NavigateTo("/");
+            return;
         }
-        
+
+        await LoadData();
+        await UpdateSchoolPeriodStatuses();
+    }
+
+    private async Task LoadData()
+    {
         allUsers = await UserService.GetAllUsersAsync();
         allHotels = allUsers
             .Where(u => !string.IsNullOrWhiteSpace(u.Hotel))
@@ -254,60 +246,93 @@ else
             .OrderBy(h => h)
             .ToList();
 
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         allMaterials = await MaterialService.GetAllAsync();
         templates = await TemplateService.GetAllTemplatesAsync();
-        
+
         foreach (var plan in plans)
         {
-            // Bevar eksisterende funktionalitet
             if (!userNamesById.ContainsKey(plan.StudentId))
             {
                 var user = await UserService.GetUserByIdAsync(plan.StudentId);
                 userNamesById[plan.StudentId] = user?.Name ?? "(Ukendt)";
             }
-            
-            bool updated = false;
+        }
+    }
+
+    private async Task UpdateSchoolPeriodStatuses()
+    {
+        var updatedPlans = false;
+        var plansToUpdate = new List<StudentPlan>();
+        
+        foreach (var plan in plans)
+        {
+            var planUpdated = false;
             foreach (var school in plan.SchoolPeriods)
             {
                 if (school.Status == "Ikke startet" && school.StartDate <= DateTime.Today)
                 {
                     school.Status = "I gang";
-                    updated = true;
+                    planUpdated = true;
                 }
             }
-
-            if (updated)
+            
+            if (planUpdated)
             {
-                await StudentPlanService.UpdateStudentPlanAsync(plan);
+                plansToUpdate.Add(plan);
+                updatedPlans = true;
             }
+        }
+
+        if (updatedPlans)
+        {
+            await Task.WhenAll(plansToUpdate.Select(plan => StudentPlanService.UpdateStudentPlanAsync(plan)));
         }
     }
 
-    private void TogglePlan(int planId)
+    private IEnumerable<StudentPlan> FilteredPlans()
     {
-        if (!openPlanIds.Add(planId))
-            openPlanIds.Remove(planId);
-    }
-    
-    private void ToggleNotes(int planId)
-    {
-        if (!openNotePlanIds.Add(planId))
-            openNotePlanIds.Remove(planId);
-    }
-    
-    /* flyttet til component
-    private string GetGoalStatusText(Goal goal)
-    {
-        int total = goal.Subtasks.Count;
-        int completed = goal.Subtasks.Count(s => s.Status == "Fuldført");
+        var filtered = plans.AsEnumerable();
 
-        if (total == 0) return "Ingen delopgaver";
-        if (completed == 0) return "Ikke startet";
-        if (completed == total) return "Fuldført";
-        return $"{completed}/{total} fuldført";
+        if (!string.IsNullOrEmpty(selectedHotel))
+        {
+            var studentIds = FilteredUsers.Select(u => u.Id).ToHashSet();
+            filtered = filtered.Where(p => studentIds.Contains(p.StudentId));
+        }
+
+        if (selectedStudentId != -1)
+        {
+            filtered = filtered.Where(p => p.StudentId == selectedStudentId);
+        }
+
+        return filtered;
     }
-    */
+
+    private void OnHotelChanged(ChangeEventArgs e)
+    {
+        selectedHotel = e.Value?.ToString() ?? "";
+        selectedStudentId = -1;
+    }
+
+    private void OnStudentChanged(ChangeEventArgs e) =>
+        selectedStudentId = int.TryParse(e.Value?.ToString(), out var id) ? id : -1;
+
+    private void TogglePlan(int planId) =>
+        _ = !openPlanIds.Add(planId) ? openPlanIds.Remove(planId) : true;
+
+    private void ToggleNotes(int planId) =>
+        _ = !openNotePlanIds.Add(planId) ? openNotePlanIds.Remove(planId) : true;
+
+    private void ToggleActionMenu(int planId) =>
+        activeActionMenuPlanId = activeActionMenuPlanId == planId ? -1 : planId;
+
+    private async Task DeleteStudentPlanAsync(int planId)
+    {
+        if (await StudentPlanService.DeleteStudentPlanAsync(planId))
+        {
+            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        }
+    }
 
     private void StartAddingNewGoal(int planId)
     {
@@ -325,62 +350,23 @@ else
 
     private async Task ConfirmAddGoal(StudentPlan plan)
     {
-        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
-        if (planToUpdate == null) return;
-
-        var newGoalId = planToUpdate.Goals.Any() ? planToUpdate.Goals.Max(g => g.Id) + 1 : 1;
+        if (string.IsNullOrWhiteSpace(newGoalTitle) || string.IsNullOrWhiteSpace(newGoalCategory)) return;
 
         var newGoal = new Goal
         {
-            Id = newGoalId,
+            Id = plan.Goals.Any() ? plan.Goals.Max(g => g.Id) + 1 : 1,
             Title = newGoalTitle,
             Category = newGoalCategory,
             Subtasks = new List<Subtask>(),
             Status = "Ikke startet"
         };
 
-        planToUpdate.Goals.Add(newGoal);
-        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
+        plan.Goals.Add(newGoal);
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
         CancelAddGoal();
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-    }
-    
-    // Filtrer planer baseret på dropdowns
-    private IEnumerable<StudentPlan> FilteredPlans()
-    {
-        IEnumerable<StudentPlan> filtered = plans;
-
-        if (!string.IsNullOrEmpty(selectedHotel))
-        {
-            var studentIds = allUsers
-                .Where(u => u.Role == "Elev" && u.Hotel == selectedHotel)
-                .Select(u => u.Id)
-                .ToHashSet();
-            filtered = filtered.Where(p => studentIds.Contains(p.StudentId));
-        }
-
-        if (selectedStudentId != -1)
-        {
-            filtered = filtered.Where(p => p.StudentId == selectedStudentId);
-        }
-
-        return filtered;
+        await LoadData();
     }
 
-    private void OnHotelChanged(ChangeEventArgs e)
-    {
-        selectedHotel = e.Value?.ToString() ?? "";
-        selectedStudentId = -1; // Nulstil elevvalg når hotel skiftes
-    }
-
-    private void OnStudentChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var id))
-            selectedStudentId = id;
-        else
-            selectedStudentId = -1;
-    }
-    
     private void StartAddNote(int planId)
     {
         addingNoteForPlanId = planId;
@@ -390,10 +376,7 @@ else
         }
     }
 
-    private void CancelAddNote()
-    {
-        addingNoteForPlanId = -1;
-    }
+    private void CancelAddNote() => addingNoteForPlanId = -1;
 
     private async Task SaveNote(StudentPlan plan)
     {
@@ -409,74 +392,55 @@ else
 
         plan.Notes.Add(newNote);
         await StudentPlanService.UpdateStudentPlanAsync(plan);
-
         newNoteTexts[plan.Id] = string.Empty;
         addingNoteForPlanId = -1;
-        StateHasChanged();
+        await LoadData();
     }
-    
+
     private async Task DeleteNote(StudentPlan plan, int noteId)
     {
-        var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
-        if (planToUpdate == null) return;
-
-        planToUpdate.Notes.RemoveAll(n => n.Id == noteId);
-
-        await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
-
-        // Opdater viewet
-        plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        plan.Notes.RemoveAll(n => n.Id == noteId);
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        await LoadData();
     }
-    
-    // sletter en hel studentplan
-    private async Task DeleteStudentPlanAsync(int planId)
+
+    private async Task ApprovePlan(StudentPlan plan)
     {
-        var success = await StudentPlanService.DeleteStudentPlanAsync(planId);
-        if (success)
-        {
-            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-        }
+        if (currentUser?.Role != "Køkkenchef") return;
+        
+        await StudentPlanService.ApprovePlanByChefAsync(plan.Id);
+        plan.IsApprovedByChef = true;
+        await LoadData();
     }
-    
-    // tre prikker til slet knappen
-    private void ToggleActionMenu(int planId)
+
+    private async Task ApproveSchoolPeriod(StudentPlan plan, SchoolPeriod school)
     {
-        activeActionMenuPlanId = activeActionMenuPlanId == planId ? -1 : planId;
+        if (currentUser?.Role != "Køkkenchef") return;
+        
+        school.IsApproved = true;
+        school.Status = "Fuldført";
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        await LoadData();
     }
-    
 
-        private StudentPlan studentPlan;
+    private async Task SaveSchoolPeriodDate(StudentPlan plan, SchoolPeriod school)
+    {
+        if (!school.StartDate.HasValue) return;
 
-        private async Task ApprovePlan(StudentPlan plan)
+        school.IsDateConfirmed = true;
+        if (school.StartDate <= DateTime.Today && school.Status == "Ikke startet")
         {
-            await StudentPlanService.ApprovePlanByChefAsync(plan.Id);
-            plan.IsApprovedByChef = true;
-        }
-        
-        private async Task ApproveSchoolPeriod(StudentPlan plan, SchoolPeriod school)
-        {
-            school.IsApproved = true;
-            school.Status = "Fuldført";
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-            plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
-        }
-        
-        private async Task SaveSchoolPeriodDate(StudentPlan plan, SchoolPeriod school)
-        {
-            var index = plan.SchoolPeriods.FindIndex(sp => sp.Id == school.Id);
-            if (index == -1) return;
-
-            var targetSchool = plan.SchoolPeriods[index];
-
-            if (targetSchool.StartDate <= DateTime.Today && targetSchool.Status == "Ikke startet")
-            {
-                targetSchool.Status = "I gang";
-            }
-
-            targetSchool.IsDateConfirmed = true;
-
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-            StateHasChanged();
+            school.Status = "I gang";
         }
 
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        await LoadData();
+    }
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Fuldført" => "bg-success",
+        "I gang" => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 }

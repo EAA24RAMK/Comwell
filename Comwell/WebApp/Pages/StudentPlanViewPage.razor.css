@@ -45,6 +45,13 @@ h3 {
     margin-bottom: 0.5rem;
 }
 
+/* Add styles for the three-dot menu */
+.plan-actions {
+    position: absolute;
+    top: 1.5rem;
+    right: 2rem;
+}
+
 .plan-box p {
     margin: 0.2rem 0 0.2rem 0;
     font-size: 1rem;
