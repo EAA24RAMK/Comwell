@@ -115,6 +115,8 @@
     [Parameter] public required List<LearningMaterial> allMaterials { get; set; }
     [Parameter] public required User currentUser { get; set; }
     
+    [Parameter] public required EventCallback refresh {get; set;}
+    
     private HashSet<int> openGoalIds = new(); 
 
     private int editingGoalId = -1;
@@ -233,7 +235,7 @@
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
     
-    private void StartEditing(Goal goal)
+    private async Task StartEditing(Goal goal)
     {
         editingGoalId = goal.Id;
         editableGoalTitle = goal.Title;
@@ -250,5 +252,6 @@
         planToUpdate.Goals.RemoveAll(g => g.Id == goal.Id);
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
+        await refresh.InvokeAsync();
     }
 }

@@ -81,7 +81,8 @@ else
             {
                 @foreach (var goal in plan.Goals)
                 {
-                  <GoalDisplayComponent goal="goal" plans="plans" plan="plan" allMaterials="allMaterials" currentUser="currentUser"></GoalDisplayComponent>
+                  <GoalDisplayComponent goal="goal" plans="plans" plan="plan" allMaterials="allMaterials" currentUser="currentUser"
+                                         refresh="() => StateHasChanged()"></GoalDisplayComponent>
                 }
 
                 <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)"> Tilføj nyt mål</button>
