@@ -44,18 +44,6 @@ public class UserRepository : IUserRepository
         return user;
     }
 
-    // Returnerer en liste med alle brugernes roller
-    public async Task<List<User>> GetByRoleAsync(string role)
-    {
-        return await _users.Find(u => u.Role == role).ToListAsync();
-    }
-
-    // Returnerer en liste med alle brugernes hoteller
-    public async Task<List<User>> GetByHotelAsync(string hotel)
-    {
-        return await _users.Find(u => u.Hotel == hotel).ToListAsync();
-    }
-
     // Sletter en bruger baseret på ID
     public async Task<bool> DeleteAsync(int id)
     {
