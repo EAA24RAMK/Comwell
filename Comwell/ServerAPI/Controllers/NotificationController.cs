@@ -49,13 +49,6 @@ public class NotificationController : ControllerBase
         return Ok();
     }
     
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
-    {
-        await _notificationRepo.DeleteAsync(id);
-        return Ok();
-    }
-    
     [HttpPost("generate")]
     public async Task<IActionResult> GenerateNotifications()
     {

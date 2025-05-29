@@ -44,11 +44,6 @@ public class NotificationRepository : INotificationRepository
         await _notifications.ReplaceOneAsync(n => n.Id == notification.Id, notification);
     }
 
-    public async Task DeleteAsync(int id)
-    {
-        await _notifications.DeleteOneAsync(n => n.Id == id);
-    }
-
     public async Task RemoveGoalNotificationForAllUsersAsync(int planId, int goalId)
     {
         var matching = await _notifications.Find(n => n.PlanId == planId && n.GoalId == goalId).ToListAsync();
