@@ -1,31 +1,38 @@
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc; // Giver adgang til ControllerBase og API-funktionalitet
 using ServerAPI.Repositories;
 using Core.Models;
 
 namespace ServerAPI.Controllers;
-[ApiController]
-[Route("api/[controller]")]
+// Controlleren håndterer autentificering (login).
+// Den bruges af frontend til at logge brugere ind via en POST-request til /api/auth/login.
 
-public class AuthController : ControllerBase
+[ApiController]                         // Fortæller .NET at dette er en API-controller
+[Route("api/[controller]")]     // URL bliver /api/auth, fordi controlleren hedder AuthController
+public class AuthController : ControllerBase 
 {
+    // Instansvariabel der bruges til at kommunikere med bruger-databasen via IUserRepository.
     private readonly IUserRepository _userRepo;
 
-    // Dependency injection
+    // Konstruktør hvor IUserRepository bliver "injectet" fra systemet (dependency injection).
+    // Det gør det muligt at arbejde med brugerdata uden selv at oprette databasen her.
     public AuthController(IUserRepository userRepo)
     {
         _userRepo = userRepo;
     }
     
-    // IActionResult returner svar succes el. fejl 200, 400, 401 osv
-    // Godkender bruger med email og password
-    // Returner id, name osv. i loggedInUser
+    // Returnerer: IActionResult – enten OK (200) med brugerdata eller Unauthorized (401) hvis login fejler.
+    // Parametre: request – indeholder e-mail og password sendt fra frontend.
+    // Formål: Tjekker om en bruger eksisterer med de indtastede loginoplysninger og returnerer brugerdata.
+    // Bruges: Når en bruger forsøger at logge ind på systemet via LoginPage.
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
+        // Finder brugeren med den angivne e-mail
         var user = await _userRepo.GetUserByEmailAsync(request.Email);
         if (user == null || user.Password != request.Password)
             return Unauthorized("Forkert loginoplysninger");
 
+        // Returnerer et objekt med de nødvendige brugeroplysninger
         return Ok(new {
             user.Id,
             user.Name,
@@ -37,10 +44,9 @@ public class AuthController : ControllerBase
         });
     }
 
-
-    // Login dataet sendt fra frontend
-    //   "email": "bruger@comwell.dk",
-    // "password": "123"
+    // Klasse: LoginRequest (Bruges kun her, så derfor er den ikke i Core/Models)
+    // Formål: Bruges som model til at modtage login-oplysninger fra frontend.
+    // Indeholder: To nødvendige felter – e-mail og password.
     public class LoginRequest
     {
         public string Email { get; set; }
