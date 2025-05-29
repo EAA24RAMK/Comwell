@@ -13,12 +13,6 @@ public class LearningMaterialService : ILearningMaterialService
         _http = http;
     }
 
-    public async Task<List<LearningMaterial>> GetBySubtaskIdAsync(int subtaskId)
-    {
-        var result = await _http.GetFromJsonAsync<List<LearningMaterial>>($"api/LearningMaterial/{subtaskId}");
-        return result ?? new List<LearningMaterial>();
-    }
-
     public async Task<LearningMaterial?> UploadFileAsync(Stream fileStream, string fileName, string title, int subtaskId)
     {
         var content = new MultipartFormDataContent();
