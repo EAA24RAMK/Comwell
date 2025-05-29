@@ -8,7 +8,6 @@ public interface INotificationRepository
     Task<List<Notification>> GetForUserAsync(int userId);
     Task AddAsync(Notification notification);
     Task UpdateAsync(Notification notification);
-    Task DeleteAsync(int id);
     Task RemoveGoalNotificationForAllUsersAsync(int planId, int goalId);
     Task MarkAsDeletedForUserAsync(int notificationId, int userId);
 
