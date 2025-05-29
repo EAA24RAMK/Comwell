@@ -11,8 +11,11 @@ public class UserService : IUserService
 {
     // Instansvariabel til at sende HTTP-anmodninger til backendens API.
     private readonly HttpClient _http;
+    
+    // Instansvariabel til at hente brugerdata i lokal storage.
     private readonly ILocalStorageService _localStorage;
 
+    // Konstruktør hvor HttpClient og LocalStorage bliver injected.
     public UserService(HttpClient http, ILocalStorageService localStorage)
     {
         _http = http;
@@ -37,6 +40,8 @@ public class UserService : IUserService
         return null;
     }
     
+    // Returnerer: Henter brugeren som er logget ind fra localStorage, eller null hvis ingen fundet.
+    // Bruges fx til at vise navn og rolle i header eller til at validere adgang til sider.
     public async Task<User?> GetCurrentUserAsync()
     {
         return await _localStorage.GetItemAsync<User>("loggedInUser");
@@ -44,7 +49,7 @@ public class UserService : IUserService
 
     // Returnerer: True hvis brugeren blev slettet, ellers false.
     // Parametre: userId – ID på den bruger der skal slettes.
-    // Formål: Bruges når en bruger fjernes fra systemet via frontend, fx i admin-panelet.
+    // Formål: Bruges når en bruger fjernes fra systemet via frontend, fx i UserPage.
     public async Task<bool> DeleteUserAsync(int userId)
     {
         var response = await _http.DeleteAsync($"api/user/{userId}");
@@ -53,7 +58,7 @@ public class UserService : IUserService
     
     // Returnerer: Brugerobjektet med det angivne ID, eller null hvis ikke fundet.
     // Parametre: id – ID på brugeren.
-    // Formål: Bruges til at hente detaljer om én specifik bruger, fx ved redigering.
+    // Formål: Bruges til at hente detaljer om en specifik bruger, fx ved redigering.
     public async Task<User?> GetUserByIdAsync(int id)
     {
         return await _http.GetFromJsonAsync<User>($"api/user/id/{id}");
@@ -63,11 +68,10 @@ public class UserService : IUserService
     // Parametre:
     //   userId – ID på brugeren der skal opdateres
     //   newStatus – Ny statusværdi, fx "Aktiv", "Inaktiv"
-    // Formål: Bruges til at ændre status på brugere i systemet, fx hvis de går på orlov.
+    // Formål: Bruges til at ændre status på brugere i systemet.
     public async Task<bool> UpdateUserStatusAsync(int userId, string newStatus)
     {
         var response = await _http.PutAsJsonAsync($"api/user/{userId}/status", newStatus);
         return response.IsSuccessStatusCode;
     }
-
 }

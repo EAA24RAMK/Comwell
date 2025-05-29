@@ -1,48 +1,61 @@
 @page "/login"
+@using Core.Models
 @using WebApp.Services
 @inject ILoginService LoginService
 @inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
+<!-- Login-side med formular og simpelt design -->
 <div class="login-container">
     <div class="login-card">
+        <!-- Logo -->
         <div class="logo-circle">
             <span class="logo-text">CW</span>
         </div>
 
+        <!-- Overskrift og undertekst -->
         <h2>Comwell</h2>
         <p class="subtitle">Login på din bruger</p>
 
+        <!-- Viser fejlbesked hvis login mislykkes -->
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
             <p class="error-message">@ErrorMessage</p>
         }
 
+        <!-- Loginformular med data binding og validering -->
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
+            <DataAnnotationsValidator/>     <!-- Aktiverer validering ud fra datamodellen -->
+            <ValidationSummary/>            <!-- Viser evt. valideringsfejl samlet -->
 
             <div class="form-group">
-                <InputText @bind-Value="loginModel.Email" placeholder="Email" class="input-field" />
+                <!-- Inputfelt til e-mail -->
+                <InputText @bind-Value="loginModel.Email" placeholder="Email" class="input-field"/>
             </div>
             <div class="form-group">
-                <InputText @bind-Value="loginModel.Password" type="password" placeholder="Kodeord" class="input-field" />
+                <!-- Inputfelt til kodeord -->
+                <InputText @bind-Value="loginModel.Password" type="password" placeholder="Kodeord" class="input-field"/>
             </div>
 
             <div class="form-options">
-                <label><input type="checkbox" /> Husk mig</label>
+                <!-- Husk mig og glemt kodeord (statisk for nu) -->
+                <label><input type="checkbox"/> Husk mig</label>
                 <a href="#" class="forgot-password">Glemt dit password?</a>
             </div>
 
+            <!-- Submit-knap -->
             <button type="submit" class="login-button">Login</button>
         </EditForm>
     </div>
 </div>
 
 @code {
-    private LoginModel loginModel = new();
-    private string ErrorMessage = "";
-
+    private Login loginModel = new(); // Objekt der bruges til at binde e-mail og password fra formularen
+    private string ErrorMessage = "";      // Besked der vises til brugeren hvis login fejler
+    
+    // Formål: Sender loginoplysninger til backend via LoginService.
+    // Hvis login lykkes, gemmes brugeren i localStorage og man navigeres til forsiden.
+    // Hvis login fejler, vises en fejlbesked.
     private async Task HandleLogin()
     {
         var user = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
@@ -55,11 +68,5 @@
         {
             ErrorMessage = "Forkert email eller kodeord.";
         }
-    }
-
-    public class LoginModel
-    {
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
     }
 }

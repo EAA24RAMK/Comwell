@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     // Formål: Tjekker om en bruger eksisterer med de indtastede loginoplysninger og returnerer brugerdata.
     // Bruges: Når en bruger forsøger at logge ind på systemet via LoginPage.
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest request)
+    public async Task<IActionResult> Login(Login request)
     {
         // Finder brugeren med den angivne e-mail
         var user = await _userRepo.GetUserByEmailAsync(request.Email);
@@ -42,14 +42,5 @@ public class AuthController : ControllerBase
             user.Status,
             user.CreatedAt
         });
-    }
-
-    // Klasse: LoginRequest (Bruges kun her, så derfor er den ikke i Core/Models)
-    // Formål: Bruges som model til at modtage login-oplysninger fra frontend.
-    // Indeholder: To nødvendige felter – e-mail og password.
-    public class LoginRequest
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
     }
 }
