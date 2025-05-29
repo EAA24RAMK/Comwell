@@ -53,13 +53,6 @@ public class LearningMaterialController : ControllerBase
         return Ok(created);
     }
 
-    [HttpGet("{subtaskId:int}")]
-    public async Task<IActionResult> GetBySubtask(int subtaskId)
-    {
-        var materials = await _repo.GetBySubtaskIdAsync(subtaskId);
-        return Ok(materials);
-    }
-
     [HttpGet("download/{fileId}")]
     public async Task<IActionResult> Download(string fileId)
     {

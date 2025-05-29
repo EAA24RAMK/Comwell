@@ -1,5 +1,6 @@
 using Core.Models;
 using MongoDB.Driver; // Giver adgang til at arbejde med MongoDB-databasen
+using Microsoft.Extensions.Configuration;
 
 namespace ServerAPI.Repositories;
 
@@ -62,7 +63,7 @@ public class UserRepository : IUserRepository
     public async Task<bool> DeleteAsync(int id)
     {
         var result = await _users.DeleteOneAsync(u => u.Id == id);
-        return result.DeletedCount > 0; 
+        return result.DeletedCount > 0;
     }
     
     // Returnerer: En bruger baseret på deres ID, eller null hvis den ikke findes.

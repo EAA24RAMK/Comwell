@@ -30,11 +30,6 @@ public class LearningMaterialRepository : ILearningMaterialRepository
         return await _materials.Find(m => m.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<List<LearningMaterial>> GetBySubtaskIdAsync(int subtaskId)
-    {
-        return await _materials.Find(m => m.SubtaskId == subtaskId).ToListAsync();
-    }
-
     public async Task<LearningMaterial?> CreateAsync(LearningMaterial material)
     {
         int maxId = 0;

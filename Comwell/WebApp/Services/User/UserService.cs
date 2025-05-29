@@ -1,7 +1,6 @@
 using Core.Models;
 using System.Net.Http.Json;
-using System.Text.Json;     
-using Microsoft.JSInterop; 
+using Blazored.LocalStorage;
 
 namespace WebApp.Services;
 
@@ -12,15 +11,12 @@ public class UserService : IUserService
 {
     // Instansvariabel til at sende HTTP-anmodninger til backendens API.
     private readonly HttpClient _http;
-    
-    // Instansvariabel til at interagere med JavaScript, fx for at tilgå localStorage i browseren.
-    private readonly IJSRuntime _js;
+    private readonly ILocalStorageService _localStorage;
 
-    // Konstruktør hvor HttpClient og IJSRuntime bliver injected.
-    public UserService(HttpClient http, IJSRuntime js)
+    public UserService(HttpClient http, ILocalStorageService localStorage)
     {
         _http = http;
-        _js = js;
+        _localStorage = localStorage;
     }
 
     // Returnerer: En liste med alle brugere fra backendens API.
@@ -41,21 +37,9 @@ public class UserService : IUserService
         return null;
     }
     
-    // Skal kigges igennem, måske kan den laves anderledes
-    
-    // Returnerer: Den aktuelt loggede ind bruger ud fra localStorage, eller null hvis ingen fundet.
-    // Formål: Bruges til at hente den bruger der er logget ind, direkte fra browserens localStorage.
-    // Bruges fx til at vise navn og rolle i header eller til at validere adgang til sider.
     public async Task<User?> GetCurrentUserAsync()
     {
-        var userJson = await _js.InvokeAsync<string>("localStorage.getItem", "loggedInUser");
-
-        return string.IsNullOrEmpty(userJson)
-            ? null
-            : JsonSerializer.Deserialize<User>(userJson, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+        return await _localStorage.GetItemAsync<User>("loggedInUser");
     }
 
     // Returnerer: True hvis brugeren blev slettet, ellers false.
@@ -85,4 +69,5 @@ public class UserService : IUserService
         var response = await _http.PutAsJsonAsync($"api/user/{userId}/status", newStatus);
         return response.IsSuccessStatusCode;
     }
+
 }
