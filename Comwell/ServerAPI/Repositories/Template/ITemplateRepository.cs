@@ -6,5 +6,4 @@ public interface ITemplateRepository
 {
     Task<List<Template>> GetAllTemplatesAsync();
     Task<Template?> GetTemplateByIdAsync(int id);
-    Task UpdateTemplateAsync(Template template);
 }

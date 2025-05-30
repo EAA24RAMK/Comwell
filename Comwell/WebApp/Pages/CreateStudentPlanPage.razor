@@ -6,17 +6,20 @@
 @inject ITemplateService TemplateService
 @inject NavigationManager Nav
 
+<!-- Side til oprettelse af elevplaner -->
 <div class="page-container">
     <h3 class="form-title">Opret plan</h3>
 
+    <!-- Viser feedbackbesked hvis der er en -->
     @if (!string.IsNullOrEmpty(feedbackMessage))
     {
         <p>@feedbackMessage</p>
     }
 
+    <!-- Formular til oprettelse af elevplan -->
     <EditForm Model="planModel" OnValidSubmit="HandleSubmit">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+        <DataAnnotationsValidator />  <!-- Aktiverer validering baseret på datamodellen -->
+        <ValidationSummary />         <!-- Viser evt. valideringsfejl samlet -->
 
         <div class="form-group">
             <label>Vælg elev:</label>
@@ -31,7 +34,7 @@
 
         <div class="form-group">
             <label>Vælg skabelon:</label>
-            <select @onchange="OnTemplateChanged">
+            <select @bind="planModel.TemplateId" @bind:after="OnTemplateChanged">
                 <option value="">Vælg en skabelon</option>
                 @foreach (var template in templates)
                 {
@@ -45,21 +48,26 @@
             <InputDate @bind-Value="planModel.PeriodStart" />
         </div>
 
+        <!-- Gem knap -->
         <button type="submit">Gem plan</button>
     </EditForm>
 </div>
 
 @code {
-    private string feedbackMessage = "";
-    private List<User> students = new();
-    private List<Template> templates = new();
-    private User? currentUser;
+    private string feedbackMessage = "";        // Besked til brugeren efter handling
+    private List<User> students = new();        // Liste over elever
+    private List<Template> templates = new();   // Liste over skabeloner
+    private User? currentUser;                  // Den bruger der er logget ind
     
+    
+    // Model for elevplan der skal oprettes
     private StudentPlan planModel = new()
     {
         PeriodStart = DateTime.Today
     };
-
+    
+    // Formål: Henter lister over elever og skabeloner når siden indlæses.
+    // Sørger også for, at elever omdirigeres til forsiden, da de ikke må oprette planer.
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await UserService.GetAllUsersAsync();
@@ -73,27 +81,35 @@
         }
     }
     
-    private async Task OnTemplateChanged(ChangeEventArgs e)
+    // Formål: Når en skabelon vælges i dropdown-menuen, henter denne metode den valgte TemplateId
+    // fra databasen og kalder ApplyTemplateGoalsToPlan for at tilføje skabelonens mål til elevplanen.
+    private async Task OnTemplateChanged()
     {
-        if (int.TryParse(e.Value?.ToString(), out int templateId))
+        if (planModel.TemplateId > 0)
         {
-            planModel.TemplateId = templateId; // <- Tilføj dette!
-            var selectedTemplate = await TemplateService.GetTemplateByIdAsync(templateId);
-            if (selectedTemplate is not null)
+            var selectedTemplate = await TemplateService.GetTemplateByIdAsync(planModel.TemplateId);
+            if (selectedTemplate != null)
             {
                 await ApplyTemplateGoalsToPlan(selectedTemplate);
             }
         }
     }
 
+    // Parametre: selectedTemplate – Skabelonen som målene skal kopieres fra.
+    // Formål: Kopierer målene fra skabelonen over i elevplanen. Justerer deadlines, så de passer
+    // i forhold til den startdato der er valgt på planen.
     private async Task ApplyTemplateGoalsToPlan(Template selectedTemplate)
     {
+        // Finder deadline på det første mål i skabelonen.
+        // Denne dato bruges som referencepunkt til at beregne alle andre deadlines.
         var referenceDate = selectedTemplate.Goals.First().Deadline;
-        var start = planModel.PeriodStart;
+        var start = planModel.PeriodStart;  // Henter startdatoen som brugeren har valgt for planen.
+        
+        // Gennemløber alle mål i skabelonen og justerer deres deadlines.
         var adjustedGoals = selectedTemplate.Goals.Select(goal =>
         {
-            var dayOffset = (goal.Deadline - referenceDate).Days;
-            return new Goal
+            var dayOffset = (goal.Deadline - referenceDate).Days; // Udregner forskydningen i antal dage mellem det nuværende mål og referencepunktet.
+            return new Goal // Opretter en kopi af målet, men justerer deadline, så det passer til startdatoen.
             {
                 Id = goal.Id,
                 Title = goal.Title,
@@ -106,15 +122,30 @@
             };
         }).ToList();
 
-        planModel.Goals = adjustedGoals;
-        planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline);
+        planModel.Goals = adjustedGoals; // Tildeler den opdaterede liste af mål til planen.
+        planModel.PeriodEnd = adjustedGoals.Max(g => g.Deadline); // Finder den seneste deadline blandt alle mål og sætter det som planens slutdato.
     }
 
+    // Formål: Gemmer den oprettede elevplan i databasen.
+    // Hvis brugeren ikke har valgt en elev og/eller skabelon, vises en fejlbesked.
+    // Når planen er gemt sendes brugeren til elevplansiden.
     private async Task HandleSubmit()
     {
+        if (planModel.TemplateId == 0 && planModel.StudentId == 0)
+        {
+            feedbackMessage = "Du mangler at udfylde elev og skabelon";
+            return;
+        }
+        
+        if (planModel.StudentId == 0)
+        {
+            feedbackMessage = "Du skal vælge en elev.";
+            return;
+        }
+        
         if (planModel.TemplateId == 0)
         {
-            feedbackMessage = "Du skal vælge en skabelon.";
+            feedbackMessage = "Du skal vælge en skabelon";
             return;
         }
         
@@ -122,7 +153,6 @@
         planModel.PeriodStart = planModel.PeriodStart.Date;
 
         await StudentPlanService.CreateStudentPlanAsync(planModel);
-        feedbackMessage = "Planen er gemt!";
         Nav.NavigateTo("/elevplaner");
     }
 }
