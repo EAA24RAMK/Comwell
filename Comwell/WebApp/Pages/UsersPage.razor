@@ -6,8 +6,12 @@
 
 <h3>Brugere</h3>
 
+<!-- Filtersektion til søgning og filtrering af brugere -->
 <div class="filters">
-    <input type="text" @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter bruger..." />
+    <!-- Søg efter brugernavn -->
+    <input type="text" @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter bruger..."/>
+    
+    <!-- Filtrer efter rolle -->
     <select @bind="selectedRole">
         <option value="">Alle roller</option>
         @foreach (var role in Roles)
@@ -15,6 +19,8 @@
             <option value="@role">@role</option>
         }
     </select>
+    
+    <!-- Filtrer efter hotel -->
     <select @bind="selectedHotel">
         <option value="">Alle lokationer</option>
         @foreach (var hotel in hotels)
@@ -22,13 +28,17 @@
             <option value="@hotel">@hotel</option>
         }
     </select>
+    
+    <!-- Vis knap til oprettelse af bruger, hvis den loggede bruger er HR -->
     @if (currentUser?.Role == "HR")
     {
         <button @onclick="CreateUser">+ Tilføj bruger</button>
     }
 </div>
 
+<!-- Liste over brugere -->
 <div class="user-list">
+    <!-- Header til listen -->
     <div class="user-card user-header">
         <div></div>
         <div class="header-label">Bruger</div>
@@ -38,6 +48,7 @@
         <div></div>
     </div>
 
+    <!-- Viser hver enkelt bruger som et kort -->
     @foreach (var user in FilteredUsers)
     {
         <div class="user-card">
@@ -55,6 +66,8 @@
             <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
                 @user.Status
             </div>
+            
+            <!-- Action-menu til HR-brugere -->
             <div class="user-actions">
                 @if (currentUser?.Role == "HR")
                 {
@@ -76,15 +89,19 @@
     }
 </div>
 
+<!-- Modal til oprettelse af en ny bruger -->
 @if (showCreateModal)
 {
     <div class="modal-background">
         <div class="modal-box">
             <h5>Opret ny bruger</h5>
+            <!-- Formularfelter -->
             <input @bind="newUser.Name" placeholder="Navn" />
             <input @bind="newUser.Email" placeholder="Email" />
             <input @bind="newUser.Password" placeholder="Adgangskode" type="password" />
             <input @bind="newUser.Hotel" placeholder="Hotel" />
+            
+            <!-- Vælg rolle -->
             <select @bind="newUser.Role">
                 <option disabled selected>Vælg rolle</option>
                 @foreach (var role in Roles)
@@ -92,11 +109,15 @@
                     <option value="@role">@role</option>
                 }
             </select>
+            
+            <!-- Vælg status -->
             <select @bind="newUser.Status">
                 <option disabled selected value="">Vælg status</option>
                 <option value="Aktiv">Aktiv</option>
                 <option value="Inaktiv">Inaktiv</option>
             </select>
+            
+            <!-- Hvis rollen er Elev, vis valg af skoletype -->
             @if (newUser.Role == "Elev")
             {
                 <select @bind="newUser.SchoolType">
@@ -107,41 +128,50 @@
                     <option value="Ordinær">Ordinær</option>
                 </select>
             }
+            
+            <!-- Knapper -->
             <button @onclick="SaveUserAsync">Gem</button>
             <button @onclick="CloseCreateModal">Luk</button>
-            @if (!string.IsNullOrEmpty(createMessage))
+            
+            <!-- Viser besked ved oprettelse -->
+            @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <p>@createMessage</p>
+                <p>@errorMessage</p>
             }
         </div>
     </div>
 }
 
 @code {
-    private static readonly List<string> Roles = new() { "Elev", "Køkkenchef", "HR", "Kok" };
-    private User? currentUser;
-    private List<User> users = new();
-    private List<string> hotels = new();
+    private static readonly List<string> Roles = new() { "Elev", "Køkkenchef", "HR", "Kok" }; // Roller der kan vælges
+    private User? currentUser; // Den aktuelle loggede bruger
+    private List<User> users = new(); // Liste over alle brugere
+    private List<string> hotels = new(); // Liste over hoteller brugt til filtrering
     
-    // Filter state
-    private string searchTerm = "";
-    private string selectedRole = "";
-    private string selectedHotel = "";
+    // Filtrering
+    private string searchTerm = ""; // Søgefelt til filtrering af brugere baseret på navn
+    private string selectedRole = ""; // Valgt rolle til filtrering
+    private string selectedHotel = ""; // Valgt hotel til filtrering
     
-    // UI state
-    private int? activeActionMenuUserId;
-    private bool showCreateModal;
+    // UI
+    private int? activeActionMenuUserId; // Holder styr på hvilken bruger man via (⋮) vil slette eller gøre Inaktiv/Aktiv
+    private bool showCreateModal; // Viser/skjuler opret bruger-modal
     
-    // Create user state
-    private User newUser = new();
-    private string createMessage = "";
-
+    // Tilføj bruger
+    private User newUser = new(); // Den bruger der oprettes
+    private string errorMessage = ""; // Fejlbesked
+    
+    // Returnerer en liste over brugere filtreret ud fra søgefelt, rolle og hotel
     private IEnumerable<User> FilteredUsers =>
         users.Where(u =>
             (string.IsNullOrEmpty(searchTerm) || u.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
             (string.IsNullOrEmpty(selectedRole) || u.Role == selectedRole) &&
             (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel));
 
+    // Formål: Initialiserer siden ved at hente den aktuelle bruger, brugerliste og hoteller.
+    // Funktion:
+    // 1. Henter den bruger, som er logget ind, via UserService.
+    // 2. Tjekker om den loggede bruger er "Elev" – i så fald sendes de til forsiden.
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -153,26 +183,32 @@
 
         users = await UserService.GetAllUsersAsync();
         hotels = users
-            .Select(u => u.Hotel)
-            .Where(h => !string.IsNullOrEmpty(h))
-            .Distinct()
-            .OrderBy(h => h)
-            .ToList();
+            .Select(u => u.Hotel) // Tager alle brugers hotel
+            .Where(h => !string.IsNullOrEmpty(h)) // Fjerner tomme eller null hoteller
+            .Distinct() // Sørger for at hvert hotel kun vises en gang
+            .OrderBy(h => h) // Sortere listen i alfabetisk rækkefølge
+            .ToList(); // Laver det om til en liste, som gemmes i hotels
     }
 
+    // Formål: Åbner modal-vinduet til oprettelse af en ny bruger.
     private void CreateUser()
     {
         showCreateModal = true;
         newUser = new();
-        createMessage = "";
+        errorMessage = "";
     }
-
+    
+    // Formål: Lukker modal-vinduet uden at gemme noget.
     private void CloseCreateModal() => showCreateModal = false;
 
+    // Formål: Gemmer en ny bruger i databasen.
+    // Funktion:
+    // 1. Sender newUser til backend via UserService.
+    // 2. Hvis brugeren ikke blev oprettet korrekt vises fejlbesked.
     private async Task SaveUserAsync()
     {
         var result = await UserService.CreateUserAsync(newUser);
-        createMessage = result != null ? "Bruger oprettet!" : "Noget gik galt under oprettelsen";
+        if (result == null) errorMessage = "Noget gik galt under oprettelsen";
         
         if (result != null)
         {
@@ -181,6 +217,11 @@
         }
     }
 
+    // Formål: Sletter en bruger.
+    // Funktion:
+    // 1. Tjekker om den loggede bruger er HR.
+    // 2. Kalder UserService for at slette brugeren med angivet ID.
+    // 3. Hvis sletningen lykkes, hentes listen af brugere igen.
     private async Task DeleteUserAsync(int userId)
     {
         if (currentUser?.Role == "HR" && await UserService.DeleteUserAsync(userId))
@@ -190,9 +231,18 @@
         activeActionMenuUserId = null;
     }
 
+    // Formål: Viser eller skjuler action-menuen (⋮) for en bestemt bruger.
+    // Funktion:
+    // - Hvis brugeren klikker på menuen igen, lukkes den.
+    // - Hvis en anden brugers menu åbnes, vises den i stedet.
     private void ToggleActionMenu(int userId) =>
         activeActionMenuUserId = activeActionMenuUserId == userId ? null : userId;
 
+    // Formål: Returnerer initialer ud fra brugerens fulde navn.
+    // Funktion:
+    // - Splitter navnet op ved mellemrum.
+    // - Hvis der er flere navne, bruges første bogstav i begge navne.
+    // - Hvis kun ét navn, bruges første bogstav.
     private static string GetInitials(string fullName)
     {
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -204,6 +254,10 @@
         };
     }
     
+    // Formål: Skifter en brugers status mellem Aktiv og Inaktiv.
+    // Funktion:
+    // - Opdaterer status via UserService.
+    // - Når status er ændret, opdateres brugerlisten.
     private async Task ToggleUserStatusAsync(User user)
     {
         var newStatus = user.Status == "Aktiv" ? "Inaktiv" : "Aktiv";
