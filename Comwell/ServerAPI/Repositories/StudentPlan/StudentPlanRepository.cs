@@ -4,35 +4,44 @@ using ServerAPI.Repositories;
 
 namespace ServerAPI;
 
+/* Repository overblik
+- Ansvarlig for alt, der har med elevplaner (StudentPlan) at gøre.
+- Kommunikerer med MongoDB for at oprette, hente, opdatere og slette elevplaner.
+- Bruger TemplateRepository og NotificationRepository til at hente templates og håndtere notifikationer. */
 public class StudentPlanRepository : IStudentPlanRepository
 {
-    private readonly IMongoCollection<StudentPlan> _studentPlan;
-    private readonly ITemplateRepository _templateRepo;
-    private readonly INotificationRepository _notificationRepo;
-
-    public StudentPlanRepository(IConfiguration config)
+    private readonly IMongoCollection<StudentPlan> _studentPlan; // Instansvariabel for StudentPlan-collection i MongoDB
+    private readonly ITemplateRepository _templateRepo; // Instansvariabel til at hente templates
+    private readonly INotificationRepository _notificationRepo; // Instansvariabel til at håndtere notifikationer
+    private readonly IUserRepository _userRepo; // Instansvariabel til at hente brugere
+    
+    // Konstruktøren sørger for at etablere forbindelsen til MongoDB.
+    // connection string og databasenavn læses fra appsettings.json.
+    // Opretter adgang til både templates og notifikationer, så vi kan hente skabeloner og styre notifikationer.
+    public StudentPlanRepository(IConfiguration config, ITemplateRepository templateRepo, INotificationRepository notificationRepo, IUserRepository userRepo)
     {
         var client = new MongoClient(config["MongoDB:ConnectionString"]);
         var db = client.GetDatabase(config["MongoDB:DatabaseName"]);
         _studentPlan = db.GetCollection<StudentPlan>("studentplan");
         
-        _templateRepo = new TemplateRepository(config);
-        _notificationRepo = new NotificationRepository(config);
+        _templateRepo = templateRepo;
+        _notificationRepo = notificationRepo;
+        _userRepo = userRepo;;
     }
     
-    // Finder højeste ID og plusser med en, og giver den ID til ny plan
-    // Opretter og indsætter ny plan i database
+    // Parametre: createPlan – den plan der skal oprettes.
+    // Formål: Opretter en ny elevplan i databasen. Sætter ID, deadlines, mål og skoleperioder baseret på skabelonen.
     public async Task CreateStudentPlanAsync(StudentPlan createPlan)
     {
-        // Hent template fra database
+        // Henter den tilknyttede template fra database
         var template = await _templateRepo.GetTemplateByIdAsync(createPlan.TemplateId);
         if (template == null)
             throw new Exception("Template not found");
 
-        // Kopiér Goals fra template
+        // Kopier målene fra template over i planen
         createPlan.Goals = template.Goals;
 
-        // Sæt slutdato baseret på template-title
+        // Sætter slutdato baseret på hvilken template det er
         var title = template.Title.ToLower();
         if (title.Contains("1. praktikperiode"))
             createPlan.PeriodEnd = createPlan.PeriodStart.AddDays(52 * 7);
@@ -45,13 +54,13 @@ public class StudentPlanRepository : IStudentPlanRepository
         else
             createPlan.PeriodEnd = createPlan.PeriodStart;
 
-        // Beregn deadlines
+        // Beregner deadlines for hvert mål ved at kalde CalculateDeadline()
         foreach (var goal in createPlan.Goals)
         {
             goal.Deadline = CalculateDeadline(createPlan.PeriodStart, goal.Title.ToLower(), title);
         }
 
-        // Sæt ID
+        // Finder højeste ID og plusser med en, og giver den ID til den nye plan
         int maxId = 0;
         var allPlans = await _studentPlan.Find(_ => true).ToListAsync();
         if (allPlans.Any())
@@ -60,13 +69,22 @@ public class StudentPlanRepository : IStudentPlanRepository
         }
         createPlan.Id = maxId + 1;
         
-        createPlan.SchoolPeriods = new List<SchoolPeriod>();
+        createPlan.SchoolPeriods = new List<SchoolPeriod>(); // Opretter tom liste for skoleperioder
+        
+        // Henter alle skoleperioder fra alle elevplaner
+        int maxSchoolId = 0;
+        var allSchoolPeriods = allPlans 
+            .Where(p => p.SchoolPeriods != null) //Filtrerer planer der har skoleperioder
+            .SelectMany(p => p.SchoolPeriods!) // Samler alle skoleperioder i en liste
+            .ToList();
 
-        // Find næste SchoolPeriod ID
-        int maxSchoolId = allPlans.SelectMany(p => p.SchoolPeriods ?? new List<SchoolPeriod>())
-            .DefaultIfEmpty()
-            .Max(sp => sp?.Id ?? 0);
+        // Hvis der findes skoleperioder i databasen, finder højeste ID 
+        if (allSchoolPeriods.Any())
+        {
+            maxSchoolId = allSchoolPeriods.Max(sp => sp.Id);
+        }
 
+        // Tilføjer skoleperiode baseret på praktikperioden og giver dem unikt Id
         if (title.Contains("1. praktikperiode"))
         {
             createPlan.SchoolPeriods.Add(new SchoolPeriod
@@ -100,7 +118,7 @@ public class StudentPlanRepository : IStudentPlanRepository
         else if (title.Contains("afslutning"))
             createPlan.SchoolPeriods.Add(new SchoolPeriod
             {
-                Id = maxSchoolId + 2,
+                Id = maxSchoolId + 1,
                 Title = "Fagprøve",
                 TemplateId = null,
                 DurationWeeks = 2
@@ -108,42 +126,46 @@ public class StudentPlanRepository : IStudentPlanRepository
 
         await _studentPlan.InsertOneAsync(createPlan);
     }
-
     
-    // Henter alle elevplaner og returnerer dem i en liste
+    // Returnerer: En liste med alle elevplaner i databasen.
+    // Formål: Henter alle elevplaner, bruges i Elevplaner-siden.
     public async Task<List<StudentPlan>> GetAllPlansAsync()
     {
         return await _studentPlan.Find(_ => true).ToListAsync();
     }
 
-    // Henter en elevs planer ud fra Student ID returner i en liste
+    // Returnerer: En liste med alle planer for en specifik elev.
+    // Parametre: studentId – ID på eleven.
+    // Formål: Henter alle planer for en bestemt elev, bruges i Elevplan-siden og dropdown på elevplaner-siden..
     public async Task<List<StudentPlan>> GetPlansByStudentAsync(int studentId)
     {
         return await _studentPlan.Find(p => p.StudentId == studentId).ToListAsync();
     }
-
-    // Henter alle elevplaner fra et hotel, så køkkenchefen kan se sine elevers planer
-    // Til at elever kun kan se deres egen plan
+    
+    // Returnerer: En liste af elevplaner tilknyttet et bestemt hotel.
+    // Parametre: hotel – Navn på hotellet.
+    // Formål: Bruges fx af HR til at få overblik over alle elever på et specifikt hotel.
     public async Task<List<StudentPlan>> GetPlansByHotelAsync(string hotel)
     {
-        var client = new MongoClient(_studentPlan.Database.Client.Settings);
-        var userCollection = client
-            .GetDatabase(_studentPlan.Database.DatabaseNamespace.DatabaseName)
-            .GetCollection<User>("user");
+        var allUsers = await _userRepo.GetAllAsync();
+        var studentIds = allUsers
+            .Where(u => u.Hotel == hotel && u.Role == "Elev")
+            .Select(u => u.Id)
+            .ToList();
         
-        var students = await userCollection
-            .Find(u => u.Hotel == hotel && u.Role == "Elev")
-            .Project(u => u.Id)
-            .ToListAsync();
-        
-        return await _studentPlan.Find(p => students.Contains(p.StudentId)).ToListAsync();
+        return await _studentPlan.Find(p => studentIds.Contains(p.StudentId)).ToListAsync();
     }
     
+    // Returnerer: En elevplan baseret på ID, eller null hvis den ikke findes.
+    // Parametre: id – Planens ID.
+    // Formål: Bruges til at hente en specifik plan.
     public async Task<StudentPlan?> GetPlanByIdAsync(int id)
     {
         return await _studentPlan.Find(p => p.Id == id).FirstOrDefaultAsync();
     }
 
+    // Parametre: updatedPlan – Den opdaterede plan.
+    // Formål: Opdaterer en eksisterende elevplan og fjerner notifikationer, hvis mål er fuldført.
     public async Task UpdateStudentPlanAsync(StudentPlan updatedPlan)
     {
         var existingPlan = await _studentPlan.Find(p => p.Id == updatedPlan.Id).FirstOrDefaultAsync();
@@ -159,14 +181,26 @@ public class StudentPlanRepository : IStudentPlanRepository
                     previousGoal.Status != "Fuldført" &&
                     updatedGoal.Status == "Fuldført")
                 {
-                    await _notificationRepo.RemoveGoalNotificationForAllUsersAsync(updatedPlan.Id, updatedGoal.Id);
+                    await _notificationRepo.RemoveGoalNotificationForAllUsersAsync(updatedPlan.Id, updatedGoal.Id); // Kalder RemoveGoal... metode i NotificationRepository.
                 }
             }
         }
 
-        await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan);
+        await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan); // Udskift hele planen med den opdaterede version
     }
     
+    // Returnerer: True hvis planen blev slettet, ellers false.
+    // Parametre: id – ID på planen der skal slettes.
+    // Formål: Bruges til at fjerne en hel elevplan fra databasen.
+    public async Task<bool> DeleteStudentPlanAsync(int id)
+    {
+        var result = await _studentPlan.DeleteOneAsync(p => p.Id == id);
+        return result.DeletedCount > 0;
+    }
+    
+    // Returnerer: Deadline som DateTime.
+    // Parametre: periodStart – Startdato for perioden, goalTitle – målets titel, planTitle – planens titel.
+    // Formål: Beregner en passende deadline for et mål baseret på planens type og målets navn.
     private DateTime CalculateDeadline(DateTime periodStart, string goalTitle, string planTitle)
     {
         if (planTitle.Contains("1. praktik"))
@@ -203,13 +237,6 @@ public class StudentPlanRepository : IStudentPlanRepository
         }
 
         return periodStart;
-    }
-    
-    // sletter en hel studentplan
-    public async Task<bool> DeleteStudentPlanAsync(int id)
-    {
-        var result = await _studentPlan.DeleteOneAsync(p => p.Id == id);
-        return result.DeletedCount > 0;
     }
 }
 
