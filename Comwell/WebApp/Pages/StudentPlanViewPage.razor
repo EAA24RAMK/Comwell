@@ -15,20 +15,20 @@
 <!-- Filtrering efter hotel og elev -->
 <div class="mb-3 d-flex gap-3">
     <div>
-        <select @onchange="OnHotelChanged" class="form-select">
+        <select @bind="selectedHotel" class="form-select">
             <option value="">Alle hoteller</option>
             @foreach (var hotel in allHotels)
             {
-                <option value="@hotel" selected="@(hotel == selectedHotel)">@hotel</option>
+                <option value="@hotel">@hotel</option>
             }
         </select>
     </div>
     <div>
-        <select @onchange="OnStudentChanged" class="form-select">
+        <select @bind="selectedStudentId" class="form-select">
             <option value="-1">Alle elever</option>
             @foreach (var user in FilteredUsers)
             {
-                <option value="@user.Id" selected="@(user.Id == selectedStudentId)">
+                <option value="@user.Id">
                     @user.Name (@user.Hotel)
                 </option>
             }
@@ -334,6 +334,12 @@ else
         {
             var studentIds = FilteredUsers.Select(u => u.Id).ToHashSet();
             filtered = filtered.Where(p => studentIds.Contains(p.StudentId));
+            
+            // Reset student selection when hotel changes
+            if (selectedStudentId != -1 && !studentIds.Contains(selectedStudentId))
+            {
+                selectedStudentId = -1;
+            }
         }
 
         if (selectedStudentId != -1)
@@ -343,15 +349,6 @@ else
 
         return filtered;
     }
-
-    private void OnHotelChanged(ChangeEventArgs e)
-    {
-        selectedHotel = e.Value?.ToString() ?? "";
-        selectedStudentId = -1;
-    }
-
-    private void OnStudentChanged(ChangeEventArgs e) =>
-        selectedStudentId = int.TryParse(e.Value?.ToString(), out var id) ? id : -1;
 
     private void TogglePlan(int planId) =>
         _ = !openPlanIds.Add(planId) ? openPlanIds.Remove(planId) : true;
