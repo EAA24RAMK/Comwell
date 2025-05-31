@@ -8,9 +8,11 @@
 @inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
+<!-- Side til visning og administration af elevplaner -->
 <h3>Elevplaner</h3>
 <p class="welcome-text">Her er et samlet overblik over alle elevplaner.</p>
 
+<!-- Filtrering efter hotel og elev -->
 <div class="mb-3 d-flex gap-3">
     <div>
         <select @onchange="OnHotelChanged" class="form-select">
@@ -34,16 +36,20 @@
     </div>
 </div>
 
+<!-- Viser en besked hvis der ikke er nogen planer -->
 @if (plans?.Any() != true)
 {
     <p>Ingen planer fundet.</p>
 }
 else
 {
+    <!-- Gennemløb og visning af planer -->
     @foreach (var plan in FilteredPlans())
     {
         <div class="plan-box">
+            <!-- Viser skabelontitel -->
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
+            <!-- Handlingsmenu (fx slet plan) -->
             <div class="plan-actions">
                 <button @onclick="() => ToggleActionMenu(plan.Id)">⋮</button>
                 @if (activeActionMenuPlanId == plan.Id)
@@ -53,10 +59,13 @@ else
                     </div>
                 }
             </div>
+            
+            <!-- Vis elevens navn -->
             <p><strong>Elev:</strong> @userNamesById.GetValueOrDefault(plan.StudentId, "(Ukendt)")</p>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
 
+            <!-- Køkkenchefens godkendelse -->
             @if (currentUser?.Role == "Køkkenchef")
             {
                 if (!plan.IsApprovedByChef)
@@ -73,31 +82,42 @@ else
                 <p class="text-success mt-2">✔ Praktikperiode godkendt af køkkenchef</p>
             }
 
+            <!-- Vis og skjul mål -->
             <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
-                Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+                Mål
+                @if (openPlanIds.Contains(plan.Id))
+                {
+                    <span>▼</span>
+                }
+                else
+                {
+                    <span>▶</span>
+                }
             </button>
 
+            <!-- Viser alle mål -->
             @if (openPlanIds.Contains(plan.Id))
             {
                 @foreach (var goal in plan.Goals)
                 {
-                    <GoalDisplayComponent 
+                    <GoalDisplayComponent
                         goal="goal"
                         plans="plans"
                         plan="plan"
                         allMaterials="allMaterials"
                         currentUser="currentUser"
-                        refresh="EventCallback.Factory.Create(this, () => StateHasChanged())" />
+                        refresh="EventCallback.Factory.Create(this, () => StateHasChanged())"/>
                 }
 
                 <button class="bi bi-plus" @onclick="() => StartAddingNewGoal(plan.Id)">Tilføj nyt mål</button>
 
                 @if (newGoalPlanId == plan.Id)
                 {
+                    <!-- Formular til at tilføje nyt mål -->
                     <div class="new-goal-form">
                         <h5>Nyt mål</h5>
                         <label>Titel:</label>
-                        <InputText @bind-Value="newGoalTitle" />
+                        <InputText @bind-Value="newGoalTitle"/>
 
                         <label>Kategori:</label>
                         <select @bind="newGoalCategory">
@@ -111,6 +131,7 @@ else
                 }
             }
 
+            <!-- Viser skoleperioder -->
             @foreach (var school in plan.SchoolPeriods)
             {
                 <div class="school-period">
@@ -118,9 +139,10 @@ else
 
                     @if (!school.IsDateConfirmed)
                     {
+                        <!-- Formular til at vælge startdato -->
                         <div>
                             <label>Startdato:</label>
-                            <InputDate @bind-Value="school.StartDate" class="form-control mb-2" />
+                            <InputDate @bind-Value="school.StartDate" class="form-control mb-2"/>
                             <button @onclick="() => SaveSchoolPeriodDate(plan, school)">Gem dato</button>
                         </div>
                     }
@@ -137,6 +159,7 @@ else
                         }
                     }
 
+                    <!-- Godkendelse af skoleperioder -->
                     <div class="d-flex align-items-center gap-2">
                         @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
                         {
@@ -153,13 +176,23 @@ else
                     </div>
                 </div>
             }
-            
+
+            <!-- Vis og skjul noter -->
             <h5>
                 <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
-                    Noter @if (openNotePlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+                    Noter
+                    @if (openNotePlanIds.Contains(plan.Id))
+                    {
+                        <span>▼</span>
+                    }
+                    else
+                    {
+                        <span>▶</span>
+                    }
                 </button>
             </h5>
 
+            <!-- Viser noter -->
             @if (openNotePlanIds.Contains(plan.Id))
             {
                 @foreach (var note in plan.Notes)
@@ -172,6 +205,7 @@ else
 
                 @if (addingNoteForPlanId == plan.Id)
                 {
+                    <!-- Formular til at tilføje ny note -->
                     <div class="note-form">
                         <textarea class="form-control mb-2"
                                   @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
@@ -191,33 +225,35 @@ else
 }
 
 @code {
-    // Core Data
-    private List<StudentPlan> plans = new();
-    private List<Template> templates = new();
-    private List<LearningMaterial> allMaterials = new();
-    private User? currentUser;
-    private Dictionary<int, string> userNamesById = new();
+    // Holder styr på plan-relaterede data
+    private List<StudentPlan> plans = new();                     // Liste over alle elevplaner
+    private List<Template> templates = new();                    // Liste over skabeloner
+    private List<LearningMaterial> allMaterials = new();         // Liste over alt læringsmateriale
+    private User? currentUser;                                   // Bruger der er logget ind
+    private Dictionary<int, string> userNamesById = new();       // Slår StudentId op til navn
 
-    // Filter State
-    private List<User> allUsers = new();
-    private List<string> allHotels = new();
-    private int selectedStudentId = -1;
-    private string selectedHotel = "";
+    // Filter – holder styr på filtervalg
+    private List<User> allUsers = new();                         // Liste over alle brugere
+    private List<string> allHotels = new();                      // Liste over alle hoteller
+    private int selectedStudentId = -1;                          // ID på valgt elev (-1 = alle)
+    private string selectedHotel = "";                           // Valgt hotel
 
-    // UI State
-    private HashSet<int> openPlanIds = new();
-    private HashSet<int> openNotePlanIds = new();
-    private int activeActionMenuPlanId = -1;
+    // UI – styrer hvilke sektioner der er åbne
+    private HashSet<int> openPlanIds = new();                    // Åbne planer (vis mål)
+    private HashSet<int> openNotePlanIds = new();                // Åbne noter
+    private int activeActionMenuPlanId = -1;                     // ID på planen med åben menu
 
-    // Goal State
-    private int newGoalPlanId = -1;
-    private string newGoalTitle = "";
-    private string newGoalCategory = "";
+    // Goal – styrer mål der tilføjes
+    private int newGoalPlanId = -1;                               // ID på plan der tilføjes mål til
+    private string newGoalTitle = "";                             // Titel på nyt mål
+    private string newGoalCategory = "";                          // Kategori på nyt mål
 
-    // Note State
-    private int addingNoteForPlanId = -1;
-    private Dictionary<int, string> newNoteTexts = new();
+    // Note – styrer noter der tilføjes
+    private int addingNoteForPlanId = -1;                         // ID på plan der tilføjes note til
+    private Dictionary<int, string> newNoteTexts = new();         // Tekster til nye noter
 
+    // Returnerer: Liste over elever filtreret på hotel.
+    // Formål: Viser kun elever, og filtrerer dem hvis der er valgt et hotel.
     private IEnumerable<User> FilteredUsers => allUsers
         .Where(u => u.Role == "Elev" && 
                (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel))
