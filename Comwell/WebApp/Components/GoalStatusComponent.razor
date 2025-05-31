@@ -1,16 +1,19 @@
 @using Core.Models
 
+<!-- Viser tekst der beskriver status på målet -->
 @GoalStatusText
 
 @code {
-    [Parameter] public Goal Goal { get; set; } 
+    [Parameter] public Goal goal { get; set; } // [Parameter] – Det mål (Goal) vi skal vise status for.
 
+    // Egenskab: Returnerer en tekst, der beskriver målets status.
+    // Formål: Viser om målet er ikke startet, delvist fuldført eller fuldt færdigt.
     private string GoalStatusText
     {
         get
         {
-            int total = Goal.Subtasks.Count;
-            int completed = Goal.Subtasks.Count(s => s.Status == "Fuldført");
+            int total = goal.Subtasks.Count;
+            int completed = goal.Subtasks.Count(s => s.Status == "Fuldført");
 
             if (total == 0) return "Ingen delopgaver";
             if (completed == 0) return "Ikke startet";

@@ -100,6 +100,7 @@ else
             {
                 @foreach (var goal in plan.Goals)
                 {
+                    // Komponent
                     <GoalDisplayComponent
                         goal="goal"
                         plans="plans"
@@ -252,26 +253,20 @@ else
     private int addingNoteForPlanId = -1;                         // ID på plan der tilføjes note til
     private Dictionary<int, string> newNoteTexts = new();         // Tekster til nye noter
 
-    // Returnerer: Liste over elever filtreret på hotel.
-    // Formål: Viser kun elever, og filtrerer dem hvis der er valgt et hotel.
-    private IEnumerable<User> FilteredUsers => allUsers
-        .Where(u => u.Role == "Elev" && 
-               (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel))
-        .OrderBy(u => u.Name);
-
+    // Formål: Initialiserer siden. Henter brugerdata og elevplaner, medmindre man er elev.
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser is null || (currentUser.Role != "HR" && currentUser.Role != "Køkkenchef" && currentUser.Role != "Kok"))
+        if (currentUser?.Role == "Elev")
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        await LoadData();
-        await UpdateSchoolPeriodStatuses();
+        await LoadData(); // Henter alle data til siden
     }
 
+    // Formål: Henter alle brugere, hoteller, planer, skabeloner, læringsmaterialer og opdaterer status på skoleperioder.
     private async Task LoadData()
     {
         allUsers = await UserService.GetAllUsersAsync();
@@ -285,7 +280,9 @@ else
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         allMaterials = await MaterialService.GetAllAsync();
         templates = await TemplateService.GetAllTemplatesAsync();
+        await UpdateSchoolPeriodStatuses(); 
 
+        // Bruges til at finde navnet på elever baseret på Id
         foreach (var plan in plans)
         {
             if (!userNamesById.ContainsKey(plan.StudentId))
@@ -296,11 +293,13 @@ else
         }
     }
 
+    // Formål: Opdaterer status på skoleperioder. Ændrer status på skoleperioder automatisk hvis startdato er nået.
     private async Task UpdateSchoolPeriodStatuses()
     {
         var updatedPlans = false;
         var plansToUpdate = new List<StudentPlan>();
         
+        // Sætter skoleperiode i gang hvis startdato er nået.
         foreach (var plan in plans)
         {
             var planUpdated = false;
@@ -325,7 +324,16 @@ else
             await Task.WhenAll(plansToUpdate.Select(plan => StudentPlanService.UpdateStudentPlanAsync(plan)));
         }
     }
+    
+    // Returnerer: Liste over elever filtreret på hotel.
+    // Formål: Viser kun elever, og filtrerer dem hvis der er valgt et hotel.
+    private IEnumerable<User> FilteredUsers => allUsers
+        .Where(u => u.Role == "Elev" && 
+                    (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel))
+        .OrderBy(u => u.Name);
 
+    // Returnerer: Liste af filtrerede elevplaner.
+    // Formål: Filtrerer planer efter valgt hotel og/eller elev.
     private IEnumerable<StudentPlan> FilteredPlans()
     {
         var filtered = plans.AsEnumerable();
@@ -335,7 +343,6 @@ else
             var studentIds = FilteredUsers.Select(u => u.Id).ToHashSet();
             filtered = filtered.Where(p => studentIds.Contains(p.StudentId));
             
-            // Reset student selection when hotel changes
             if (selectedStudentId != -1 && !studentIds.Contains(selectedStudentId))
             {
                 selectedStudentId = -1;
@@ -350,15 +357,42 @@ else
         return filtered;
     }
 
-    private void TogglePlan(int planId) =>
-        _ = !openPlanIds.Add(planId) ? openPlanIds.Remove(planId) : true;
+    // Vis/skjul mål for en plan
+    private void TogglePlan(int planId)
+    {
+        bool openPlan = openPlanIds.Add(planId);
+        
+        if (!openPlan)
+        {
+            openPlanIds.Remove(planId);
+        }
+    }
 
-    private void ToggleNotes(int planId) =>
-        _ = !openNotePlanIds.Add(planId) ? openNotePlanIds.Remove(planId) : true;
+    // Vis/skjul noter for en plan
+    private void ToggleNotes(int planId)
+    {
+        bool openNote = openNotePlanIds.Add(planId);
+        
+        if (!openNote)
+        {
+            openNotePlanIds.Remove(planId);
+        }
+    }
+    
+    // Vis/skjul action-menu (⋮) for en plan
+    private void ToggleActionMenu(int planId)
+    {
+        if (activeActionMenuPlanId == planId)
+        {
+            activeActionMenuPlanId = -1;
+        }
+        else
+        {
+            activeActionMenuPlanId = planId;
+        }
+    }
 
-    private void ToggleActionMenu(int planId) =>
-        activeActionMenuPlanId = activeActionMenuPlanId == planId ? -1 : planId;
-
+    // Sletter en elevplan
     private async Task DeleteStudentPlanAsync(int planId)
     {
         if (await StudentPlanService.DeleteStudentPlanAsync(planId))
@@ -367,6 +401,7 @@ else
         }
     }
 
+    // Starter tilføjelse af nyt mål
     private void StartAddingNewGoal(int planId)
     {
         newGoalPlanId = planId;
@@ -374,6 +409,7 @@ else
         newGoalCategory = "";
     }
 
+    // Annullerer tilføjelse af mål
     private void CancelAddGoal()
     {
         newGoalPlanId = -1;
@@ -381,13 +417,18 @@ else
         newGoalCategory = "";
     }
 
+    // Parametre: plan – Den elevplan som målet skal tilføjes til.
+    // Formål: Tilføjer et nyt mål til elevplanen. 
+    // Henter input fra felterne (titel og kategori), tildeler et unikt ID, 
+    // Efterfølgende nulstilles inputfelter, og siden opdateres med den nye data.
     private async Task ConfirmAddGoal(StudentPlan plan)
     {
         if (string.IsNullOrWhiteSpace(newGoalTitle) || string.IsNullOrWhiteSpace(newGoalCategory)) return;
 
+        // sætter standardværdier. 
         var newGoal = new Goal
         {
-            Id = plan.Goals.Any() ? plan.Goals.Max(g => g.Id) + 1 : 1,
+            Id = plan.Goals.Any() ? plan.Goals.Max(g => g.Id) + 1 : 1, // Finder næste ledige ID
             Title = newGoalTitle,
             Category = newGoalCategory,
             Subtasks = new List<Subtask>(),
@@ -400,6 +441,9 @@ else
         await LoadData();
     }
 
+    // Parametre: planId – ID på den plan hvor der skal tilføjes en note.
+    // Formål: Bruges til at tilføje en ny note til en plan.
+    // Henter den aktuelle plan, så man kan tilføje en note.
     private void StartAddNote(int planId)
     {
         addingNoteForPlanId = planId;
@@ -409,8 +453,16 @@ else
         }
     }
 
-    private void CancelAddNote() => addingNoteForPlanId = -1;
+    // Formål: Annullerer tilføjelse af en ny note ved at nulstille den valgte plan.
+    private void CancelAddNote()
+    {
+        addingNoteForPlanId = -1;
+    }
 
+    // Parametre: plan – Den elevplan som noten skal tilføjes til.
+    // Formål: Gemmer en ny note. 
+    // Opretter en note med unikt ID og nuværende dato, tilføjer den til planen, gemmer opdateringen i databasen, 
+    // og opdaterer visningen med den nye note.
     private async Task SaveNote(StudentPlan plan)
     {
         if (!newNoteTexts.TryGetValue(plan.Id, out var noteText) || string.IsNullOrWhiteSpace(noteText))
@@ -418,18 +470,22 @@ else
 
         var newNote = new Note
         {
-            Id = plan.Notes.Any() ? plan.Notes.Max(n => n.Id) + 1 : 1,
-            Text = noteText.Trim(),
+            Id = plan.Notes.Any() ? plan.Notes.Max(n => n.Id) + 1 : 1, // Unikt ID
+            Text = noteText.Trim(), // Rydder for ekstra mellemrum
             CreatedAt = DateTime.Now
         };
 
         plan.Notes.Add(newNote);
         await StudentPlanService.UpdateStudentPlanAsync(plan);
-        newNoteTexts[plan.Id] = string.Empty;
-        addingNoteForPlanId = -1;
+        newNoteTexts[plan.Id] = string.Empty; // Nulstiller tekstfeltet
+        addingNoteForPlanId = -1; // Lukker noteformularen
         await LoadData();
     }
 
+    // Parametre:
+    // - plan – Planen som noten skal slettes fra.
+    // - noteId – ID på noten der skal slettes.
+    // Formål: Sletter en eksisterende note fra en plan baseret på note-ID. 
     private async Task DeleteNote(StudentPlan plan, int noteId)
     {
         plan.Notes.RemoveAll(n => n.Id == noteId);
@@ -437,6 +493,8 @@ else
         await LoadData();
     }
 
+    // Parametre: plan – Den elevplan der skal godkendes.
+    // Formål: Køkkenchef kan godkende en praktikperiode. 
     private async Task ApprovePlan(StudentPlan plan)
     {
         if (currentUser?.Role != "Køkkenchef") return;
@@ -446,6 +504,10 @@ else
         await LoadData();
     }
 
+    // Parametre:
+    // - plan – Den plan hvor skoleperioden findes.
+    // - school - den skoleperiode der skal godkendes
+    // Formål: Køkkenchef kan godkende en skoleperiode. 
     private async Task ApproveSchoolPeriod(StudentPlan plan, SchoolPeriod school)
     {
         if (currentUser?.Role != "Køkkenchef") return;
@@ -456,6 +518,11 @@ else
         await LoadData();
     }
 
+    // Parametre:
+    // - plan – Den plan hvor skoleperioden findes.
+    // - school – Skoleperioden der skal have gemt sin dato.
+    // Formål: Gemmer startdatoen for en skoleperiode. 
+    // Hvis startdatoen er sat og vi er forbi datoen, ændrer den også status til "I gang".
     private async Task SaveSchoolPeriodDate(StudentPlan plan, SchoolPeriod school)
     {
         if (!school.StartDate.HasValue) return;
@@ -470,6 +537,9 @@ else
         await LoadData();
     }
 
+    // Returnerer: En CSS-klasse baseret på status.
+    // Parametre: status – Status på skoleperiode eller mål.
+    // Formål: Returnerer korrekt baggrundsfarve baseret på status (bruges til badges i UI).
     private static string GetStatusClass(string status) => status switch
     {
         "Fuldført" => "bg-success",

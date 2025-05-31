@@ -4,20 +4,33 @@
 @inject NavigationManager Nav
 
 <div style="margin-left: 1rem; margin-bottom: 1rem;">
+    <!-- Knap der fold-ud/folder-ind målet og viser målets titel og status -->
     <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-        <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal" />
+        <strong>@goal.Title</strong> - <GoalStatusComponent goal="goal"/>
 
-        @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+        <!-- Viser pil op eller ned alt efter om målet er foldet ud -->
+        @if (openGoalIds.Contains(goal.Id))
+        {
+            <span>▼</span>
+        }
+        else
+        {
+            <span>▶</span>
+        }
     </button>
 
+    <!-- Hvis målet er foldet ud -->
     @if (openGoalIds.Contains(goal.Id))
     {
+        <!-- Hvis brugeren redigerer målet -->
         @if (editingGoalId == goal.Id)
         {
             <div>
+                <!-- Formular til at redigere målets titel -->
                 <label>Titel:</label>
-                <InputText @bind-Value="editableGoalTitle" />
+                <InputText @bind-Value="editableGoalTitle"/>
 
+                <!-- Formular til at redigere målets kategori -->
                 <label>Kategori:</label>
                 <select @bind="editableGoalCategory">
                     <option value="Skole">Skole</option>
@@ -26,44 +39,51 @@
             </div>
 
             <ul>
+                <!-- Liste over delmål under redigering -->
                 @for (int i = 0; i < editableSubtasks.Count; i++)
                 {
                     var index = i;
                     <li @key="index">
-                        <input type="checkbox"
-                               checked="@editableSubtasksCompleted[index]"
-                               @onchange="e => editableSubtasksCompleted[index] = (bool)e.Value" />
+                        <!-- Tekstfelt for delmål-tekst -->
                         <input value="@editableSubtasks[index]"
-                               @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty" />
+                               @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty"/>
+                        <!-- Knap til at fjerne delmålet -->
                         <button @onclick="() => RemoveSubtask(index)">Slet</button>
                     </li>
                 }
+                <!-- Knap til at tilføje nyt delmål -->
                 <li>
                     <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj delmål</button>
                 </li>
             </ul>
 
+            <!-- Gem og annuller knapper for redigering -->
             <button @onclick="() => SaveGoalChanges(plan, goal)"> Gem</button>
             <button @onclick="CancelEditing">Annuller</button>
         }
         else
         {
             <ul>
+                <!-- Liste over eksisterende delmål -->
                 @foreach (var subtask in goal.Subtasks)
                 {
                     <li class="d-flex align-items-center gap-2">
+                        <!-- Checkbox til at markere delmål som fuldført -->
                         <input type="checkbox"
                                disabled="@((subtask.Status == "Ikke startet"))"
                                checked="@(subtask.Status == "Fuldført")"
-                               @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)" />
+                               @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)"/>
 
+                        <!-- Start-knap for delmål -->
                         <button class="btn btn-sm btn-outline-secondary"
-                                @onclick="() => StartSubtask(plan, goal, subtask)">
+                                @onclick="() => StartSubtask(plan, subtask)">
                             Start
                         </button>
 
+                        <!-- Tekst for delmålet -->
                         @subtask.Text
 
+                        <!-- Badge der viser status på delmålet -->
                         @if (subtask.Status == "Ikke startet")
                         {
                             <span class="badge bg-secondary">Ikke startet</span>
@@ -79,11 +99,13 @@
                             <span class="badge bg-success">Fuldført</span>
                         }
 
+                        <!-- Badge hvis der er anmodet om fuldførelse -->
                         @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
                         {
                             <span class="badge bg-warning text-dark ms-2">Anmodet</span>
                         }
-                        @* Læringsmateriale knap *@
+                        
+                        <!-- Læringsmateriale knap hvis der findes materiale til delmålet -->
                         @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
                         {
                             <button class="btn btn-sm btn-info ms-2"
@@ -95,6 +117,7 @@
                 }
             </ul>
 
+            <!-- Deadline for målet, vises i rød hvis overskredet -->
             <p>
                 <strong>Deadline:</strong>
                 <span style="color:@(goal.Deadline < DateTime.Today ? "red" : "black")">
@@ -102,6 +125,7 @@
                 </span>
             </p>
 
+            <!-- Knapper til at redigere eller slette målet -->
             <button class="bi bi-pencil-square" @onclick="() => StartEditing(goal)"> Rediger</button>
             <button class="bi bi-trash" @onclick="() => DeleteGoal(plan, goal)"> ️Slet</button>
         }
@@ -109,43 +133,55 @@
 </div>
 
 @code {
-    [Parameter] public required Goal goal { get; set; }
-    [Parameter] public required List<StudentPlan> plans { get; set; }
-    [Parameter] public required StudentPlan plan { get; set; }
-    [Parameter] public required List<LearningMaterial> allMaterials { get; set; }
-    [Parameter] public required User currentUser { get; set; }
+    [Parameter] public required Goal goal { get; set; } // Mål-objektet der vises og redigeres
+    [Parameter] public required List<StudentPlan> plans { get; set; } // Liste over alle elevplaner (brugt til at finde og opdatere korrekt plan)
+    [Parameter] public required StudentPlan plan { get; set; } // Den aktuelle plan som målet hører til
+    [Parameter] public required List<LearningMaterial> allMaterials { get; set; } // Læringsmaterialer, bruges til at vise knapper hvis et subtask har materiale
+    [Parameter] public required User currentUser { get; set; } // Brugeren der er logget ind (elev, HR eller køkkenchef)
+    [Parameter] public required EventCallback refresh {get; set;} // Event der kan kaldes for at opdatere visningen
     
-    [Parameter] public required EventCallback refresh {get; set;}
-    
-    private HashSet<int> openGoalIds = new(); 
+    private HashSet<int> openGoalIds = new(); // ID'er på mål der er foldet ud
 
-    private int editingGoalId = -1;
-    private List<string> editableSubtasks = new();
+    private int editingGoalId = -1; // ID på det mål der er ved at blive redigeret
+    
+    // Lister til midlertidig redigering af delmål
+    private List<string> editableSubtasks = new(); 
     private List<bool> editableSubtasksCompleted = new();
+    
+    // Midlertidig redigering af målets titel og kategori
     private string editableGoalTitle = "";
     private string editableGoalCategory = "";
     
+    // Parametre: goalId – ID på målet der skal foldes ud eller skjules.
+    // Formål: Åbner eller lukker mål for at vise/skjule delmålene.
     private void ToggleGoal(int goalId)
     {
         if (!openGoalIds.Add(goalId))
             openGoalIds.Remove(goalId);
     }
     
-    private void RemoveSubtask(int index)
+    // Parametre: subtaskDel – delmålet der skal fjernes.
+    // Formål: Fjerner et delmål fra listen under redigering.
+    private void RemoveSubtask(int subtaskDel)
     {
-        if (index >= 0 && index < editableSubtasks.Count)
+        if (subtaskDel >= 0 && subtaskDel < editableSubtasks.Count)
         {
-            editableSubtasks.RemoveAt(index);
-            editableSubtasksCompleted.RemoveAt(index);
+            editableSubtasks.RemoveAt(subtaskDel);
+            editableSubtasksCompleted.RemoveAt(subtaskDel);
         }
     }
     
+    // Formål: Tilføjer et tomt delmål til listen under redigering.
     private void AddSubtask()
     {
         editableSubtasks.Add(string.Empty);
         editableSubtasksCompleted.Add(false);
     }
     
+    // Parametre: 
+    //   plan – Planen målet hører til.
+    //   goal – Målet der skal opdateres.
+    // Formål: Gemmer ændringer lavet på et mål (titel, kategori, delmål).
     private async Task SaveGoalChanges(StudentPlan plan, Goal goal)
     {
         var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);
@@ -157,8 +193,8 @@
         goalToUpdate.Title = editableGoalTitle;
         goalToUpdate.Category = editableGoalCategory;
 
-        goalToUpdate.Subtasks = new List<Subtask>();
-        for (int i = 0; i < editableSubtasks.Count; i++)
+        goalToUpdate.Subtasks = new List<Subtask>(); // Ny tom liste til delmål
+        for (int i = 0; i < editableSubtasks.Count; i++) 
         {
             if (!string.IsNullOrWhiteSpace(editableSubtasks[i]))
             {
@@ -170,27 +206,14 @@
             }
         }
         
-        // Evt. opdater målstatus hvis ønsket
-        if (goalToUpdate.Subtasks.All(s => s.Status == "Fuldført"))
-        {
-            goalToUpdate.Status = "Fuldført";
-        }
-        else if (goalToUpdate.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
-        {
-            goalToUpdate.Status = "I gang";
-        }
-        else
-        {
-            goalToUpdate.Status = "Ikke startet";
-        }
-        
         await StudentPlanService.UpdateStudentPlanAsync(planToUpdate);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
         
-        editingGoalId = -1; // <- nøglelinje
-        await refresh.InvokeAsync(); // <- så refreshes visningen bagefter
+        editingGoalId = -1; // Afslut redigering
+        await refresh.InvokeAsync(); // Opdater visning
     }
     
+    // Formål: Annullerer redigering af et mål og nulstiller inputfelter.
     private void CancelEditing()
     {
         editingGoalId = -1;
@@ -200,6 +223,12 @@
         editableGoalCategory = "";
     }
     
+    // Parametre:
+    //   plan – Den plan målet hører til.
+    //   goal – Målet som delmålet hører til.
+    //   subtask – Det delmål der toggles.
+    //   isCompleted – True hvis delmålet er fuldført, ellers false.
+    // Formål: Skifter status på et delmål og opdaterer målets status baseret på delmålenes tilstand.
     private async Task ToggleSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask, bool isCompleted)
     {
         subtask.Status = isCompleted ? "Fuldført" : "Ikke startet";
@@ -222,22 +251,20 @@
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
     
-    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
+    // Parametre:
+    //   plan – Den plan delmålet hører til.
+    //   subtask – Det delmål der startes.
+    // Formål: Skifter status på et delmål fra "Ikke startet" til "I gang" når eleven starter arbejdet.
+    private async Task StartSubtask(StudentPlan plan, Subtask subtask)
     {
         subtask.Status = "I gang";
-
-        // Opdater goal-status
-        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
-            goal.Status = "Fuldført";
-        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
-            goal.Status = "I gang";
-        else
-            goal.Status = "Ikke startet";
 
         await StudentPlanService.UpdateStudentPlanAsync(plan);
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser!);
     }
     
+    // Parametre: goal – Det mål der skal redigeres.
+    // Formål: Starter redigering af et mål ved at kopiere nuværende titel, kategori og delmål til midlertidige felter.
     private async Task StartEditing(Goal goal)
     {
         editingGoalId = goal.Id;
@@ -247,6 +274,10 @@
         editableSubtasksCompleted = goal.Subtasks.Select(s => s.Status == "Fuldført").ToList();
     }
     
+    // Parametre:
+    //   plan – Den plan målet hører til.
+    //   goal – Det mål der skal slettes.
+    // Formål: Sletter et mål fra planen og opdaterer databasen og visningen.
     private async Task DeleteGoal(StudentPlan plan, Goal goal)
     {
         var planToUpdate = plans.FirstOrDefault(p => p.Id == plan.Id);

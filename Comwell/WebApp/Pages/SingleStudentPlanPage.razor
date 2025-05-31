@@ -8,63 +8,93 @@
 @inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
-<h3>@(currentUser?.Name ?? "Min") elevplan</h3>
+<!-- Side til visning af en elevs egen elevplan -->
+<h3>@(currentUser?.Name) elevplan</h3>
 <p></p>
 
+<!-- Hvis der ikke findes nogen planer -->
 @if (plans?.Any() != true)
 {
     <p>Ingen planer fundet.</p>
 }
 else
 {
+    <!-- Gennemløb alle planer -->
     @foreach (var plan in plans)
     {
         <div class="plan-box">
+            <!-- Titel på skabelonen -->
             <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
+            <!-- Periode og oprettet af -->
             <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
             <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
 
+            <!-- Fold-ud knap til mål -->
             <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
-                Mål @if (openPlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+                Mål
+                @if (openPlanIds.Contains(plan.Id))
+                {
+                    <span>▼</span>
+                }
+                else
+                {
+                    <span>▶</span>
+                }
             </button>
 
+            <!-- Viser mål hvis planen er foldet ud -->
             @if (openPlanIds.Contains(plan.Id))
             {
                 @foreach (var goal in plan.Goals)
                 {
+                    <!-- Fold-ud knap til delmål -->
                     <div style="margin-left: 1rem; margin-bottom: 1rem;">
                         <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-                            <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal" />
-                            @if (openGoalIds.Contains(goal.Id)) { <span>▼</span> } else { <span>▶</span> }
+                            <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal"/>
+                            @if (openGoalIds.Contains(goal.Id))
+                            {
+                                <span>▼</span>
+                            }
+                            else
+                            {
+                                <span>▶</span>
+                            }
                         </button>
 
+                        <!-- Viser delmål hvis målet er foldet ud -->
                         @if (openGoalIds.Contains(goal.Id))
                         {
                             <ul>
                                 @foreach (var subtask in goal.Subtasks)
                                 {
                                     <li class="d-flex align-items-center gap-2">
+                                        <!-- Checkbox til delmål -->
                                         <input type="checkbox"
                                                disabled="@(subtask.Status == "Ikke startet")"
                                                checked="@(subtask.Status == "Fuldført")"
-                                               @onchange="e => RequestSubtaskCompletion(plan, goal, subtask)" />
-                                        
+                                               @onchange="e => RequestSubtaskCompletion(plan, subtask)"/>
+
+                                        <!-- Start-knap til delmål -->
                                         <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => StartSubtask(plan, goal, subtask)">
+                                                @onclick="() => StartSubtask(plan, subtask)">
                                             Start
                                         </button>
 
+                                        <!-- Tekst for delmålet -->
                                         @subtask.Text
 
+                                        <!-- Status-badge -->
                                         <span class="badge @GetStatusClass(subtask.Status)">
                                             @subtask.Status
                                         </span>
 
+                                        <!-- Viser badge hvis der er anmodet om fuldførelse -->
                                         @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
                                         {
                                             <span class="badge bg-warning text-dark ms-2">Anmodet om fuldførelse</span>
                                         }
 
+                                        <!-- Læringsmateriale knap hvis der er materiale -->
                                         @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
                                         {
                                             <button class="btn btn-sm btn-info ms-2"
@@ -79,11 +109,14 @@ else
                     </div>
                 }
             }
-            
+
+            <!-- Skoleperioder -->
             @foreach (var school in plan.SchoolPeriods)
             {
                 <div class="mb-4 p-3 border rounded">
                     <h5>@school.Title</h5>
+                    
+                    <!-- Viser start- og slutdato hvis valgt -->
                     @if (school.StartDate.HasValue && school.IsDateConfirmed)
                     {
                         var start = school.StartDate.Value;
@@ -95,10 +128,12 @@ else
                         <p class="text-muted"><em>Dato ikke valgt endnu</em></p>
                     }
 
+                    <!-- Status på skoleperiode -->
                     <span class="badge @GetStatusClass(school.Status)">
                         @school.Status
                     </span>
 
+                    <!-- Godkendt besked hvis skoleperiode er godkendt -->
                     @if (school.IsApproved)
                     {
                         <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
@@ -106,12 +141,22 @@ else
                 </div>
             }
 
+            <!-- Fold-ud knap til noter -->
             <h5>
                 <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
-                    Noter @if (openNotePlanIds.Contains(plan.Id)) { <span>▼</span> } else { <span>▶</span> }
+                    Noter
+                    @if (openNotePlanIds.Contains(plan.Id))
+                    {
+                        <span>▼</span>
+                    }
+                    else
+                    {
+                        <span>▶</span>
+                    }
                 </button>
             </h5>
 
+            <!-- Viser noter hvis de er foldet ud -->
             @if (openNotePlanIds.Contains(plan.Id))
             {
                 @foreach (var note in plan.Notes)
@@ -121,6 +166,7 @@ else
                     </div>
                 }
 
+                <!-- Formular til at tilføje ny note -->
                 @if (addingNoteForPlanId == plan.Id)
                 {
                     <div>
@@ -144,18 +190,19 @@ else
 }
 
 @code {
-    private List<StudentPlan> plans = new();
-    private List<Template> templates = new();
-    private List<LearningMaterial> allMaterials = new();
-    private User? currentUser;
+    private List<StudentPlan> plans = new(); // Liste over alle elevens planer
+    private List<Template> templates = new(); // Liste over alle skabeloner
+    private List<LearningMaterial> allMaterials = new(); // Liste over alt læringsmateriale tilknyttet delmål
+    private User? currentUser; // Den aktuelt loggede bruger (eleven)
     
-    // UI State
-    private HashSet<int> openPlanIds = new();
-    private HashSet<int> openGoalIds = new();
-    private HashSet<int> openNotePlanIds = new();
-    private int addingNoteForPlanId = -1;
-    private Dictionary<int, string> newNoteTexts = new();
+    // UI – styrer hvad der er foldet ud
+    private HashSet<int> openPlanIds = new();               // Åbne planer (for visning af mål)
+    private HashSet<int> openGoalIds = new();               // Åbne mål (for visning af delmål)
+    private HashSet<int> openNotePlanIds = new();           // Åbne noter for en plan
+    private int addingNoteForPlanId = -1;                   // ID på plan hvor man er ved at tilføje note
+    private Dictionary<int, string> newNoteTexts = new();   // Tekst-input til nye noter
 
+    // Formål: Initialiserer siden. Tjekker om brugeren er elev, og henter brugerdata og elevplaner.
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -168,34 +215,46 @@ else
         await LoadData();
     }
 
+    // Formål: Henter elevens planer, læringsmaterialer og skabeloner fra backend.
     private async Task LoadData()
     {
-        if (currentUser is null) return;
+        if (currentUser == null) return;
         
         plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
         allMaterials = await MaterialService.GetAllAsync();
         templates = await TemplateService.GetAllTemplatesAsync();
     }
 
+    // Parametre: planId – ID på planen der foldes ud/skjules.
+    // Formål: Fold-ud/fold-ind funktion for visning af mål under en plan.
     private void TogglePlan(int planId)
     {
         if (!openPlanIds.Add(planId))
             openPlanIds.Remove(planId);
     }
 
+    // Parametre: goalId – ID på målet der foldes ud/skjules.
+    // Formål: Fold-ud/fold-ind funktion for visning af delmål under et mål.
     private void ToggleGoal(int goalId)
     {
         if (!openGoalIds.Add(goalId))
             openGoalIds.Remove(goalId);
     }
 
+    // Parametre: planId – ID på planen hvor noter skal foldes ud/skjules.
+    // Formål: Fold-ud/fold-ind funktion for visning af noter under en plan.
     private void ToggleNotes(int planId)
     {
         if (!openNotePlanIds.Add(planId))
             openNotePlanIds.Remove(planId);
     }
 
-    private async Task RequestSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask)
+    // Parametre: 
+    //   plan – Den elevplan delmålet hører til.
+    //   subtask – Det delmål brugeren anmoder om at fuldføre.
+    // Formål: Eleven kan anmode om at få et delmål markeret som fuldført.
+    // Ændrer status til "Anmodet om fuldførelse" og opdaterer planen i databasen.
+    private async Task RequestSubtaskCompletion(StudentPlan plan, Subtask subtask)
     {
         if (subtask.Status == "I gang")
         {
@@ -205,7 +264,11 @@ else
         }
     }
 
-    private async Task StartSubtask(StudentPlan plan, Goal goal, Subtask subtask)
+    // Parametre: 
+    //   plan – Den elevplan delmålet hører til.
+    //   subtask – Det delmål brugeren vil starte.
+    // Formål: Eleven kan starte et delmål, ændrer status fra "Ikke startet" til "I gang".
+    private async Task StartSubtask(StudentPlan plan, Subtask subtask)
     {
         if (subtask.Status == "Ikke startet")
         {
@@ -215,6 +278,8 @@ else
         }
     }
 
+    // Parametre: planId – ID på den plan der skal tilføjes en ny note til.
+    // Formål: Starter processen for at tilføje en ny note til en plan.
     private void StartAddNote(int planId)
     {
         addingNoteForPlanId = planId;
@@ -224,8 +289,13 @@ else
         }
     }
 
+    // Formål: Annullerer tilføjelse af en ny note.
     private void CancelAddNote() => addingNoteForPlanId = -1;
 
+    // Parametre: plan – Den elevplan som noten skal tilføjes til.
+    // Formål: Gemmer en ny note. 
+    // Opretter en note med unikt ID og nuværende dato, tilføjer den til planen, gemmer opdateringen i databasen, 
+    // og opdaterer visningen med den nye note.
     private async Task SaveNote(StudentPlan plan)
     {
         if (!newNoteTexts.TryGetValue(plan.Id, out var noteText) || string.IsNullOrWhiteSpace(noteText))
@@ -245,6 +315,9 @@ else
         await LoadData();
     }
 
+    // Returnerer: En CSS-klasse baseret på status.
+    // Parametre: status – Status på skoleperiode eller mål.
+    // Formål: Returnerer korrekt baggrundsfarve baseret på status (bruges til badges i UI).
     private static string GetStatusClass(string status) => status switch
     {
         "Fuldført" => "bg-success",
