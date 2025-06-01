@@ -38,20 +38,31 @@ public class PostRepository : IPostRepository
         post.Id = maxId + 1; // Tildeler nyt ID
         
         post.CreatedAt = DateTime.UtcNow;
-        await _collection.InsertOneAsync(post); // Gemmer brugeren i databasen
+        await _collection.InsertOneAsync(post); // Gemmer opslag i databasen
         return post;
     }
 
+    // Parametre: id – ID på opslaget der skal slettes.
+    // Formål: Sletter et opslag fra databasen baseret på dets ID.
     public void Delete(int id)
     {
         _collection.DeleteOne(p => p.Id == id);
     }
 
+    // Returnerer: Liste af alle opslag.
+    // Formål: Henter alle opslag fra databasen.
     public List<Post> GetAll()
     {
         return _collection.Find(_ => true).ToList();
     }
 
+    // Returnerer: Liste af opslag målrettet brugeren.
+    // Parametre: 
+    //   username – E-mail på brugeren der er logget ind.
+    //   role – Brugerens rolle ("HR", "Køkkenchef", "Elev", "Kok".).
+    // Formål: Henter opslag baseret på brugerens rolle:
+    // - HR og Køkkenchef: Må se alle opslag.
+    // - Andre (fx elev): Må se opslag målrettet dem eller opslag uden målgruppe.
     public List<Post> GetForUser(string username, string role)
     {
         if (role == "HR" || role == "Køkkenchef")
@@ -60,11 +71,13 @@ public class PostRepository : IPostRepository
             return _collection.Find(_ => true).ToList();
         }
 
-        // Find brugerens ID
+        // Find bruger baseret på E-mail
         var user = _userCollection.Find(u => u.Email == username).FirstOrDefault();
         if (user == null) return new();
 
-        // Find opslag der er målrettet denne bruger eller ikke har nogen modtagere
+        // Find opslag der enten:
+        // - Ikke har målgruppe (TargetUserIds.Count == 0), eller
+        // - Har denne brugers ID i målgruppen
         return _collection.Find(post =>
             post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(user.Id)).ToList();
     }

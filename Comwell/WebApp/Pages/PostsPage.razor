@@ -4,6 +4,7 @@
 @inject IUserService UserService
 @inject IPostService PostService
 
+<!-- Hvis ingen bruger er logget ind -->
 @if (currentUser == null)
 {
     <p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
@@ -13,22 +14,27 @@ else
     <div class="posts-container">
         <h3>Opslagstavle</h3>
 
+        <!-- Søgning og opret-knap -->
         <div class="topbar">
             <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
             <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
         </div>
 
+        <!-- Liste over opslag -->
         <div class="posts-list">
             @if (FilteredPosts.Any())
             {
                 @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
                 {
                     <div class="post-card">
+                        <!-- Header med forfatter og metadata -->
                         <div class="post-header">
                             <div class="post-author-avatar">@GetInitials(post.Author)</div>
                             <div class="post-meta">
                                 <div class="post-title">@post.Title</div>
                                 <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                                
+                                <!-- Viser målgruppe hvis bruger er HR eller Køkkenchef -->
                                 @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
                                 {
                                     if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
@@ -50,6 +56,8 @@ else
                                     }
                                 }
                             </div>
+                            
+                            <!-- Mulighed for at slette opslag hvis man må -->
                             @if (CanDeletePost(post))
                             {
                                 <div class="post-options">
@@ -63,7 +71,11 @@ else
                                 </div>
                             }
                         </div>
+                        
+                        <!-- Opslagets indhold -->
                         <p class="post-content">@post.Content</p>
+                        
+                        <!-- Eventuelt link tilknyttet opslag -->
                         @if (!string.IsNullOrWhiteSpace(post.Url))
                         {
                             <h10 class="post-link">
@@ -83,15 +95,19 @@ else
         </div>
     </div>
 
+    <!-- Modal til oprettelse af nyt opslag -->
     @if (showModal)
     {
         <div class="modal-backdrop" @onclick="CloseModal"></div>
         <div class="modal">
             <h4>Opret nyt opslag</h4>
+            
+            <!-- Formularfelter til nyt opslag -->
             <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
             <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
             <input @bind="newPost.Url" placeholder="Tilføj et link (valgfrit)" class="input-field" />
 
+            <!-- Kun HR og Køkkenchef kan vælge modtagere -->
             @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
             {
                 <div class="role-selection-buttons">
@@ -106,6 +122,7 @@ else
                     </button>
                 </div>
 
+                <!-- Dropdown for hoteller -->
                 <select @onchange="OnHotelChanged" class="form-select" hidden="@selectedAllUsers">
                     <option value="">Vælg hotel</option>
                     @foreach (var hotel in allHotels)
@@ -114,6 +131,7 @@ else
                     }
                 </select>
 
+                <!-- Checkbox-liste over brugere hvis der ikke vælges alle -->
                 @if (!selectedAllUsers)
                 {
                     <label>Vælg modtagere:</label>
@@ -131,6 +149,7 @@ else
                 }
             }
 
+            <!-- Knapper til at annullere eller oprette opslag -->
             <div class="modal-actions">
                 <button class="cancel-button" @onclick="CloseModal">Annuller</button>
                 <button class="create-button" @onclick="SubmitModal">Opret</button>
@@ -140,20 +159,27 @@ else
 }
 
 @code {
-    private List<Post> posts = new();
-    private Post newPost = new();
-    private User? currentUser;
-    private List<User> allUsers = new();
-    private List<string> allHotels = new();
-    private List<User> filteredUsers = new();
-    private List<int> selectedUserIds = new();
-    private string searchTerm = "";
-    private string selectedHotel = "";
-    private string selectedTargetGroup = "";
-    private bool selectedAllUsers = false;
-    private bool showModal = false;
-    private int? confirmDeletePostId = null;
+    // Bruger- og opslag-relateret data
+    private List<Post> posts = new();                      // Liste over alle opslag
+    private Post newPost = new();                          // Midlertidigt objekt til oprettelse af nyt opslag
+    private User? currentUser;                             // Aktuelt loggede bruger
+    private List<User> allUsers = new();                   // Liste over alle brugere
+    private List<string> allHotels = new();                // Liste over alle hoteller
+    private List<User> filteredUsers = new();              // Liste over filtrerede brugere baseret på valg
 
+// Søge- og filtertilstand
+    private List<int> selectedUserIds = new();             // Liste over ID'er på valgte modtagere
+    private string searchTerm = "";                        // Søgefelt til søgning i opslag
+    private string selectedHotel = "";                     // Valgt hotel til filtrering af brugere
+    private string selectedTargetGroup = "";               // Valgt målgruppe (fx "Elev", "Køkkenchef", "All")
+    private bool selectedAllUsers = false;                 // Om alle brugere er valgt som modtagere
+
+// UI-tilstand
+    private bool showModal = false;                        // Om modal til oprettelse af opslag vises
+    private int? confirmDeletePostId = null;               // ID på opslag der er valgt til sletning
+
+    // Formål: Initialiserer siden.
+    // Henter aktuel bruger, alle brugere, hoteller og opslag.
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -166,12 +192,14 @@ else
         await LoadPosts();
     }
 
+    // Formål: Henter opslag målrettet brugeren fra backend.
     private async Task LoadPosts()
     {
         if (currentUser == null) return;
         posts = await PostService.GetPostsForUserAsync(currentUser.Email, currentUser.Role);
     }
 
+    // Returnerer: Filtrerede opslag baseret på søgning og synlighed.
     private IEnumerable<Post> FilteredPosts =>
         string.IsNullOrWhiteSpace(searchTerm)
             ? posts.Where(CanViewPost)
@@ -205,7 +233,8 @@ else
             newPost.Url = "https://" + newPost.Url;
         }
 
-        await PostService.CreatePostAsync(newPost);
+        var createdPost = await PostService.CreatePostAsync(newPost);
+        posts.Insert(0, createdPost);
         newPost = new();
         selectedUserIds.Clear();
         selectedHotel = "";
@@ -215,6 +244,7 @@ else
         showModal = false;
         
         await LoadPosts();
+        StateHasChanged();
     }
 
     private void CloseModal() => showModal = false;
@@ -286,11 +316,20 @@ else
         selectedHotel = "";
         filteredUsers = new();
     }
-
-    private string GetInitials(string? fullName)
+    
+    // Formål: Returnerer initialer ud fra brugerens fulde navn.
+    // Funktion:
+    // - Splitter navnet op ved mellemrum.
+    // - Hvis der er flere navne, bruges første bogstav i begge navne.
+    // - Hvis kun ét navn, bruges første bogstav.
+    private static string GetInitials(string fullName)
     {
-        if (string.IsNullOrWhiteSpace(fullName)) return "";
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length == 1 ? parts[0][0].ToString().ToUpper() : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+        return parts.Length switch
+        {
+            0 => "",
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
+        };
     }
 }
