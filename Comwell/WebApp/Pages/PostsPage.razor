@@ -22,9 +22,9 @@ else
 
         <!-- Liste over opslag -->
         <div class="posts-list">
-            @if (FilteredPosts.Any())
+            @if (FilteredPosts().Any())
             {
-                @foreach (var post in FilteredPosts.OrderByDescending(p => p.Id))
+                @foreach (var post in FilteredPosts().OrderByDescending(p => p.Id))
                 {
                     <div class="post-card">
                         <!-- Header med forfatter og metadata -->
@@ -200,12 +200,29 @@ else
     }
 
     // Returnerer: Filtrerede opslag baseret på søgning og synlighed.
-    private IEnumerable<Post> FilteredPosts =>
-        string.IsNullOrWhiteSpace(searchTerm)
-            ? posts.Where(CanViewPost)
-            : posts.Where(p => CanViewPost(p) &&
-                (!string.IsNullOrEmpty(p.Title) && p.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                 !string.IsNullOrEmpty(p.Content) && p.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+    // Formål: Filtrerer opslag baseret på:
+    // 1. Om brugeren har adgang til at se opslaget
+    // 2. Om opslaget matcher brugerens søgning (hvis der søges)
+    private IEnumerable<Post> FilteredPosts()
+    {
+        // Start med alle opslag
+        var filteredPosts = posts.Where(CanViewPost);
+
+        // Hvis der ikke er søgt efter noget, returner alle synlige opslag
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return filteredPosts;
+
+        // Filtrer opslag baseret på søgning i titel og indhold
+        return filteredPosts.Where(post =>
+            // Søg i titlen (hvis den ikke er tom)
+            (!string.IsNullOrEmpty(post.Title) && 
+             post.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            ||
+            // Søg i indholdet (hvis det ikke er tomt)
+            (!string.IsNullOrEmpty(post.Content) && 
+             post.Content.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        );
+    }
 
     private bool CanViewPost(Post post)
     {
