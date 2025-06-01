@@ -200,16 +200,12 @@ else
     }
 
     // Returnerer: Filtrerede opslag baseret på søgning og synlighed.
-    // Formål: Filtrerer opslag baseret på:
-    // 1. Om brugeren har adgang til at se opslaget
-    // 2. Om opslaget matcher brugerens søgning (hvis der søges)
+    // Formål: Filtrerer opslag baseret på om brugeren har adgang til at se opslaget
     private IEnumerable<Post> FilteredPosts()
     {
-        // Start med alle opslag
-        var filteredPosts = posts.Where(CanViewPost);
-
-        // Hvis der ikke er søgt efter noget, returner alle synlige opslag
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        var filteredPosts = posts.Where(CanViewPost); // Vis alle opslag til HR og Køkkenchefer
+        
+        if (string.IsNullOrWhiteSpace(searchTerm))  // Hvis der ikke er søgt efter noget, returner alle synlige opslag
             return filteredPosts;
 
         // Filtrer opslag baseret på søgning i titel og indhold
@@ -224,6 +220,9 @@ else
         );
     }
 
+    // Returnerer: True hvis brugeren må se opslaget, ellers false.
+    // Parametre: post – Det opslag der tjekkes.
+    // Formål: Bestemmer om opslaget er synligt for den aktuelle bruger.
     private bool CanViewPost(Post post)
     {
         if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
@@ -231,6 +230,9 @@ else
         return post.TargetUserIds.Count == 0 || post.TargetUserIds.Contains(currentUser?.Id ?? -1);
     }
 
+    // Returnerer: True hvis brugeren må slette opslaget, ellers false.
+    // Parametre: post – Det opslag der tjekkes.
+    // Formål: Bestemmer om brugeren må slette et opslag.
     private bool CanDeletePost(Post post)
     {
         if (currentUser == null) return false;
@@ -239,20 +241,16 @@ else
         return true;
     }
 
+    // Formål: Sender nyt opslag til backend og nulstiller modalens inputfelter.
     private async Task SubmitModal()
     {
         newPost.Author = currentUser?.Name ?? "Ukendt";
         newPost.CreatedAt = DateTime.Now;
-        newPost.TargetUserIds = selectedUserIds;
+        newPost.TargetUserIds = selectedUserIds;                            // Sæt målgruppe
 
-        if (!string.IsNullOrWhiteSpace(newPost.Url) && !newPost.Url.StartsWith("http"))
-        {
-            newPost.Url = "https://" + newPost.Url;
-        }
-
-        var createdPost = await PostService.CreatePostAsync(newPost);
-        posts.Insert(0, createdPost);
-        newPost = new();
+        var createdPost = await PostService.CreatePostAsync(newPost);       // Opret opslag
+        posts.Insert(0, createdPost);                                  // Tilføj til liste
+        newPost = new();                                               // Nulstil felter
         selectedUserIds.Clear();
         selectedHotel = "";
         filteredUsers.Clear();
@@ -264,8 +262,11 @@ else
         StateHasChanged();
     }
 
+    // Formål: Lukker modal-vinduet til oprettelse af opslag.
     private void CloseModal() => showModal = false;
 
+    // Parametre: id – ID på opslag der skal slettes.
+    // Formål: Sletter et opslag og opdaterer visningen.
     private async Task ConfirmDelete(int id)
     {
         await PostService.DeletePostAsync(id);
@@ -273,11 +274,15 @@ else
         await LoadPosts();
     }
 
+    // Parametre: postId – ID på opslag der skal åbne/lukke slet-popup.
+    // Formål: Åbner eller lukker bekræftelses-popup for sletning.
     private void ToggleDeletePopup(int postId)
     {
         confirmDeletePostId = confirmDeletePostId == postId ? null : postId;
     }
-
+    
+    // Parametre: e – Ændringsevent fra hotel-dropdown.
+    // Formål: Filtrerer brugere baseret på valgt hotel.
     private void OnHotelChanged(ChangeEventArgs e)
     {
         selectedHotel = e.Value?.ToString() ?? "";
@@ -287,6 +292,9 @@ else
         selectedTargetGroup = "";
     }
 
+    // Parametre: userId – ID på brugeren, isChecked – Om checkbox er valgt.
+    // Formål: Tilføjer eller fjerner bruger som skal se opslaget.
+    // Bruges i forbindelse med OnHotalChanged
     private void ToggleUserSelection(int userId, bool isChecked)
     {
         if (isChecked && !selectedUserIds.Contains(userId))
@@ -295,6 +303,7 @@ else
             selectedUserIds.Remove(userId);
     }
 
+    // Formål: Vælger eller fjerner alle brugere som modtagere.
     private void ToggleAllUsers()
     {
         if (selectedTargetGroup == "All")
@@ -313,6 +322,8 @@ else
         filteredUsers = new();
     }
 
+    // Parametre: role – Den rolle brugerne skal filtreres på (fx "Elev").
+    // Formål: Vælger alle brugere med en bestemt rolle som modtagere.
     private void ToggleRoleSelection(string role)
     {
         if (selectedTargetGroup == role)
