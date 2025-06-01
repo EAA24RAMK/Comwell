@@ -3,30 +3,43 @@ using MongoDB.Driver;
 
 namespace ServerAPI.Repositories;
 
+// Repository overblik
+// - Bruges til at gemme og hente opslag fra MongoDB.
+// - Arbejder også med brugere for at filtrere opslag baseret på målgrupper.
+// - Repositoryet bliver brugt til vores PostPage.
 public class PostRepository : IPostRepository
 {
-    private readonly IMongoCollection<Post> _collection;
-    private readonly IMongoCollection<User> _userCollection;
+    private readonly IMongoCollection<Post> _collection; // Instansvariabel for Post-collection i MongoDB
+    private readonly IMongoCollection<User> _userCollection; // Instansvariabel for User-collection i MongoDB
 
+    // Konstruktøren sørger for at etablere forbindelsen til MongoDB.
+    // connection string og databasenavn læses fra appsettings.json.
+    // Opretter adgang til både post og user, så vi kan oprette og hente opslag og målrette opslag til brugere.
     public PostRepository(IConfiguration config)
     {
         var client = new MongoClient(config["MongoDB:ConnectionString"]);
         var db = client.GetDatabase(config["MongoDB:DatabaseName"]);
         _collection = db.GetCollection<Post>("post");
-        _userCollection = db.GetCollection<User>("user"); // bruger-kollektion
+        _userCollection = db.GetCollection<User>("user");
     }
-
-    public void Create(Post post)
+    
+    // Parametre: post – Det opslag der skal oprettes.
+    // Formål: Opretter et nyt opslag i databasen.
+    // Tildeler et unikt ID (max eksisterende ID + 1) og sætter oprettelsesdato.
+    public async Task<Post?> Create(Post post)
     {
-        var maxId = _collection.Find(_ => true)
-            .SortByDescending(p => p.Id)
-            .Limit(1)
-            .FirstOrDefault()?.Id ?? 0;
+        int maxId = 0;
+        var allPosts = await _collection.Find(_ => true).ToListAsync();
+        if (allPosts.Any())
+        {
+            maxId = allPosts.Max(t => t.Id); // Finder det højeste eksisterende ID
+        }
 
-        post.Id = maxId + 1;
+        post.Id = maxId + 1; // Tildeler nyt ID
+        
         post.CreatedAt = DateTime.UtcNow;
-
-        _collection.InsertOne(post);
+        await _collection.InsertOneAsync(post); // Gemmer brugeren i databasen
+        return post;
     }
 
     public void Delete(int id)
