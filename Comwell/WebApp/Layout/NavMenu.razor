@@ -4,6 +4,7 @@
 @inject NavigationManager NavManager
 @inject IUserService UserService
 
+<!-- Topbar med logo -->
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
@@ -12,14 +13,17 @@
     </div>
 </div>
 
+<!-- Scrollbart navigationsmenu -->
 <div class="nav-scrollable">
     <nav class="nav flex-column">
+        <!-- Link til oversigt -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="HandleLinkClick">
                 <span class="bi bi-house-door" aria-hidden="true"></span> Oversigt
             </NavLink>
         </div>
 
+        <!-- Opret plan (vises ikke for Elev og Kok) -->
         @if (currentUser != null && currentUser.Role != "Elev" && currentUser.Role != "Kok")
         {
             <div class="nav-item px-3">
@@ -29,10 +33,12 @@
             </div>
         }
 
+        <!-- Elevplan eller Elevplaner afhængig af rolle -->
         @if (currentUser != null)
         {
             if (currentUser.Role == "Elev")
             {
+                <!-- Elev ser kun egne elevplaner -->
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="elevplan" @onclick="HandleLinkClick">
                         <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplan
@@ -41,6 +47,7 @@
             }
             else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
             {
+                <!-- HR, Køkkenchef og Kok ser alle elevplaner -->
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="elevplaner" @onclick="HandleLinkClick">
                         <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplaner
@@ -49,6 +56,7 @@
             }
         }
 
+        <!-- Brugere (vises ikke for Elev) -->
         @if (currentUser != null && currentUser.Role != "Elev")
         {
             <div class="nav-item px-3">
@@ -58,18 +66,21 @@
             </div>
         }
 
+        <!-- Læringsmateriale (tilgængelig for alle) -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="learningmaterials" @onclick="HandleLinkClick">
                 <span class="bi bi-journal-bookmark" aria-hidden="true"></span> Læringsmateriale
             </NavLink>
         </div>
 
+        <!-- Opslagstavle (tilgængelig for alle) -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="posts" @onclick="HandleLinkClick">
                 <span class="bi bi-card-text" aria-hidden="true"></span> Opslagstavle
             </NavLink>
         </div>
 
+        <!-- Rapporter (vises ikke for Elev) -->
         @if (currentUser != null && currentUser.Role != "Elev")
         {
             <div class="nav-item px-3">
@@ -79,6 +90,7 @@
             </div>
         }
 
+        <!-- Login eller logout afhængig af loginstatus -->
         <div class="nav-item px-3">
             @if (isLoggedIn)
             {
@@ -96,6 +108,7 @@
     </nav>
 </div>
 
+<!-- Brugerinformationskort nederst -->
 <div class="user-info mt-4 px-3">
     <div class="avatar">@GetInitials(currentUser?.Name)</div>
     <div class="user-details">
@@ -106,37 +119,49 @@
 
 
 @code {
-    [Parameter] public EventCallback ToggleMenu { get; set; }
+    [Parameter] public EventCallback ToggleMenu { get; set; } // Event der kan bruges til at lukke sidebaren
 
-    private User? currentUser;
-    private bool isLoggedIn = false;
+    private User? currentUser;              // Den aktuelt loggede bruger
+    private bool isLoggedIn = false;        // Om der er en bruger logget ind
 
+    // Initialiserer komponenten når den loades
     protected override async Task OnInitializedAsync()
     {
-        var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
-        isLoggedIn = user != null;
-        currentUser = await UserService.GetCurrentUserAsync();
+        var user = await LocalStorage.GetItemAsync<User>("loggedInUser"); // Hent brugerdata fra localStorage
+        isLoggedIn = user != null;                                            // Sæt loginstatus
+        currentUser = await UserService.GetCurrentUserAsync();                // Hent den aktive bruger
     }
 
+    // Logger brugeren ud
     private async Task HandleLogout()
     {
-        await LocalStorage.RemoveItemAsync("loggedInUser");
-        isLoggedIn = false;
-        NavManager.NavigateTo("/login", true);
-        await ToggleMenu.InvokeAsync(); // Luk menuen efter logout
+        await LocalStorage.RemoveItemAsync("loggedInUser"); // Fjern brugeren fra localStorage
+        isLoggedIn = false;                                     // Sæt loginstatus til false
+        NavManager.NavigateTo("/login", true);      // Navigér til login-siden
+        await ToggleMenu.InvokeAsync();                         // Luk menuen efter logout (mobilvenlig)
     }
 
+    // Håndterer klik på menupunkter
     private async Task HandleLinkClick()
     {
-        await ToggleMenu.InvokeAsync(); // Luk menuen når et link klikkes
+        await ToggleMenu.InvokeAsync(); // Luk menuen når et link klikkes (mobilvenlig)
     }
     
-    private string GetInitials(string? fullName)
+    // Formål: Returnerer initialer ud fra brugerens fulde navn.
+    // Funktion:
+    // - Splitter navnet op ved mellemrum.
+    // - Hvis der er flere navne, bruges første bogstav i begge navne.
+    // - Hvis kun ét navn, bruges første bogstav.
+    private static string GetInitials(string fullName)
     {
         if (string.IsNullOrWhiteSpace(fullName)) return "";
+        
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
-        return string.Concat(parts[0][0], parts[^1][0]).ToUpper();
+        return parts.Length switch
+        {
+            0 => "",
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
+        };
     }
-
 }

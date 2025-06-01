@@ -33,4 +33,9 @@ public class NotificationService : INotificationService
     {
         await _http.PostAsync($"api/notification/{notificationId}/delete-for-user/{userId}", null);
     }
+
+    public async Task GenererateNotificationsAsync()
+    {
+        await _http.PostAsync("api/notification/generate", null);
+    }
 }

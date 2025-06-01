@@ -9,6 +9,7 @@
 <h3>Læringsmateriale</h3>
 <p></p>
 
+<!-- Viser succes- eller fejlbeskeder -->
 @if (!string.IsNullOrEmpty(successMessage))
 {
     <p style="color: green">@successMessage</p>
@@ -18,8 +19,10 @@
     <p style="color: red">@errorMessage</p>
 }
 
+<!-- Sektion for upload og tilføjelse, kun synlig for HR og Køkkenchef -->
 @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
 {
+    <!-- Upload dokument sektion -->
     <div class="section-card">
         <h4>Upload dokument</h4>
         <InputFile OnChange="HandleFileSelected" />
@@ -36,6 +39,7 @@
         </div>
     </div>
 
+    <!-- Tilføj link sektion -->
     <div class="section-card">
         <h4>Tilføj link</h4>
         <input type="text" @bind="linkTitle" placeholder="Titel" class="form-control" />
@@ -53,6 +57,7 @@
     </div>
 }
 
+<!-- Liste over materialer -->
 <h4>Materialer</h4>
 @if (materials.Count == 0)
 {
@@ -88,41 +93,45 @@ else
 }
 
 @code {
-    // Gemmer brugeren i en variabel
-    private User? currentUser;
-    
-    private List<LearningMaterial> materials = new();
-    private List<Subtask> subtasks = new();
+    private User? currentUser;                        // Aktuelt loggede bruger
+    private List<LearningMaterial> materials = new(); // Liste over læringsmaterialer
+    private List<Subtask> subtasks = new();           // Liste over delmål (subtasks)
 
-    private IBrowserFile? selectedFile;
-    private string uploadTitle = string.Empty;
-    private int? uploadSubtaskId;
+    // Upload
+    private IBrowserFile? selectedFile;              // Fil valgt af brugeren
+    private string uploadTitle = string.Empty;       // Titel på filen
+    private int? uploadSubtaskId;                    // ID på det delmål filen tilknyttes
 
-    private string linkTitle = string.Empty;
-    private string linkUrl = string.Empty;
-    private int? linkSubtaskId;
+    // Link
+    private string linkTitle = string.Empty;         // Titel på linket
+    private string linkUrl = string.Empty;           // URL på linket
+    private int? linkSubtaskId;                      // ID på det delmål linket tilknyttes
 
-    private string? successMessage;
-    private string? errorMessage;
+    // Feedback beskeder
+    private string? successMessage;                  // Succesbesked
+    private string? errorMessage;                    // Fejlbesked
 
-    // Til at vise læringsmateriale
-    private int? filteredSubtaskId;
+    // Filter
+    private int? filteredSubtaskId;                  // Hvis sat, vis kun materialer for valgt subtask
 
+    // Initialisering af siden
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await UserService.GetCurrentUserAsync();
-        var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-        var plan = plans.FirstOrDefault();
+        currentUser = await UserService.GetCurrentUserAsync(); // Hent den nuværende bruger
+        var plans = await StudentPlanService.GetPlansByUserAsync(currentUser); // Hent brugerens elevplaner
+        var plan = plans.FirstOrDefault(); // Brug den første plan hvis der er flere
 
         if (plan != null)
-            subtasks = plan.Goals.SelectMany(g => g.Subtasks).ToList();
+            subtasks = plan.Goals.SelectMany(g => g.Subtasks).ToList(); // Hent alle delmål som liste
 
-        // Læs subtaskId direkte fra URL
-        var uri = new Uri(Nav.Uri); //url hentes med Nav.Uri og laver den til et uri objekt
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query); //querystring bliver parset
+        // Læs subtaskId fra URL (fx ved klik fra delmål)
+        var uri = new Uri(Nav.Uri); //url hentes med Nav.Uri og laver den til om til et uri objekt
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query); // Tager query-delen af URL'en (det efter ?) og parser den til nøgle/værdi-par
+                                                                                         // Eksempel: "?subtaskId=5" bliver til et dictionary hvor "subtaskId" = "5"
         var subtaskIdString = query.Get("subtaskId");
 
-        if (int.TryParse(subtaskIdString, out var sid)) // henter subtaskID, hvis den findes filtreres materials i markuppen (foreach løkken)
+        // Konverterer SubtaskId fra string til int.
+        if (int.TryParse(subtaskIdString, out var sid)) // Henter subtaskID i URl'en, hvis den findes filtreres materials i markuppen (foreach løkken)
         {
             filteredSubtaskId = sid;
         }
@@ -130,22 +139,36 @@ else
         materials = await MaterialService.GetAllAsync();
     }
 
+    // Håndterer når en bruger vælger en fil i input feltet.
+    // InputFileChangeEventArgs indeholder den valgte fil og dens data (navn, størrelse, type).
     private void HandleFileSelected(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
     }
 
+    // Formål: Når brugeren vælger en fil og klikker upload, sendes filen sammen med en titel og delmål-ID til backend.
+    // Hvis upload lykkes, tilføjes det nye læringsmateriale til listen og en succesbesked vises.
+    // Hvis der er fejl (fx manglende titel eller fil), vises en fejlbesked.
     private async Task UploadFile()
     {
+        // Valider input: Sørger for at alle nødvendige felter er udfyldt
         if (selectedFile == null || string.IsNullOrWhiteSpace(uploadTitle) || uploadSubtaskId is null)
         {
             errorMessage = "Udfyld titel, vælg fil og delmål.";
             return;
         }
 
+        // Åbn filstream fra den valgte fil (filen åbnes som en datastrøm)
         using var stream = selectedFile.OpenReadStream(long.MaxValue);
-        var result = await MaterialService.UploadFileAsync(stream, selectedFile.Name, uploadTitle, uploadSubtaskId.Value);
-
+        
+        // Kald vores service for at uploade filen sammen med metadata
+        var result = await MaterialService.UploadFileAsync(
+            stream,                  // Selve filindholdet
+            selectedFile.Name,        // Navnet på filen
+            uploadTitle,              // Titel givet af brugeren
+            uploadSubtaskId.Value     // ID på delmålet, materialet tilknyttes
+        );
+        
         if (result != null)
         {
             materials.Add(result);
@@ -161,14 +184,18 @@ else
         }
     }
 
+    // Tilføj et link som læringsmateriale
+    // Formål: Giver brugeren mulighed for at tilføje et link som læringsmateriale
     private async Task AddLink()
     {
+        // Valider input: Tjek om både titel, URL og delmål er angivet
         if (string.IsNullOrWhiteSpace(linkTitle) || string.IsNullOrWhiteSpace(linkUrl) || linkSubtaskId is null)
         {
             errorMessage = "Udfyld titel, link og vælg delmål.";
             return;
         }
 
+        // Opret et nyt læringsmateriale-objekt for linket
         var link = new LearningMaterial
         {
             Title = linkTitle,
@@ -177,7 +204,9 @@ else
             LinkUrl = linkUrl
         };
 
+        // Kald service for at gemme linket i databasen
         var result = await MaterialService.AddLinkAsync(link);
+        
         if (result != null)
         {
             materials.Add(result);
@@ -193,10 +222,13 @@ else
             successMessage = null;
         }
     }
-
+    
+    // Formål: Giver brugeren mulighed for at fjerne et eksisterende læringsmateriale
     private async Task DeleteMaterial(int id)
     {
+        // Kald service for at slette læringsmaterialet i backend
         var confirmed = await MaterialService.DeleteAsync(id);
+        
         if (confirmed)
         {
             materials = materials.Where(m => m.Id != id).ToList();

@@ -6,14 +6,18 @@
 @using Core.Models
 @using WebApp.Services
 
+<!-- Layout vises kun hvis brugeren ikke er på login-siden -->
 @if (!NavManager.Uri.Contains("/login"))
 {
     <div class="layout">
+        <!-- Sidebar med navigation -->
         <div class="@(sidebarCollapsed ? "sidebar collapse" : "sidebar")">
-            <NavMenu ToggleMenu="ToggleSidebar" />
+            <NavMenu ToggleMenu="ToggleSidebar"/>
         </div>
 
+        <!-- Main-område -->
         <div class="main">
+            <!-- Topbar med titel, klokke og brugeravatar -->
             <div class="top-row px-4 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-3">
                     <button class="navbar-toggler d-md-none" @onclick="ToggleSidebar">
@@ -28,12 +32,14 @@
                         <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;"
                            @onclick="async () => await ToggleNotifications()"></i>
 
+                        <!-- Badge med antal nye notifikationer -->
                         @if (!hasSeenNotifications && notifications?.Count > 0)
                         {
                             <span class="notification-badge">@notifications.Count</span>
                         }
                     </div>
 
+                    <!-- Notifikationsliste dropdown -->
                     @if (showNotifications)
                     {
                         <div class="notification-overlay position-absolute end-0 mt-2 p-3 shadow bg-white rounded">
@@ -46,10 +52,10 @@
                                         <li class="mb-2 border-bottom pb-2">
                                             <div>@note.Message</div>
                                             <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br/>
-                                            <!-- 🗑️ Slet-knap -->
+                                            <!-- Slet-knap til notifikation -->
                                             <button class="btn btn-sm btn-outline-danger"
                                                     @onclick="() => DeleteNotification(note.Id)">
-                                                🗑️ Slet
+                                                Slet
                                             </button>
                                         </li>
                                     }
@@ -62,12 +68,14 @@
                         </div>
                     }
 
+                    <!-- Avatar med brugerinitialer -->
                     <div class="avatar" title="@currentUser?.Name">
                         @GetInitials(currentUser?.Name)
                     </div>
                 </div>
             </div>
 
+            <!-- Indholdsområde hvor siden vises -->
             <article class="content px-4">
                 @Body
             </article>
@@ -76,39 +84,47 @@
 }
 else
 {
+    <!-- Enkel layout til login-siden -->
     <div class="main">
         @Body
     </div>
 }
 
 @code {
-    private User? currentUser;
-    private bool showNotifications = false;
-    private List<Notification> notifications = new();
-    private bool hasSeenNotifications = false;
-    private bool sidebarCollapsed = true;
+    private User? currentUser;                        // Aktuelt loggede bruger
+    private bool showNotifications = false;           // Om notifikationslisten vises
+    private List<Notification> notifications = new(); // Liste over brugerens notifikationer
+    private bool hasSeenNotifications = false;        // Om brugeren har set notifikationerne
+    private bool sidebarCollapsed = true;             // Om sidebaren er skjult (mobil-venlig)
 
+    // Initialiserer layoutet
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await UserService.GetCurrentUserAsync();
+        currentUser = await UserService.GetCurrentUserAsync(); // Henter loggede bruger
 
         if (currentUser != null)
         {
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         }
 
-        NavManager.LocationChanged += (_, __) => // lambda funktion
+        // Sidebaren lukker automatisk ved sidenavigering
+        NavManager.LocationChanged += (_, __) => //Modtager parametre som gives videre men bruges ikke
         {
-            sidebarCollapsed = true; // lukker siden ved at sætte til true
-            InvokeAsync(StateHasChanged);
+            sidebarCollapsed = true; // Lukker sidebaren ved at sætte sidebarCollapsed til true.
+                                     // Dette gør, at hvis brugeren er på mobil (eller smal skærm),
+                                     // vil sidebaren automatisk skjule sig efter navigation.
+            InvokeAsync(StateHasChanged); // Opdater UI
         };
     }
 
+    // Åbner eller lukker sidebar
     public void ToggleSidebar()
     {
         sidebarCollapsed = !sidebarCollapsed;
     }
-
+    
+    // Formål: Bruges til at vise eller skjule listen af notifikationer, når brugeren klikker på klokken.
+    // Hvis listen åbnes, hentes nye notifikationer fra backend og markeres som set.
     private async Task ToggleNotifications()
     {
         showNotifications = !showNotifications;
@@ -116,24 +132,37 @@ else
         if (showNotifications && currentUser != null)
         {
             // Kalder backend for at generere nye notifikationer først
-            await Http.PostAsync("api/notification/generate", null);
+            await NotificationService.GenererateNotificationsAsync();
 
-            // Henter notifikationer bagefter
+            // Henter liste af notifikationer fra backend bagefter
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
-            hasSeenNotifications = true; // markér som læst (visuelt)
+            hasSeenNotifications = true; // marker som læst (visuelt)
             
             StateHasChanged(); // Opdater UI
         }
     }
 
-    private string GetInitials(string? fullName)
+    // Formål: Returnerer initialer ud fra brugerens fulde navn.
+    // Funktion:
+    // - Splitter navnet op ved mellemrum.
+    // - Hvis der er flere navne, bruges første bogstav i begge navne.
+    // - Hvis kun ét navn, bruges første bogstav.
+    private static string GetInitials(string fullName)
     {
         if (string.IsNullOrWhiteSpace(fullName)) return "";
+        
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0].Substring(0, 1).ToUpper();
-        return string.Concat(parts[0][0], parts[^1][0]).ToUpper();
+        return parts.Length switch
+        {
+            0 => "",
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
+        };
     }
-    
+
+    // Sletter en notifikation for brugeren
+    // Formål: Bruges til at slette en specifik notifikation, når brugeren klikker på "Slet".
+    // Derefter hentes den opdaterede liste af notifikationer, så listen opdateres med det samme.
     private async Task DeleteNotification(int notificationId)
     {
         if (currentUser == null) return;
