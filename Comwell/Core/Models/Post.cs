@@ -7,6 +7,6 @@ public class Post
     public string Content { get; set; } = "";
     public string Author { get; set; } = "";
     public DateTime CreatedAt { get; set; }
-    public List<int> TargetUserIds { get; set; } = new();
+    public List<int> TargetUserIds { get; set; } = new(); // Reference til User (via id)
     public string? Url { get; set; }
 }

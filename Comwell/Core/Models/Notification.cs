@@ -6,8 +6,8 @@ public class Notification
     public string Message { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime Deadline { get; set; } 
-    public int? PlanId { get; set; } 
-    public int? GoalId { get; set; } 
+    public int? PlanId { get; set; } // Reference til StudentPlan
+    public int? GoalId { get; set; } // Reference til Goal
     public bool IsRead { get; set; } = false;
     public List<int> DeletedByUserIds { get; set; } = new(); 
     public List<int> NotifyUserId { get; set; } = new List<int>();

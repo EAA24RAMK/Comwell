@@ -6,6 +6,7 @@
 <div style="margin-left: 1rem; margin-bottom: 1rem;">
     <!-- Knap der fold-ud/folder-ind målet og viser målets titel og status -->
     <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
+        <!-- Komponent -->
         <strong>@goal.Title</strong> - <GoalStatusComponent goal="goal"/>
 
         <!-- Viser pil op eller ned alt efter om målet er foldet ud -->
