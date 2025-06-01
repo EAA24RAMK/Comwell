@@ -25,7 +25,7 @@ builder.Services.AddScoped<ILearningMaterialService, LearningMaterialService>();
 // Konfigurerer HttpClient til at sende requests til backend
 // BaseAddress: Angiver hvilket API vi arbejder imod 
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("comwelltpapi.azurewebsites.net/") }
+    new HttpClient { BaseAddress = new Uri("https://comwelltpapi.azurewebsites.net/") }
 );
 
 await builder.Build().RunAsync();
