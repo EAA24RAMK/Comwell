@@ -6,7 +6,7 @@
 
 <h3>Rapporter</h3>
 
-<!-- Vælg lokation -->
+<!-- Dropdown: Vælg lokation for at filtrere brugere efter hotel -->
 <div class="section">
     <label class="filter-label">Vælg lokation:</label>
     <select class="filter-select" @bind="selectedLocation">
@@ -18,14 +18,16 @@
     </select>
 </div>
 
-<!-- Statistik pr. rolle -->
+<!-- Statistik: Antal ansatte samlet og pr. rolle -->
 <div class="section">
     <h4 class="subsection-title">Statistik over ansatte</h4>
     <div class="stats-container">
+        <!-- Total antal ansatte -->
         <div class="stat-card">
             <h5>Samlet antal</h5>
             <div class="count">@filteredUsers.Count()</div>
         </div>
+        <!-- Antal ansatte pr. rolle -->
         @foreach (var role in roles)
         {
             int count = filteredUsers.Count(u => u.Role == role);
@@ -40,7 +42,7 @@
     </div>
 </div>
 
-<!-- Brugergrupper -->
+<!-- Tabel for hver brugergruppe (Elev, HR, Køkkenchef, Kok) -->
 @foreach (var role in roles)
 {
     var usersInRole = filteredUsers.Where(u => u.Role == role).ToList();
@@ -51,7 +53,7 @@
 
         @if (role == "Elev")
         {
-            <!-- Dropdown for mål -->
+            <!-- Dropdown: Vælg mål for elever (for filtrering på specifikke mål) -->
             <label class="filter-label">Vælg mål:</label>
             <select class="filter-select" @bind="selectedGoalTitle">
                 <option value="">Vælg mål</option>
@@ -62,6 +64,7 @@
             </select>
         }
 
+        <!-- Tabel: Viser navn, email, lokation og evt. fuldførelsesprocent -->
         <table class="data-table @(role == "Elev" ? "" : "fixed-layout")">
             <thead>
             <tr>
@@ -70,42 +73,24 @@
                 <th>Lokation</th>
                 @if (role == "Elev")
                 {
-                    <th>Fuldførelsesprocent</th>
+                    <th>Fuldførelsesprocent</th> <!-- Kun for elever -->
                 }
             </tr>
             </thead>
             <tbody>
             @foreach (var user in usersInRole)
             {
+                // Find alle elevplaner for brugeren
                 var userPlans = allPlans.Where(p => p.StudentId == user.Id).ToList();
                 var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
-                int percent = 0;
-
-                if (role == "Elev")
-                {
-                    if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
-                    {
-                        var selectedGoals = allGoals.Where(g => g.Title == selectedGoalTitle).ToList();
-                        int total = selectedGoals.Count;
-                        int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
-                        percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
-                    }
-                    else
-                    {
-                        int total = allGoals.Count;
-                        int done = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
-                        percent = total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
-                    }
-                }
-
-
+                int percent = CalculateCompletionPercentage(allGoals, role, selectedGoalTitle);
                 <tr>
                     <td>@user.Name</td>
                     <td>@user.Email</td>
                     <td>@user.Hotel</td>
                     @if (role == "Elev")
                     {
-                        <td>@percent %</td>
+                        <td>@percent %</td> <!-- Vis procent kun for elever -->
                     }
                 </tr>
             }
@@ -116,27 +101,82 @@
 }
 
 @code {
-    private List<User> allUsers = new();
-    private List<StudentPlan> allPlans = new();
+    private List<User> allUsers = new();             // Liste over alle brugere (elever, HR, kokke, køkkenchefer)
+    private List<StudentPlan> allPlans = new();       // Liste over alle elevplaner i systemet
 
-    private string selectedLocation = "";
-    private string selectedGoalTitle = "";
+    // Filtre
+    private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
+    private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
 
-    private List<string> roles = new();
-    private List<string> locations = new();
-    private List<string> goalTitles = new();
+    // Hjælpelister
+    private List<string> roles = new();               // Liste over unikke roller (Elev, HR, osv.)
+    private List<string> locations = new();           // Liste over unikke lokationer (hoteller)
+    private List<string> goalTitles = new();          // Liste over unikke mål (goal-titler)
 
+    // Filtreret brugerliste baseret på valgt lokation
     private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
         ? allUsers
         : allUsers.Where(u => u.Hotel == selectedLocation).ToList();
 
+    // Initialisering ved sideindlæsning
     protected override async Task OnInitializedAsync()
     {
         allUsers = await UserService.GetAllUsersAsync();
         allPlans = await StudentPlanService.GetAllPlansAsync();
 
-        roles = allUsers.Select(u => u.Role).Distinct().OrderByDescending(r => r == "Elev").ToList();
-        locations = allUsers.Select(u => u.Hotel).Where(h => !string.IsNullOrWhiteSpace(h)).Distinct().OrderBy(h => h).ToList();
-        goalTitles = allPlans.SelectMany(p => p.Goals).Select(g => g.Title).Distinct().OrderBy(t => t).ToList();
+        // Find unikke roller, sorter så "Elev" står først
+        roles = allUsers
+            .Select(u => u.Role)
+            .Distinct()
+            .OrderByDescending(r => r == "Elev")
+            .ToList();
+        
+        // Find unikke lokationer (hoteller), sorteret alfabetisk
+        locations = allUsers
+            .Select(u => u.Hotel)
+            .Where(h => !string
+                .IsNullOrWhiteSpace(h))
+            .Distinct()
+            .OrderBy(h => h)
+            .ToList();
+        
+        // Find unikke måltitler fra alle elevplaner, sorteret alfabetisk
+        goalTitles = allPlans
+            .SelectMany(p => p.Goals)
+            .Select(g => g.Title)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList();
+    }
+    
+    // Beregner fuldførelsesprocent for en bruger baseret på deres mål (goals)
+    // Returnerer: Et heltal (0-100) som viser procent færdiggørelse
+    // Parametre:
+    //   goals – Liste over alle mål for brugeren (Goals)
+    //   role – Brugerens rolle (fx "Elev", "HR", "Køkkenchef", "Kok")
+    //   goalTitle – Et specifikt mål der ønskes filtreret på
+    // Formål: Beregne hvor mange mål (eller et specifikt mål) der er fuldført for en elev
+    private int CalculateCompletionPercentage(List<Goal> goals, string role, string goalTitle)
+    {
+        if (role != "Elev") return 0;
+        
+        // Hvis intet specifikt mål (goalTitle) er valgt
+        if (string.IsNullOrWhiteSpace(goalTitle))
+        {
+            // Beregn procent: (Antal fuldførte mål / Total mål) * 100
+            // Hvis total er 0 (ingen mål), returner 0 for at undgå division med 0
+            int total = goals.Count;
+            int done = goals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+            return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+        }
+        // Hvis et specifikt mål er valgt
+        else
+        {
+            var selectedGoals = goals.Where(g => g.Title == goalTitle).ToList(); // Hvis et specifikt mål er valgt, filtrer kun mål med den titel
+            int total = selectedGoals.Count; // Antal mål med den valgte titel
+            int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført")); // Antal af disse mål hvor alle delmål er fuldført
+            
+            return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+        }
     }
 } 

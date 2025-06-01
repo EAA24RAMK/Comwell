@@ -6,24 +6,24 @@
 
 <h1 class="page-title">Oversigt</h1>
 
-@if (isCheckingUser)
+ @if (!isLoggedIn)
 {
-    <p>Indlæser...</p>
-}
-else if (!isLoggedIn)
-{
+    <!-- Hvis ingen bruger er logget ind -->
     <p class="access-denied"><strong>Log venligst ind for at tilgå portalen.</strong></p>
 }
 else
 {
-    <p class="welcome-text">Velkommen tilbage, @userName. Her er din samlede oversigt.</p>
+    <!-- Hvis bruger er logget ind -->
+    <p class="welcome-text">Velkommen tilbage, @(currentUser?.Name). Her er din samlede oversigt.</p>
 
     <div class="dashboard-wrapper">
 
         <!-- FLEX LAYOUT -->
         <div class="dashboard-columns">
-            <!-- VENSTRE -->
+            <!-- Venstre kolonne: Mål og links -->
             <div class="left-content">
+                
+                <!-- Oversigt over mål fordelt på status -->
                 <div class="goal-grid">
                     <div class="goal-card total">
                         <div class="goal-icon icon-green">
@@ -31,7 +31,7 @@ else
                         </div>
                         <div class="goal-content">
                             <span class="goal-label">Mål i alt</span>
-                            <span class="goal-value">@goals.Count()</span>
+                            <span class="goal-value">@goals.Count()</span> <!-- Total antal mål -->
                         </div>
                     </div>
 
@@ -40,8 +40,8 @@ else
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="goal-content">
-                            <span class="goal-label">Færdigt</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span>
+                            <span class="goal-label">Fuldført</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span> <!-- Fuldførte mål -->
                         </div>
                     </div>
 
@@ -51,7 +51,7 @@ else
                         </div>
                         <div class="goal-content">
                             <span class="goal-label">I gang</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span> <!-- Mål i gang -->
                         </div>
                     </div>
 
@@ -61,12 +61,12 @@ else
                         </div>
                         <div class="goal-content">
                             <span class="goal-label">Vær opmærksom på</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span>
+                            <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span> <!-- Mål med opmærksomhed -->
                         </div>
                     </div>
                 </div>
 
-                <!-- LÆRINGSPORTALER UNDER MÅL -->
+                <!-- Eksterne læringsportaler -->
                 <div class="external-links-section">
                     <h2>
                         <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
@@ -80,7 +80,7 @@ else
                 </div>
             </div>
 
-            <!-- HØJRE -->
+            <!-- Højre kolonne: Seneste opslag -->
             <div class="right-content">
                 <div class="recent-posts-section">
                     <h2>
@@ -90,6 +90,7 @@ else
 
                     @if (recentPosts.Any())
                     {
+                        <!-- Viser de seneste opslag -->
                         <ul>
                             @foreach (var post in recentPosts)
                             {
@@ -98,6 +99,7 @@ else
                                     <div>
                                         <strong>@post.Title</strong><br />
                                         <span class="post-snippet">
+                                            <!-- Viser et kort uddrag af opslagets indhold -->
                                             @post.Content?.Substring(0, Math.Min(80, post.Content.Length))...
                                         </span>
                                     </div>
@@ -107,6 +109,7 @@ else
                     }
                     else
                     {
+                        <!-- Hvis ingen opslag findes -->
                         <p>Ingen beskeder fundet.</p>
                     }
                 </div>
@@ -118,36 +121,28 @@ else
 
 
 @code {
-    private string userName = "gæst";
-    private List<Goal> goals = new();
-    private bool isLoggedIn = false;
-    private bool isCheckingUser = true;
-    private List<Post> recentPosts = new();
+    private User? currentUser;               // Den aktuelt loggede bruger
+    private List<Goal> goals = new();         // Liste over alle mål tilhørende brugeren
+    private bool isLoggedIn = false;          // Om brugeren er logget ind
+    private List<Post> recentPosts = new();   // Liste over de seneste opslag
 
+    // Initialiserer siden når den indlæses
     protected override async Task OnInitializedAsync()
     {
+        currentUser = await UserService.GetCurrentUserAsync();
         await LoadGoals();
         await LoadRecentPosts();
     }
 
-
+    // Henter alle mål for den aktuelle bruger
     private async Task LoadGoals()
     {
-        try
-        {
-            var currentUser = await UserService.GetCurrentUserAsync();
             if (currentUser != null)
             {
                 isLoggedIn = true;
-                userName = currentUser.Name ?? currentUser.Email ?? "bruger";
-                var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-                goals = plans.SelectMany(p => p.Goals).ToList();
+                var plans = await StudentPlanService.GetPlansByUserAsync(currentUser); // Hent elevens planer
+                goals = plans.SelectMany(p => p.Goals).ToList(); // Saml alle mål fra alle planer
             }
-        }
-        finally
-        {
-            isCheckingUser = false;
-        }
     }
 
     // Henter de nyeste opslag fra PostService
@@ -155,10 +150,8 @@ else
     {
         var allPosts = await PostService.GetAllPostsAsync();
         recentPosts = allPosts
-            .OrderByDescending(p => p.Id) // Sortér nyeste først (vi bruger Id som fallback)
+            .OrderByDescending(p => p.Id) // Sorterer så de nyeste opslag kommer først (baseret på ID)
             .Take(3) // Vis kun de 3 nyeste
             .ToList();
     }
-
-
-} 
+}

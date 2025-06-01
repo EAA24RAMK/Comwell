@@ -1,15 +1,13 @@
-using Core.Models;
 using ServerAPI.Repositories;
-using MongoDB.Driver;
 using ServerAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Dependency Injection – registrerer repositories
+// Når en controller fx beder om IUserRepository, får den en instans af UserRepository
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
 builder.Services.AddScoped<ITemplateRepository, TemplateRepository>();
@@ -18,19 +16,20 @@ builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<ILearningMaterialRepository, LearningMaterialRepository>();
 
+// Konfigurerer CORS
+// Gør det muligt for WebApp (frontend) at snakke med backend
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins("http://localhost:5229") // WebApp URL
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyMethod()                       // Tillad alle HTTP-metoder (GET, POST, PUT, DELETE osv.)
+            .AllowAnyHeader();                      // Tillad alle headers
     });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (
     app.Environment.IsDevelopment())
 {
