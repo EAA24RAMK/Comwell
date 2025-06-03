@@ -79,7 +79,7 @@ else
             }
             else
             {
-                <a href="@($"http://localhost:5079/api/LearningMaterial/download/{mat.FileId}")" target="_blank" download="@mat.FileName">[Download]</a>
+                <a href="@($"https://comwelltpapi.azurewebsites.net/api/LearningMaterial/download/{mat.FileId}")" target="_blank" download="@mat.FileName">[Download]</a>
             }
 
             @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
