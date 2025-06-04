@@ -30,7 +30,7 @@ public class StudentPlanRepository : IStudentPlanRepository
     }
     
     // Parametre: createPlan – den plan der skal oprettes.
-    // Formål: Opretter en ny elevplan i databasen. Sætter ID, deadlines, mål og skoleperioder baseret på skabelonen.
+    // Formål: Opretter en ny elevplan i databazsen. Sætter ID, deadlines, mål og skoleperioder baseret på skabelonen.
     public async Task CreateStudentPlanAsync(StudentPlan createPlan)
     {
         // Henter den tilknyttede template fra database
