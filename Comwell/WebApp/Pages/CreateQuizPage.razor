@@ -1,0 +1,299 @@
+@page "/quiz/create"
+@using Core.Models
+@using WebApp.Services
+@using Blazored.LocalStorage
+@inject IQuizService QuizService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+<PageTitle>Opret Quiz</PageTitle>
+
+<div class="create-quiz-container">
+    @if (!HasPermission)
+    {
+        <div class="access-denied">
+            <div class="alert alert-danger">
+                <h4><i class="bi bi-shield-exclamation"></i> Adgang Nægtet</h4>
+                <p>Du har ikke tilladelse til at oprette quizzer. Kun HR, Køkkenchef og Kok kan oprette nye quizzer.</p>
+                <button class="btn btn-outline-primary" @onclick="GoBackToQuiz">
+                    <i class="bi bi-arrow-left"></i> Tilbage til Quiz
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="page-header">
+            <h1><i class="bi bi-plus-circle"></i> Opret Ny Quiz</h1>
+            <p class="text-muted">Opret en ny quiz til dine kolleger</p>
+        </div>
+
+        <div class="quiz-form-card">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Quiz Detaljer</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="title">Titel <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" @bind="newQuiz.Title" placeholder="Fx: Køkken Sikkerhed" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="difficulty">Sværhedsgrad</label>
+                                <select class="form-select" id="difficulty" @bind="newQuiz.Difficulty">
+                                    <option value="Let">Let</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Svær">Svær</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Beskrivelse <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" rows="3" @bind="newQuiz.Description" 
+                                  placeholder="Beskriv hvad denne quiz handler om..."></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="timeLimit">Tidsbegrænsning (minutter)</label>
+                                <input type="number" class="form-control" id="timeLimit" @bind="newQuiz.TimeLimitMinutes" min="1" max="60" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3>Spørgsmål</h3>
+                    <button type="button" class="btn btn-outline-primary btn-sm" @onclick="AddQuestion">
+                        <i class="bi bi-plus"></i> Tilføj Spørgsmål
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (newQuiz.Questions.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-question-circle text-muted"></i>
+                            <p class="text-muted">Ingen spørgsmål endnu. Tilføj det første spørgsmål for at komme i gang.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < newQuiz.Questions.Count; i++)
+                        {
+                            var questionIndex = i;
+                            var question = newQuiz.Questions[questionIndex];
+                            
+                            <div class="question-card">
+                                <div class="question-header">
+                                    <h5>Spørgsmål @(questionIndex + 1)</h5>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveQuestion(questionIndex)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Spørgsmål tekst <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="question.QuestionText" placeholder="Indtast dit spørgsmål her..." />
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Type</label>
+                                                                        <select class="form-select" value="@question.QuestionType" @onchange="@((ChangeEventArgs e) => OnQuestionTypeChanged(questionIndex, e.Value?.ToString() ?? ""))">
+                                <option value="MultipleChoice">Multiple Choice</option>
+                                <option value="TrueFalse">Sand/Falsk</option>
+                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Point</label>
+                                            <input type="number" class="form-control" @bind="question.Points" min="1" max="50" />
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="answers-section">
+                                    <label>Svar muligheder</label>
+                                    @for (int j = 0; j < question.Answers.Count; j++)
+                                    {
+                                        var answerIndex = j;
+                                        var answer = question.Answers[answerIndex];
+                                        
+                                        <div class="answer-row">
+                                            <div class="form-check">
+                                                <input type="radio" class="form-check-input" name="correct_@questionIndex" 
+                                                       checked="@answer.IsCorrect" @onchange="() => SetCorrectAnswer(questionIndex, answerIndex)" />
+                                                <input type="text" class="form-control answer-input" @bind="answer.AnswerText" 
+                                                       placeholder="Svar mulighed @(answerIndex + 1)" />
+                                                @if (question.QuestionType == "MultipleChoice" && question.Answers.Count > 2)
+                                                {
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => RemoveAnswer(questionIndex, answerIndex)">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                    
+                                    @if (question.QuestionType == "MultipleChoice" && question.Answers.Count < 6)
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" @onclick="() => AddAnswer(questionIndex)">
+                                            <i class="bi bi-plus"></i> Tilføj Svar
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" @onclick="GoBackToQuiz">
+                    <i class="bi bi-arrow-left"></i> Annuller
+                </button>
+                <button type="button" class="btn btn-success" @onclick="SaveQuiz" disabled="@(!IsFormValid || isSubmitting)">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    <i class="bi bi-check-circle"></i> Gem Quiz
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private Quiz newQuiz = new Quiz();
+    private User? loggedInUser;
+    private bool HasPermission => loggedInUser?.Role == "HR" || loggedInUser?.Role == "Køkkenchef" || loggedInUser?.Role == "Kok";
+    private bool isSubmitting = false;
+    
+    private bool IsFormValid => 
+        !string.IsNullOrWhiteSpace(newQuiz.Title) && 
+        !string.IsNullOrWhiteSpace(newQuiz.Description) && 
+        newQuiz.Questions.Count > 0 &&
+        newQuiz.Questions.All(q => !string.IsNullOrWhiteSpace(q.QuestionText) && 
+                                   q.Answers.Count >= 2 && 
+                                   q.Answers.Any(a => a.IsCorrect) &&
+                                   q.Answers.All(a => !string.IsNullOrWhiteSpace(a.AnswerText)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        loggedInUser = await LocalStorage.GetItemAsync<User>("loggedInUser");
+        
+        // Initialize default values
+        newQuiz.Difficulty = "Medium";
+        newQuiz.TimeLimitMinutes = 5;
+        newQuiz.IsActive = true;
+        newQuiz.CreatedByUserId = loggedInUser?.Id ?? 1;
+    }
+    
+    private void AddQuestion()
+    {
+        var question = new QuizQuestion
+        {
+            QuestionType = "MultipleChoice",
+            Points = 10,
+            Answers = new List<QuizAnswer>
+            {
+                new QuizAnswer { AnswerText = "", IsCorrect = true },
+                new QuizAnswer { AnswerText = "", IsCorrect = false },
+                new QuizAnswer { AnswerText = "", IsCorrect = false },
+                new QuizAnswer { AnswerText = "", IsCorrect = false }
+            }
+        };
+        newQuiz.Questions.Add(question);
+    }
+    
+    private void RemoveQuestion(int index)
+    {
+        newQuiz.Questions.RemoveAt(index);
+    }
+    
+    private void OnQuestionTypeChanged(int questionIndex, string newType)
+    {
+        var question = newQuiz.Questions[questionIndex];
+        question.QuestionType = newType;
+        
+        if (newType == "TrueFalse")
+        {
+            question.Answers.Clear();
+            question.Answers.Add(new QuizAnswer { AnswerText = "Ja", IsCorrect = true });
+            question.Answers.Add(new QuizAnswer { AnswerText = "Nej", IsCorrect = false });
+        }
+        else if (question.Answers.Count < 2)
+        {
+            question.Answers.Clear();
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = true });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+        }
+    }
+    
+    private void AddAnswer(int questionIndex)
+    {
+        var question = newQuiz.Questions[questionIndex];
+        if (question.Answers.Count < 6)
+        {
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+        }
+    }
+    
+    private void RemoveAnswer(int questionIndex, int answerIndex)
+    {
+        var question = newQuiz.Questions[questionIndex];
+        if (question.Answers.Count > 2)
+        {
+            question.Answers.RemoveAt(answerIndex);
+        }
+    }
+    
+    private void SetCorrectAnswer(int questionIndex, int answerIndex)
+    {
+        var question = newQuiz.Questions[questionIndex];
+        for (int i = 0; i < question.Answers.Count; i++)
+        {
+            question.Answers[i].IsCorrect = i == answerIndex;
+        }
+    }
+    
+    private async Task SaveQuiz()
+    {
+        if (!IsFormValid || isSubmitting) return;
+        
+        isSubmitting = true;
+        try
+        {
+            await QuizService.CreateQuizAsync(newQuiz);
+            Navigation.NavigateTo("/quiz");
+        }
+        catch (Exception ex)
+        {
+            // Handle error - could show a toast or alert
+            Console.WriteLine($"Error creating quiz: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+    
+    private void GoBackToQuiz()
+    {
+        Navigation.NavigateTo("/quiz");
+    }
+} 

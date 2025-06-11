@@ -43,7 +43,7 @@ h3 {
 }
 
 .filters button {
-    background-color: #a6af87;
+    background-color: #172C39;
     border: none;
     padding: 0.5rem 1rem;
     color: white;
@@ -53,5 +53,5 @@ h3 {
 }
 
 .filters button:hover {
-    background-color: #8f976e;
+    background-color: #0d1a22;
 }

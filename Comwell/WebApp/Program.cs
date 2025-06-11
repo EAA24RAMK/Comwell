@@ -21,11 +21,12 @@ builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningMaterialService, LearningMaterialService>();
+builder.Services.AddScoped<IQuizService, QuizService>();
 
 // Konfigurerer HttpClient til at sende requests til backend
 // BaseAddress: Angiver hvilket API vi arbejder imod 
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("https://comwelltpapi.azurewebsites.net/") }
+    new HttpClient { BaseAddress = new Uri("http://localhost:5079/") }
 );
 
 await builder.Build().RunAsync();

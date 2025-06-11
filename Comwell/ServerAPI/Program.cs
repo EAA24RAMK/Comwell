@@ -15,6 +15,10 @@ builder.Services.AddScoped<IStudentPlanRepository, StudentPlanRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<ILearningMaterialRepository, LearningMaterialRepository>();
+builder.Services.AddScoped<IQuizRepository, QuizRepository>();
+builder.Services.AddScoped<IQuizAttemptRepository, QuizAttemptRepository>();
+builder.Services.AddScoped<IAchievementRepository, AchievementRepository>();
+builder.Services.AddScoped<IUserAchievementRepository, UserAchievementRepository>();
 
 // Konfigurerer CORS
 // Gør det muligt for WebApp (frontend) at snakke med backend
@@ -22,7 +26,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://comwelltp.azurewebsites.net") // WebApp URL
+        policy.WithOrigins("http://localhost:5229") // WebApp URL
             .AllowAnyMethod()                       // Tillad alle HTTP-metoder (GET, POST, PUT, DELETE osv.)
             .AllowAnyHeader();                      // Tillad alle headers
     });

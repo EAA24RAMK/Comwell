@@ -196,7 +196,7 @@ section {
 }
 
 .btn-confirm {
-    background-color: #aab78a; /* samme grønne nuance */
+    background-color: #172C39;
     color: white;
     border: none;
     padding: 0.5rem 1.2rem;
@@ -208,5 +208,5 @@ section {
 }
 
 .btn-confirm:hover {
-    background-color: #96a574;
+    background-color: #0d1a22;
 }

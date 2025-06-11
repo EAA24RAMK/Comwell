@@ -30,7 +30,7 @@ h3 {
 }
 
 .create-modal-button {
-    background-color: #a6af87;
+    background-color: #172C39;
     border: none;
     color: white;
     padding: 0.6rem 1.2rem;
@@ -40,7 +40,7 @@ h3 {
 }
 
 .create-modal-button:hover {
-    background-color: #8f976e;
+    background-color: #0d1a22;
 }
 
 .posts-list {
@@ -210,7 +210,7 @@ h3 {
 }
 
 .create-button {
-    background-color: #a6af87;
+    background-color: #172C39;
     border: none;
     color: white;
     padding: 0.5rem 1rem;
@@ -220,7 +220,7 @@ h3 {
 }
 
 .create-button:hover {
-    background-color: #8f976e;
+    background-color: #0d1a22;
 }
 
 /* === VÆLG ALLE PERSONER KNAP === */

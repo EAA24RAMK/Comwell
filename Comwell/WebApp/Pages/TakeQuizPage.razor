@@ -1,0 +1,348 @@
+@page "/quiz/take/{AttemptId:int}"
+@using WebApp.Services
+@using Core.Models
+@inject IUserService UserService
+@inject IQuizService QuizService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+@if (currentUser == null)
+{
+    <p><strong>Du skal være logget ind for at tage en quiz.</strong></p>
+}
+else if (quiz == null || attempt == null)
+{
+    <p><strong>Quiz ikke fundet.</strong></p>
+}
+else if (isCompleted)
+{
+    <!-- Results Page -->
+    <div class="quiz-results">
+        <div class="results-header">
+            <h3>🎉 Quiz Gennemført!</h3>
+            <h4>@quiz.Title</h4>
+        </div>
+
+        <div class="score-summary">
+            <div class="score-circle">
+                <span class="score-percentage">@attempt.Percentage.ToString("F1")%</span>
+                <span class="score-points">@attempt.Score/@attempt.MaxScore point</span>
+            </div>
+        </div>
+
+        <div class="performance-message">
+            @if (attempt.Percentage >= 90)
+            {
+                <p class="excellent">🌟 Fremragende præstation! Du behersker dette emne rigtigt godt!</p>
+            }
+            else if (attempt.Percentage >= 70)
+            {
+                <p class="good">👍 Godt klaret! Du har en solid forståelse af emnet.</p>
+            }
+            else if (attempt.Percentage >= 50)
+            {
+                <p class="okay">📚 Okay resultat. Der er plads til forbedring - øv dig lidt mere!</p>
+            }
+            else
+            {
+                <p class="needs-improvement">💪 Du kan blive meget bedre! Prøv at læse mere om emnet og tag quizzen igen.</p>
+            }
+        </div>
+
+        @if (newAchievements.Any())
+        {
+            <div class="new-achievements">
+                <h4>🏆 Nye Præstationer Opnået!</h4>
+                <div class="achievement-list">
+                    @foreach (var achievement in newAchievements)
+                    {
+                        <div class="achievement-earned">
+                            <span class="achievement-icon">@achievement.Icon</span>
+                            <div class="achievement-details">
+                                <strong>@achievement.Name</strong>
+                                <p>@achievement.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="results-actions">
+            <button class="back-button" @onclick="BackToQuizCenter">
+                Tilbage til Quiz Center
+            </button>
+            <button class="retake-button" @onclick="RetakeQuiz">
+                Tag Quiz Igen
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Quiz Taking Interface -->
+    <div class="take-quiz-container">
+        <div class="quiz-header">
+            <div class="quiz-info">
+                <h3>@quiz.Title</h3>
+                <div class="progress-info">
+                    Spørgsmål @(currentQuestionIndex + 1) af @quiz.Questions.Count
+                </div>
+            </div>
+            <div class="timer">
+                <span class="timer-icon">⏱️</span>
+                <span class="timer-value">@timeRemaining</span>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: @(((double)(currentQuestionIndex + 1) / quiz.Questions.Count) * 100)%"></div>
+        </div>
+
+        @if (currentQuestion != null)
+        {
+            <div class="question-container">
+                <div class="question">
+                    <h4>@currentQuestion.QuestionText</h4>
+                </div>
+
+                <div class="answers">
+                    @if (currentQuestion.QuestionType == "MultipleChoice")
+                    {
+                        @foreach (var answer in currentQuestion.Answers)
+                        {
+                            <label class="answer-option @(selectedAnswerId == answer.Id ? "selected" : "")">
+                                <input type="radio" 
+                                       name="answer" 
+                                       value="@answer.Id" 
+                                       @onchange="@((ChangeEventArgs e) => SelectAnswer(answer.Id))" />
+                                <span class="answer-text">@answer.AnswerText</span>
+                            </label>
+                        }
+                    }
+                    else if (currentQuestion.QuestionType == "TrueFalse")
+                    {
+                        @foreach (var answer in currentQuestion.Answers)
+                        {
+                            <label class="answer-option @(selectedAnswerId == answer.Id ? "selected" : "")">
+                                <input type="radio" 
+                                       name="answer" 
+                                       value="@answer.Id" 
+                                       @onchange="@((ChangeEventArgs e) => SelectAnswer(answer.Id))" />
+                                <span class="answer-text">@answer.AnswerText</span>
+                            </label>
+                        }
+                    }
+                </div>
+
+                <div class="question-actions">
+                    @if (currentQuestionIndex > 0)
+                    {
+                        <button class="prev-button" @onclick="PreviousQuestion">
+                            ← Forrige
+                        </button>
+                    }
+                    
+                    @if (currentQuestionIndex < quiz.Questions.Count - 1)
+                    {
+                        <button class="next-button" @onclick="NextQuestion" disabled="@(selectedAnswerId == null)">
+                            Næste →
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="submit-button" @onclick="SubmitQuiz" disabled="@(selectedAnswerId == null)">
+                            Afslut Quiz
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int AttemptId { get; set; }
+    
+    private Quiz? quiz;
+    private QuizAttempt? attempt;
+    private User? currentUser;
+    private List<Achievement> newAchievements = new();
+    
+    private int currentQuestionIndex = 0;
+    private QuizQuestion? currentQuestion => quiz?.Questions.ElementAtOrDefault(currentQuestionIndex);
+    private int? selectedAnswerId;
+    private Dictionary<int, int> userAnswers = new();
+    private bool isCompleted = false;
+    
+    private string timeRemaining = "";
+    private Timer? timer;
+    private DateTime startTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null)
+        {
+            await LoadQuizData();
+            if (quiz != null && !isCompleted)
+            {
+                StartTimer();
+            }
+        }
+    }
+
+    private async Task LoadQuizData()
+    {
+        // Find attempt (this would normally come from service)
+        var attempts = await QuizService.GetUserAttemptsAsync(currentUser!.Id);
+        // For simplicity, we'll get the quiz and create the attempt structure we need
+        
+        // In a real implementation, you'd have a method to get attempt by ID
+        // For now, let's simulate it
+        var allQuizzes = await QuizService.GetAllQuizzesAsync();
+        quiz = allQuizzes.FirstOrDefault(); // This should be based on the attempt
+        
+        if (quiz != null)
+        {
+            attempt = new QuizAttempt
+            {
+                Id = AttemptId,
+                QuizId = quiz.Id,
+                UserId = currentUser!.Id,
+                StartedAt = DateTime.Now,
+                MaxScore = quiz.Questions.Sum(q => q.Points)
+            };
+            startTime = DateTime.Now;
+        }
+    }
+
+    private void StartTimer()
+    {
+        if (quiz == null) return;
+        
+        timer = new Timer(UpdateTimer, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private async void UpdateTimer(object? state)
+    {
+        if (quiz == null) return;
+        
+        var elapsed = DateTime.Now - startTime;
+                        var remaining = TimeSpan.FromMinutes(quiz.TimeLimitMinutes) - elapsed;
+        
+        if (remaining.TotalSeconds <= 0)
+        {
+            await InvokeAsync(async () =>
+            {
+                timeRemaining = "Tid udløbet!";
+                await SubmitQuiz();
+                StateHasChanged();
+            });
+        }
+        else
+        {
+            await InvokeAsync(() =>
+            {
+                timeRemaining = $"{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+                StateHasChanged();
+            });
+        }
+    }
+
+    private void SelectAnswer(int answerId)
+    {
+        selectedAnswerId = answerId;
+        if (currentQuestion != null)
+        {
+            userAnswers[currentQuestion.Id] = answerId;
+        }
+    }
+
+    private void NextQuestion()
+    {
+        if (currentQuestionIndex < quiz!.Questions.Count - 1)
+        {
+            currentQuestionIndex++;
+            // Load previously selected answer for this question
+            if (currentQuestion != null && userAnswers.ContainsKey(currentQuestion.Id))
+            {
+                selectedAnswerId = userAnswers[currentQuestion.Id];
+            }
+            else
+            {
+                selectedAnswerId = null;
+            }
+        }
+    }
+
+    private void PreviousQuestion()
+    {
+        if (currentQuestionIndex > 0)
+        {
+            currentQuestionIndex--;
+            // Load previously selected answer for this question
+            if (currentQuestion != null && userAnswers.ContainsKey(currentQuestion.Id))
+            {
+                selectedAnswerId = userAnswers[currentQuestion.Id];
+            }
+            else
+            {
+                selectedAnswerId = null;
+            }
+        }
+    }
+
+    private async Task SubmitQuiz()
+    {
+        if (attempt == null || quiz == null) return;
+
+        timer?.Dispose();
+
+        // Convert user answers to QuizAttemptAnswer objects
+        attempt.UserAnswers = userAnswers.Select(ua => new QuizAttemptAnswer
+        {
+            QuestionId = ua.Key,
+            SelectedAnswerId = ua.Value,
+            IsCorrect = false, // Will be calculated in service
+            PointsEarned = 0 // Will be calculated in service
+        }).ToList();
+
+        // Submit the quiz
+        attempt = await QuizService.SubmitQuizAsync(attempt);
+        
+        // Check for new achievements
+        var allAchievements = await QuizService.GetAllAchievementsAsync();
+        var userAchievementsBefore = await QuizService.GetUserAchievementsAsync(currentUser!.Id);
+        
+        await QuizService.CheckAndAwardAchievementsAsync(currentUser!.Id);
+        
+        var userAchievementsAfter = await QuizService.GetUserAchievementsAsync(currentUser!.Id);
+        var newAchievementIds = userAchievementsAfter
+            .Where(ua => !userAchievementsBefore.Any(ub => ub.AchievementId == ua.AchievementId))
+            .Select(ua => ua.AchievementId);
+        
+        newAchievements = allAchievements.Where(a => newAchievementIds.Contains(a.Id)).ToList();
+        
+        isCompleted = true;
+    }
+
+    private async Task RetakeQuiz()
+    {
+        if (currentUser != null && quiz != null)
+        {
+            var newAttempt = await QuizService.StartQuizAsync(quiz.Id, currentUser.Id);
+            Navigation.NavigateTo($"/quiz/take/{newAttempt.Id}");
+        }
+    }
+
+    private void BackToQuizCenter()
+    {
+        Navigation.NavigateTo("/quiz");
+    }
+
+    public void Dispose()
+    {
+        timer?.Dispose();
+    }
+} 
