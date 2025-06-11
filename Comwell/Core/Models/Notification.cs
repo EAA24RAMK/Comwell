@@ -9,6 +9,7 @@ public class Notification
     public int? PlanId { get; set; } // Reference til StudentPlan
     public int? GoalId { get; set; } // Reference til Goal
     public bool IsRead { get; set; } = false;
+    public string? Link { get; set; } // URL eller side man kan klikke sig videre til
     public List<int> DeletedByUserIds { get; set; } = new(); 
     public List<int> NotifyUserId { get; set; } = new List<int>();
 }

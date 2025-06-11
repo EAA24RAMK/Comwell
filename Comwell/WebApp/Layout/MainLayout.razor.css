@@ -449,3 +449,10 @@ main {
     border-radius: 50%;
 }
 
+.notification-message {
+    color: #0066cc;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+
