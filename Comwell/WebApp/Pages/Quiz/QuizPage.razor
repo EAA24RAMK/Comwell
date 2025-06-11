@@ -1,0 +1,406 @@
+@page "/quiz"
+@using WebApp.Services
+@using Core.Models
+@inject IUserService UserService
+@inject IQuizService QuizService
+@inject NavigationManager Navigation
+
+@if (currentUser == null)
+{
+    <div class="access-denied">
+        <div class="access-denied-content">
+            <div class="access-denied-icon">
+                <i class="bi bi-lock"></i>
+            </div>
+            <h2>Adgang krævet</h2>
+            <p>Du skal være logget ind for at bruge quiz-funktionen.</p>
+            <a href="/login" class="login-link">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Log ind
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="quiz-page">
+        <!-- Header Section -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1 class="page-title">
+                        <i class="bi bi-patch-question"></i>
+                        Quiz Center
+                    </h1>
+                    <p class="page-subtitle">Test din viden og konkurrér med dine kolleger!</p>
+                </div>
+                @if (CanCreateQuiz)
+                {
+                    <div class="header-actions">
+                        <button class="create-quiz-btn" @onclick="NavigateToCreateQuiz">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Opret Quiz</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <div class="tab-buttons">
+                <button class="tab-button @(activeTab == "quizzes" ? "active" : "")" @onclick='() => SetActiveTab("quizzes")'>
+                    <i class="bi bi-collection"></i>
+                    <span>Tilgængelige Quizzes</span>
+                </button>
+                <button class="tab-button @(activeTab == "leaderboard" ? "active" : "")" @onclick='() => SetActiveTab("leaderboard")'>
+                    <i class="bi bi-trophy"></i>
+                    <span>Topresultater</span>
+                </button>
+                <button class="tab-button @(activeTab == "achievements" ? "active" : "")" @onclick='() => SetActiveTab("achievements")'>
+                    <i class="bi bi-award"></i>
+                    <span>Mine Præstationer</span>
+                </button>
+                <button class="tab-button @(activeTab == "myresults" ? "active" : "")" @onclick='() => SetActiveTab("myresults")'>
+                    <i class="bi bi-graph-up"></i>
+                    <span>Mine Resultater</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Quiz List Tab -->
+            @if (activeTab == "quizzes")
+            {
+                <div class="quiz-section">
+                    @if (quizzes.Any())
+                    {
+                        <div class="quiz-grid">
+                            @foreach (var quiz in quizzes)
+                            {
+                                <div class="quiz-card">
+                                    <div class="quiz-card-header">
+                                        <div class="quiz-difficulty difficulty-@quiz.Difficulty.ToLower()">
+                                            @quiz.Difficulty
+                                        </div>
+                                        <div class="quiz-questions">
+                                            @quiz.Questions.Count spørgsmål
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="quiz-card-body">
+                                        <h3 class="quiz-title">@quiz.Title</h3>
+                                        <p class="quiz-description">@quiz.Description</p>
+                                        
+                                        <div class="quiz-meta">
+                                            <div class="meta-item">
+                                                <i class="bi bi-clock"></i>
+                                                <span>@quiz.TimeLimitMinutes min</span>
+                                            </div>
+                                            <div class="meta-item">
+                                                <i class="bi bi-patch-question"></i>
+                                                <span>@quiz.Questions.Count spørgsmål</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="quiz-card-footer">
+                                        <button class="start-quiz-btn" @onclick="() => StartQuiz(quiz.Id)">
+                                            <i class="bi bi-play-circle"></i>
+                                            <span>Start Quiz</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="bi bi-patch-question"></i>
+                            </div>
+                            <h3>Ingen quizzes tilgængelige</h3>
+                            <p>Der er ingen quizzes at tage endnu.</p>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Leaderboard Tab -->
+            @if (activeTab == "leaderboard")
+            {
+                <div class="leaderboard-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="bi bi-trophy"></i>
+                            Topresultater
+                        </h2>
+                        <p>De bedste resultater fra alle quizzes</p>
+                    </div>
+
+                    @if (leaderboard.Any())
+                    {
+                        <div class="leaderboard-list">
+                            @for (int i = 0; i < leaderboard.Count; i++)
+                            {
+                                var attempt = leaderboard[i];
+                                var user = allUsers.FirstOrDefault(u => u.Id == attempt.UserId);
+                                var quiz = quizzes.FirstOrDefault(q => q.Id == attempt.QuizId);
+                                
+                                <div class="leaderboard-item">
+                                    <div class="rank-section">
+                                        @if (i == 0) 
+                                        { 
+                                            <div class="rank gold">
+                                                <i class="bi bi-trophy-fill"></i>
+                                                <span>1</span>
+                                            </div>
+                                        }
+                                        else if (i == 1) 
+                                        { 
+                                            <div class="rank silver">
+                                                <i class="bi bi-award-fill"></i>
+                                                <span>2</span>
+                                            </div>
+                                        }
+                                        else if (i == 2) 
+                                        { 
+                                            <div class="rank bronze">
+                                                <i class="bi bi-award"></i>
+                                                <span>3</span>
+                                            </div>
+                                        }
+                                        else 
+                                        { 
+                                            <div class="rank regular">
+                                                <span>@(i + 1)</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    
+                                    <div class="user-section">
+                                        <div class="user-avatar">
+                                            @GetInitials(user?.Name)
+                                        </div>
+                                        <div class="user-info">
+                                            <div class="user-name">@(user?.Name ?? "Ukendt")</div>
+                                            <div class="quiz-name">@(quiz?.Title ?? "Ukendt Quiz")</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="score-section">
+                                        <div class="percentage">@attempt.Percentage.ToString("F1")%</div>
+                                        <div class="points">@attempt.Score/@attempt.MaxScore point</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                            <h3>Ingen resultater endnu</h3>
+                            <p>Vær den første til at gennemføre en quiz!</p>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Achievements Tab -->
+            @if (activeTab == "achievements")
+            {
+                <div class="achievements-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="bi bi-award"></i>
+                            Mine Præstationer
+                        </h2>
+                        <p>Opnå præstationer ved at gennemføre quizzes</p>
+                    </div>
+
+                    <div class="achievements-grid">
+                        @foreach (var achievement in allAchievements)
+                        {
+                            var isEarned = userAchievements.Any(ua => ua.AchievementId == achievement.Id);
+                            <div class="achievement-card @(isEarned ? "earned" : "locked")">
+                                <div class="achievement-icon">
+                                    @achievement.Icon
+                                </div>
+                                <div class="achievement-content">
+                                    <h4 class="achievement-name">@achievement.Name</h4>
+                                    <p class="achievement-description">@achievement.Description</p>
+                                    <div class="achievement-requirements">@achievement.Requirements</div>
+                                </div>
+                                @if (isEarned)
+                                {
+                                    var earnedDate = userAchievements.First(ua => ua.AchievementId == achievement.Id).EarnedAt;
+                                    <div class="earned-badge">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <span>@earnedDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="locked-badge">
+                                        <i class="bi bi-lock-fill"></i>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- My Results Tab -->
+            @if (activeTab == "myresults")
+            {
+                <div class="results-section">
+                    <div class="section-header">
+                        <h2>
+                            <i class="bi bi-graph-up"></i>
+                            Mine Resultater
+                        </h2>
+                        <p>Oversigt over dine quiz-præstationer</p>
+                    </div>
+
+                    @if (userAttempts.Any())
+                    {
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value">@userAttempts.Count</div>
+                                    <div class="stat-label">Gennemførte Quizzes</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-bar-chart"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value">@userAttempts.Average(a => a.Percentage).ToString("F1")%</div>
+                                    <div class="stat-label">Gennemsnitlig Score</div>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="bi bi-star-fill"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value">@userAttempts.Max(a => a.Percentage).ToString("F1")%</div>
+                                    <div class="stat-label">Bedste Score</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="results-list">
+                            @foreach (var attempt in userAttempts.OrderByDescending(a => a.CompletedAt))
+                            {
+                                var quiz = quizzes.FirstOrDefault(q => q.Id == attempt.QuizId);
+                                <div class="result-item">
+                                    <div class="result-icon">
+                                        <i class="bi bi-patch-question"></i>
+                                    </div>
+                                    <div class="result-content">
+                                        <h4 class="result-title">@(quiz?.Title ?? "Ukendt Quiz")</h4>
+                                        <div class="result-date">
+                                            <i class="bi bi-calendar"></i>
+                                            @attempt.CompletedAt?.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                    <div class="result-score">
+                                        <div class="score-percentage">@attempt.Percentage.ToString("F1")%</div>
+                                        <div class="score-points">@attempt.Score/@attempt.MaxScore</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h3>Ingen resultater endnu</h3>
+                            <p>Start din første quiz for at se dine resultater her.</p>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Quiz> quizzes = new();
+    private List<QuizAttempt> leaderboard = new();
+    private List<Achievement> allAchievements = new();
+    private List<UserAchievement> userAchievements = new();
+    private List<QuizAttempt> userAttempts = new();
+    private List<User> allUsers = new();
+    private User? currentUser;
+    private string activeTab = "quizzes";
+    
+    private bool CanCreateQuiz => currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef" || currentUser?.Role == "Kok";
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUser = await UserService.GetCurrentUserAsync();
+        if (currentUser != null)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        quizzes = await QuizService.GetAllQuizzesAsync();
+        leaderboard = await QuizService.GetLeaderboardAsync();
+        allAchievements = await QuizService.GetAllAchievementsAsync();
+        userAchievements = await QuizService.GetUserAchievementsAsync(currentUser!.Id);
+        userAttempts = await QuizService.GetUserAttemptsAsync(currentUser!.Id);
+        allUsers = await UserService.GetAllUsersAsync();
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private async Task StartQuiz(int quizId)
+    {
+        if (currentUser != null)
+        {
+            var attempt = await QuizService.StartQuizAsync(quizId, currentUser.Id);
+            Navigation.NavigateTo($"/quiz/take/{attempt.Id}");
+        }
+    }
+    
+    private void NavigateToCreateQuiz()
+    {
+        Navigation.NavigateTo("/quiz/create");
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
+        };
+    }
+} 

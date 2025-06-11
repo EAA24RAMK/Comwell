@@ -4,161 +4,279 @@
 @inject NavigationManager NavManager
 @inject IUserService UserService
 
-<!-- Topbar med logo -->
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">
-            <img src="images/comwell-logo.png" alt="Comwell logo" class="comwell-logo" />
-        </a>
-    </div>
-</div>
-
-<!-- Scrollbart navigationsmenu -->
-<div class="nav-scrollable">
-    <nav class="nav flex-column">
-        <!-- Link til oversigt -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="HandleLinkClick">
-                <span class="bi bi-house-door" aria-hidden="true"></span> Oversigt
-            </NavLink>
+<!-- Floating Island Navigation -->
+<div class="floating-nav">
+    <div class="nav-container">
+        <!-- Logo/Brand -->
+        <div class="nav-brand">
+            <a href="" class="brand-link">
+                <div class="brand-icon">C</div>
+                <span class="brand-text">Comwell</span>
+            </a>
         </div>
 
-        <!-- Opret plan (vises ikke for Elev og Kok) -->
-        @if (currentUser != null && currentUser.Role != "Elev" && currentUser.Role != "Kok")
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="opret-plan" @onclick="HandleLinkClick">
-                    <span class="bi bi-plus-circle" aria-hidden="true"></span> Opret plan
-                </NavLink>
-            </div>
-        }
+        <!-- Desktop Navigation Links -->
+        <nav class="nav-links" id="navLinks">
+            <NavLink href="" Match="NavLinkMatch.All" class="nav-link" @onclick="HandleLinkClick">
+                <i class="bi bi-house-door"></i>
+                <span>Oversigt</span>
+            </NavLink>
 
-        <!-- Elevplan eller Elevplaner afhængig af rolle -->
-        @if (currentUser != null)
-        {
-            if (currentUser.Role == "Elev")
+
+
+            @if (currentUser != null)
             {
-                <!-- Elev ser kun egne elevplaner -->
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="elevplan" @onclick="HandleLinkClick">
-                        <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplan
+                if (currentUser.Role == "Elev")
+                {
+                    <NavLink href="elevplan" class="nav-link" @onclick="HandleLinkClick">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Elevplan</span>
                     </NavLink>
-                </div>
-            }
-            else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
-            {
-                <!-- HR, Køkkenchef og Kok ser alle elevplaner -->
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="elevplaner" @onclick="HandleLinkClick">
-                        <span class="bi bi-list-ul" aria-hidden="true"></span> Elevplaner
+                }
+                else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
+                {
+                    <NavLink href="elevplaner" class="nav-link" @onclick="HandleLinkClick">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Elevplaner</span>
                     </NavLink>
-                </div>
+                }
             }
-        }
 
-        <!-- Brugere (vises ikke for Elev) -->
-        @if (currentUser != null && currentUser.Role != "Elev")
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="users" @onclick="HandleLinkClick">
-                    <span class="bi bi-people" aria-hidden="true"></span> Brugere
-                </NavLink>
-            </div>
-        }
-
-        <!-- Læringsmateriale (tilgængelig for alle) -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="learningmaterials" @onclick="HandleLinkClick">
-                <span class="bi bi-journal-bookmark" aria-hidden="true"></span> Læringsmateriale
-            </NavLink>
-        </div>
-
-        <!-- Opslagstavle (tilgængelig for alle) -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="posts" @onclick="HandleLinkClick">
-                <span class="bi bi-card-text" aria-hidden="true"></span> Opslagstavle
-            </NavLink>
-        </div>
-
-        <!-- Quiz (tilgængelig for alle) -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="quiz" @onclick="HandleLinkClick">
-                <span class="bi bi-patch-question" aria-hidden="true"></span> Quiz
-            </NavLink>
-        </div>
-
-        <!-- Rapporter (vises ikke for Elev) -->
-        @if (currentUser != null && currentUser.Role != "Elev")
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="rapporter" @onclick="HandleLinkClick">
-                    <span class="bi bi-bar-chart" aria-hidden="true"></span> Rapporter
-                </NavLink>
-            </div>
-        }
-
-        <!-- Login eller logout afhængig af loginstatus -->
-        <div class="nav-item px-3">
-            @if (isLoggedIn)
+            @if (currentUser != null && currentUser.Role != "Elev")
             {
-                <a class="nav-link" href="#" @onclick="HandleLogout">
-                    <span class="bi bi-box-arrow-right"></span> Log ud
-                </a>
+                <NavLink href="users" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-people"></i>
+                    <span>Brugere</span>
+                </NavLink>
+            }
+
+            <NavLink href="learningmaterials" class="nav-link" @onclick="HandleLinkClick">
+                <i class="bi bi-journal-bookmark"></i>
+                <span>Læringsmateriale</span>
+            </NavLink>
+
+            <NavLink href="posts" class="nav-link" @onclick="HandleLinkClick">
+                <i class="bi bi-card-text"></i>
+                <span>Opslagstavle</span>
+            </NavLink>
+
+            <NavLink href="quiz" class="nav-link" @onclick="HandleLinkClick">
+                <i class="bi bi-patch-question"></i>
+                <span>Quiz</span>
+            </NavLink>
+
+            @if (currentUser != null && currentUser.Role != "Elev")
+            {
+                <NavLink href="rapporter" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Rapporter</span>
+                </NavLink>
+            }
+        </nav>
+
+        <!-- User Section -->
+        <div class="nav-user">
+            @if (isLoggedIn && currentUser != null)
+            {
+                <div class="user-menu" @onclick="ToggleUserMenu">
+                    <div class="user-avatar">@GetInitials(currentUser.Name)</div>
+                    <div class="user-info-desktop">
+                        <div class="user-name">@currentUser.Name</div>
+                        <div class="user-role">@currentUser.Role</div>
+                    </div>
+                    <i class="bi bi-chevron-down user-dropdown-icon @(showUserMenu ? "rotated" : "")"></i>
+                </div>
+                
+                @if (showUserMenu)
+                {
+                    <div class="user-dropdown">
+                        <div class="user-info-mobile">
+                            <div class="user-name">@currentUser.Name</div>
+                            <div class="user-role">@currentUser.Role</div>
+                        </div>
+                        <hr class="dropdown-divider"/>
+                        <a href="#" @onclick="HandleLogout" class="dropdown-item">
+                            <i class="bi bi-box-arrow-right"></i>
+                            Log ud
+                        </a>
+                    </div>
+                }
             }
             else
             {
-                <NavLink class="nav-link" href="/login" @onclick="HandleLinkClick">
-                    <span class="bi bi-box-arrow-in-right"></span> Log ind
+                <NavLink href="/login" class="login-btn" @onclick="HandleLinkClick">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Log ind</span>
                 </NavLink>
             }
         </div>
-    </nav>
-</div>
 
-<!-- Brugerinformationskort nederst -->
-<div class="user-info mt-4 px-3">
-    <div class="avatar">@GetInitials(currentUser?.Name)</div>
-    <div class="user-details">
-        <div class="user-name">@currentUser?.Name</div>
-        <div class="user-role">@currentUser?.Role</div>
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" @onclick="ToggleMobileMenu" aria-label="Toggle navigation">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+        </button>
     </div>
-</div>
 
+    <!-- Mobile Navigation Overlay -->
+    @if (showMobileMenu)
+    {
+        <div class="mobile-nav-overlay" @onclick="CloseMobileMenu">
+            <div class="mobile-nav-content" @onclick:stopPropagation="true">
+                <div class="mobile-nav-header">
+                    <div class="mobile-brand">
+                        <div class="brand-icon">C</div>
+                        <span>Comwell</span>
+                    </div>
+                    <button class="mobile-close" @onclick="CloseMobileMenu">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <nav class="mobile-nav-links">
+                    <NavLink href="" Match="NavLinkMatch.All" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                        <i class="bi bi-house-door"></i>
+                        <span>Oversigt</span>
+                    </NavLink>
+
+
+
+                    @if (currentUser != null)
+                    {
+                        if (currentUser.Role == "Elev")
+                        {
+                            <NavLink href="elevplan" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                <i class="bi bi-list-ul"></i>
+                                <span>Elevplan</span>
+                            </NavLink>
+                        }
+                        else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
+                        {
+                            <NavLink href="elevplaner" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                <i class="bi bi-list-ul"></i>
+                                <span>Elevplaner</span>
+                            </NavLink>
+                        }
+                    }
+
+                    @if (currentUser != null && currentUser.Role != "Elev")
+                    {
+                        <NavLink href="users" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-people"></i>
+                            <span>Brugere</span>
+                        </NavLink>
+                    }
+
+                    <NavLink href="learningmaterials" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                        <i class="bi bi-journal-bookmark"></i>
+                        <span>Læringsmateriale</span>
+                    </NavLink>
+
+                    <NavLink href="posts" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                        <i class="bi bi-card-text"></i>
+                        <span>Opslagstavle</span>
+                    </NavLink>
+
+                    <NavLink href="quiz" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                        <i class="bi bi-patch-question"></i>
+                        <span>Quiz</span>
+                    </NavLink>
+
+                    @if (currentUser != null && currentUser.Role != "Elev")
+                    {
+                        <NavLink href="rapporter" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-bar-chart"></i>
+                            <span>Rapporter</span>
+                        </NavLink>
+                    }
+                </nav>
+
+                @if (isLoggedIn && currentUser != null)
+                {
+                    <div class="mobile-user-section">
+                        <div class="mobile-user-info">
+                            <div class="user-avatar">@GetInitials(currentUser.Name)</div>
+                            <div class="user-details">
+                                <div class="user-name">@currentUser.Name</div>
+                                <div class="user-role">@currentUser.Role</div>
+                            </div>
+                        </div>
+                        <button class="mobile-logout-btn" @onclick="HandleLogout">
+                            <i class="bi bi-box-arrow-right"></i>
+                            Log ud
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="mobile-auth-section">
+                        <NavLink href="/login" class="mobile-login-btn" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Log ind
+                        </NavLink>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
 
 @code {
-    [Parameter] public EventCallback ToggleMenu { get; set; } // Event der kan bruges til at lukke sidebaren
+    [Parameter] public EventCallback ToggleMenu { get; set; }
 
-    private User? currentUser;              // Den aktuelt loggede bruger
-    private bool isLoggedIn = false;        // Om der er en bruger logget ind
+    private User? currentUser;
+    private bool isLoggedIn = false;
+    private bool showMobileMenu = false;
+    private bool showUserMenu = false;
 
-    // Initialiserer komponenten når den loades
     protected override async Task OnInitializedAsync()
     {
-        var user = await LocalStorage.GetItemAsync<User>("loggedInUser"); // Hent brugerdata fra localStorage
-        isLoggedIn = user != null;                                            // Sæt loginstatus
-        currentUser = await UserService.GetCurrentUserAsync();                // Hent den aktive bruger
+        var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
+        isLoggedIn = user != null;
+        currentUser = await UserService.GetCurrentUserAsync();
     }
 
-    // Logger brugeren ud
     private async Task HandleLogout()
     {
-        await LocalStorage.RemoveItemAsync("loggedInUser"); // Fjern brugeren fra localStorage
-        isLoggedIn = false;                                     // Sæt loginstatus til false
-        NavManager.NavigateTo("/login", true);      // Navigér til login-siden
-        await ToggleMenu.InvokeAsync();                         // Luk menuen efter logout (mobilvenlig)
+        await LocalStorage.RemoveItemAsync("loggedInUser");
+        isLoggedIn = false;
+        showUserMenu = false;
+        showMobileMenu = false;
+        NavManager.NavigateTo("/login", true);
+        await ToggleMenu.InvokeAsync();
     }
 
-    // Håndterer klik på menupunkter
     private async Task HandleLinkClick()
     {
-        await ToggleMenu.InvokeAsync(); // Luk menuen når et link klikkes (mobilvenlig)
+        await ToggleMenu.InvokeAsync();
     }
-    
-    // Formål: Returnerer initialer ud fra brugerens fulde navn.
-    // Funktion:
-    // - Splitter navnet op ved mellemrum.
-    // - Hvis der er flere navne, bruges første bogstav i begge navne.
-    // - Hvis kun ét navn, bruges første bogstav.
+
+    private async Task HandleMobileLinkClick()
+    {
+        showMobileMenu = false;
+        await ToggleMenu.InvokeAsync();
+    }
+
+    private void ToggleMobileMenu()
+    {
+        showMobileMenu = !showMobileMenu;
+        if (showMobileMenu)
+        {
+            showUserMenu = false;
+        }
+    }
+
+    private void CloseMobileMenu()
+    {
+        showMobileMenu = false;
+    }
+
+    private void ToggleUserMenu()
+    {
+        showUserMenu = !showUserMenu;
+    }
+
     private static string GetInitials(string fullName)
     {
         if (string.IsNullOrWhiteSpace(fullName)) return "";

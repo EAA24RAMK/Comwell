@@ -4,129 +4,209 @@
 @inject WebApp.Services.IPostService PostService
 @using Core.Models
 
-<h1 class="page-title">Oversigt</h1>
-
- @if (!isLoggedIn)
+@if (!isLoggedIn)
 {
-    <!-- Hvis ingen bruger er logget ind -->
-    <p class="access-denied"><strong>Log venligst ind for at tilgå portalen.</strong></p>
+    <!-- Not logged in state -->
+    <div class="welcome-hero">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="bi bi-mortarboard"></i>
+            </div>
+            <h1 class="hero-title">Velkommen til Comwell Træningsportal</h1>
+            <p class="hero-subtitle">Log venligst ind for at tilgå din personlige læringsportal</p>
+            <div class="hero-action">
+                <a href="/login" class="login-cta">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Log ind
+                </a>
+            </div>
+        </div>
+    </div>
 }
 else
 {
-    <!-- Hvis bruger er logget ind -->
-    <p class="welcome-text">Velkommen tilbage, @(currentUser?.Name). Her er din samlede oversigt.</p>
-
-    <div class="dashboard-wrapper">
-
-        <!-- FLEX LAYOUT -->
-        <div class="dashboard-columns">
-            <!-- Venstre kolonne: Mål og links -->
-            <div class="left-content">
-                
-                <!-- Oversigt over mål fordelt på status -->
-                <div class="goal-grid">
-                    <div class="goal-card total">
-                        <div class="goal-icon icon-green">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="goal-content">
-                            <span class="goal-label">Mål i alt</span>
-                            <span class="goal-value">@goals.Count()</span> <!-- Total antal mål -->
-                        </div>
-                    </div>
-
-                    <div class="goal-card completed">
-                        <div class="goal-icon icon-beige">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="goal-content">
-                            <span class="goal-label">Fuldført</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "Fuldført")</span> <!-- Fuldførte mål -->
-                        </div>
-                    </div>
-
-                    <div class="goal-card in-progress">
-                        <div class="goal-icon icon-orange">
-                            <i class="fas fa-spinner"></i>
-                        </div>
-                        <div class="goal-content">
-                            <span class="goal-label">I gang</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "I gang")</span> <!-- Mål i gang -->
-                        </div>
-                    </div>
-
-                    <div class="goal-card attention">
-                        <div class="goal-icon icon-dark">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </div>
-                        <div class="goal-content">
-                            <span class="goal-label">Vær opmærksom på</span>
-                            <span class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</span> <!-- Mål med opmærksomhed -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Eksterne læringsportaler -->
-                <div class="external-links-section">
-                    <h2>
-                        <i class="bi bi-box-arrow-up-right" style="margin-right: 0.5rem;"></i>
-                        Andre læringsportaler
-                    </h2>
-                    <ul>
-                        <li><i class="bi bi-journal-code"></i><a href="#">Læringsportal A</a></li>
-                        <li><i class="bi bi-globe2"></i><a href="#">Læringsportal B</a></li>
-                        <li><i class="bi bi-mortarboard"></i><a href="#">Læringsportal C</a></li>
-                    </ul>
-                </div>
+    <!-- Logged in dashboard -->
+    <div class="dashboard">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <div class="welcome-content">
+                <h1 class="page-title">
+                    <i class="bi bi-house-door"></i>
+                    Oversigt
+                </h1>
+                <p class="welcome-text">Velkommer tilbage, <strong>@currentUser?.Name</strong>. Her er din samlede oversigt.</p>
             </div>
-
-            <!-- Højre kolonne: Seneste opslag -->
-            <div class="right-content">
-                <div class="recent-posts-section">
-                    <h2>
-                        <i class="bi bi-chat-left-text" style="margin-right: 0.5rem;"></i>
-                        Seneste opslag
-                    </h2>
-
-                    @if (recentPosts.Any())
-                    {
-                        <!-- Viser de seneste opslag -->
-                        <ul>
-                            @foreach (var post in recentPosts)
-                            {
-                                <li>
-                                    <i class="bi bi-envelope-open" aria-hidden="true"></i>
-                                    <div>
-                                        <strong>@post.Title</strong><br />
-                                        <span class="post-snippet">
-                                            <!-- Viser et kort uddrag af opslagets indhold -->
-                                            @post.Content?.Substring(0, Math.Min(80, post.Content.Length))...
-                                        </span>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <!-- Hvis ingen opslag findes -->
-                        <p>Ingen beskeder fundet.</p>
-                    }
+            <div class="welcome-stats">
+                <div class="stat-item">
+                    <div class="stat-number">@goals.Count()</div>
+                    <div class="stat-label">Mål i alt</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <div class="stat-number">@goals.Count(g => g.Status == "Fuldført")</div>
+                    <div class="stat-label">Fuldført</div>
                 </div>
             </div>
         </div>
 
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Goals Overview -->
+            <div class="dashboard-section goals-section">
+                <div class="section-header">
+                    <h2>
+                        <i class="bi bi-target"></i>
+                        Dine mål
+                    </h2>
+                </div>
+                
+                <div class="goals-grid">
+                    <div class="goal-card total">
+                        <div class="goal-icon">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </div>
+                        <div class="goal-content">
+                            <div class="goal-value">@goals.Count()</div>
+                            <div class="goal-label">Mål i alt</div>
+                        </div>
+                    </div>
+
+                    <div class="goal-card completed">
+                        <div class="goal-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="goal-content">
+                            <div class="goal-value">@goals.Count(g => g.Status == "Fuldført")</div>
+                            <div class="goal-label">Fuldført</div>
+                        </div>
+                    </div>
+
+                    <div class="goal-card in-progress">
+                        <div class="goal-icon">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </div>
+                        <div class="goal-content">
+                            <div class="goal-value">@goals.Count(g => g.Status == "I gang")</div>
+                            <div class="goal-label">I gang</div>
+                        </div>
+                    </div>
+
+                    <div class="goal-card attention">
+                        <div class="goal-icon">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div class="goal-content">
+                            <div class="goal-value">@goals.Count(g => g.Status == "Vær opmærksom på")</div>
+                            <div class="goal-label">Vær opmærksom på</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Posts -->
+            <div class="dashboard-section posts-section">
+                <div class="section-header">
+                    <h2>
+                        <i class="bi bi-chat-left-text"></i>
+                        Seneste opslag
+                    </h2>
+                    <a href="/posts" class="view-all-link">
+                        Se alle
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="posts-list">
+                    @if (recentPosts.Any())
+                    {
+                        @foreach (var post in recentPosts)
+                        {
+                            <div class="post-item">
+                                <div class="post-icon">
+                                    <i class="bi bi-file-text"></i>
+                                </div>
+                                <div class="post-content">
+                                    <div class="post-title">@post.Title</div>
+                                    <div class="post-snippet">
+                                        @post.Content?.Substring(0, Math.Min(100, post.Content.Length))@(post.Content?.Length > 100 ? "..." : "")
+                                    </div>
+                                </div>
+                                <div class="post-action">
+                                    <i class="bi bi-chevron-right"></i>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-chat-left-text"></i>
+                            <p>Ingen opslag fundet</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- External Links -->
+            <div class="dashboard-section links-section">
+                <div class="section-header">
+                    <h2>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        Andre læringsportaler
+                    </h2>
+                </div>
+
+                <div class="links-grid">
+                    <a href="#" class="link-card">
+                        <div class="link-icon">
+                            <i class="bi bi-journal-code"></i>
+                        </div>
+                        <div class="link-content">
+                            <div class="link-title">Læringsportal A</div>
+                            <div class="link-description">Eksterne kurser og materialer</div>
+                        </div>
+                        <div class="link-arrow">
+                            <i class="bi bi-arrow-up-right"></i>
+                        </div>
+                    </a>
+
+                    <a href="#" class="link-card">
+                        <div class="link-icon">
+                            <i class="bi bi-globe2"></i>
+                        </div>
+                        <div class="link-content">
+                            <div class="link-title">Læringsportal B</div>
+                            <div class="link-description">Online træningsmoduler</div>
+                        </div>
+                        <div class="link-arrow">
+                            <i class="bi bi-arrow-up-right"></i>
+                        </div>
+                    </a>
+
+                    <a href="#" class="link-card">
+                        <div class="link-icon">
+                            <i class="bi bi-mortarboard"></i>
+                        </div>
+                        <div class="link-content">
+                            <div class="link-title">Læringsportal C</div>
+                            <div class="link-description">Certificeringer og examiner</div>
+                        </div>
+                        <div class="link-arrow">
+                            <i class="bi bi-arrow-up-right"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
-
 @code {
-    private User? currentUser;               // Den aktuelt loggede bruger
-    private List<Goal> goals = new();         // Liste over alle mål tilhørende brugeren
-    private bool isLoggedIn = false;          // Om brugeren er logget ind
-    private List<Post> recentPosts = new();   // Liste over de seneste opslag
+    private User? currentUser;
+    private List<Goal> goals = new();
+    private bool isLoggedIn = false;
+    private List<Post> recentPosts = new();
 
-    // Initialiserer siden når den indlæses
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -134,24 +214,22 @@ else
         await LoadRecentPosts();
     }
 
-    // Henter alle mål for den aktuelle bruger
     private async Task LoadGoals()
     {
-            if (currentUser != null)
-            {
-                isLoggedIn = true;
-                var plans = await StudentPlanService.GetPlansByUserAsync(currentUser); // Hent elevens planer
-                goals = plans.SelectMany(p => p.Goals).ToList(); // Saml alle mål fra alle planer
-            }
+        if (currentUser != null)
+        {
+            isLoggedIn = true;
+            var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
+            goals = plans.SelectMany(p => p.Goals).ToList();
+        }
     }
 
-    // Henter de nyeste opslag fra PostService
     private async Task LoadRecentPosts()
     {
         var allPosts = await PostService.GetAllPostsAsync();
         recentPosts = allPosts
-            .OrderByDescending(p => p.Id) // Sorterer så de nyeste opslag kommer først (baseret på ID)
-            .Take(3) // Vis kun de 3 nyeste
+            .OrderByDescending(p => p.Id)
+            .Take(3)
             .ToList();
     }
 }

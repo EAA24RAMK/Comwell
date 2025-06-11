@@ -9,160 +9,109 @@
 <!-- Layout vises kun hvis brugeren ikke er på login-siden -->
 @if (!NavManager.Uri.Contains("/login"))
 {
-    <div class="layout">
-        <!-- Sidebar med navigation -->
-        <div class="@(sidebarCollapsed ? "sidebar collapse" : "sidebar")">
-            <NavMenu ToggleMenu="ToggleSidebar"/>
-        </div>
-
-        <!-- Main-område -->
-        <div class="main">
-            <!-- Topbar med titel, klokke og brugeravatar -->
-            <div class="top-row px-4 d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center gap-3">
-                    <button class="navbar-toggler d-md-none" @onclick="ToggleSidebar">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <h5 class="mb-0">Comwell træningsportal</h5>
-                </div>
-
-                <div class="d-flex align-items-center gap-3 position-relative">
-                    <!-- Klokke med badge -->
-                    <div class="notification-badge-container">
-                        <i class="bi bi-bell" style="font-size: 1.5rem; cursor: pointer;"
-                           @onclick="async () => await ToggleNotifications()"></i>
-
-                        <!-- Badge med antal nye notifikationer -->
+    <!-- Floating Navigation -->
+    <NavMenu />
+    
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Notification System (moved from old topbar) -->
+        <div class="notification-system">
+            @if (currentUser != null)
+            {
+                <div class="notification-container">
+                    <button class="notification-btn" @onclick="ToggleNotifications" aria-label="Notifikationer">
+                        <i class="bi bi-bell"></i>
                         @if (!hasSeenNotifications && notifications?.Count > 0)
                         {
                             <span class="notification-badge">@notifications.Count</span>
                         }
-                    </div>
+                    </button>
 
-                    <!-- Notifikationsliste dropdown -->
                     @if (showNotifications)
                     {
-                        <div class="notification-overlay position-absolute end-0 mt-2 p-3 shadow bg-white rounded">
-                            <h6 class="mb-3">Notifikationer</h6>
-                            <ul class="list-unstyled mb-0">
+                        <div class="notification-dropdown">
+                            <div class="notification-header">
+                                <h6>Notifikationer</h6>
+                                <button class="notification-close" @onclick="() => showNotifications = false">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                            <div class="notification-list">
                                 @if (notifications?.Any() == true)
                                 {
                                     @foreach (var note in notifications.OrderByDescending(n => n.CreatedAt))
                                     {
-                                        <li class="mb-2 border-bottom pb-2">
-                                            <div>@note.Message</div>
-                                            <small>Deadline: @note.Deadline.ToShortDateString() | Modtaget: @note.CreatedAt.ToShortDateString()</small><br/>
-                                            <!-- Slet-knap til notifikation -->
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                    @onclick="() => DeleteNotification(note.Id)">
-                                                Slet
+                                        <div class="notification-item">
+                                            <div class="notification-content">
+                                                <div class="notification-message">@note.Message</div>
+                                                <div class="notification-meta">
+                                                    Deadline: @note.Deadline.ToShortDateString() | 
+                                                    Modtaget: @note.CreatedAt.ToShortDateString()
+                                                </div>
+                                            </div>
+                                            <button class="notification-delete" @onclick="() => DeleteNotification(note.Id)" aria-label="Slet notifikation">
+                                                <i class="bi bi-trash"></i>
                                             </button>
-                                        </li>
+                                        </div>
                                     }
                                 }
                                 else
                                 {
-                                    <li>Ingen nye notifikationer</li>
+                                    <div class="notification-empty">
+                                        <i class="bi bi-bell-slash"></i>
+                                        <span>Ingen nye notifikationer</span>
+                                    </div>
                                 }
-                            </ul>
+                            </div>
                         </div>
                     }
-
-                    <!-- Avatar med brugerinitialer -->
-                    <div class="avatar" title="@currentUser?.Name">
-                        @GetInitials(currentUser?.Name)
-                    </div>
                 </div>
-            </div>
-
-            <!-- Indholdsområde hvor siden vises -->
-            <article class="content px-4">
-                @Body
-            </article>
+            }
         </div>
-    </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            @Body
+        </div>
+    </main>
 }
 else
 {
-    <!-- Enkel layout til login-siden -->
-    <div class="main">
+    <!-- Simple layout for login page -->
+    <div class="login-layout">
         @Body
     </div>
 }
 
 @code {
-    private User? currentUser;                        // Aktuelt loggede bruger
-    private bool showNotifications = false;           // Om notifikationslisten vises
-    private List<Notification> notifications = new(); // Liste over brugerens notifikationer
-    private bool hasSeenNotifications = false;        // Om brugeren har set notifikationerne
-    private bool sidebarCollapsed = true;             // Om sidebaren er skjult (mobil-venlig)
+    private User? currentUser;
+    private bool showNotifications = false;
+    private List<Notification> notifications = new();
+    private bool hasSeenNotifications = false;
 
-    // Initialiserer layoutet
     protected override async Task OnInitializedAsync()
     {
-        currentUser = await UserService.GetCurrentUserAsync(); // Henter loggede bruger
+        currentUser = await UserService.GetCurrentUserAsync();
 
         if (currentUser != null)
         {
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         }
-
-        // Sidebaren lukker automatisk ved sidenavigering
-        NavManager.LocationChanged += (_, __) => //Modtager parametre som gives videre men bruges ikke
-        {
-            sidebarCollapsed = true; // Lukker sidebaren ved at sætte sidebarCollapsed til true.
-                                     // Dette gør, at hvis brugeren er på mobil (eller smal skærm),
-                                     // vil sidebaren automatisk skjule sig efter navigation.
-            InvokeAsync(StateHasChanged); // Opdater UI
-        };
     }
 
-    // Åbner eller lukker sidebar
-    public void ToggleSidebar()
-    {
-        sidebarCollapsed = !sidebarCollapsed;
-    }
-    
-    // Formål: Bruges til at vise eller skjule listen af notifikationer, når brugeren klikker på klokken.
-    // Hvis listen åbnes, hentes nye notifikationer fra backend og markeres som set.
     private async Task ToggleNotifications()
     {
         showNotifications = !showNotifications;
 
         if (showNotifications && currentUser != null)
         {
-            // Kalder backend for at generere nye notifikationer først
             await NotificationService.GenererateNotificationsAsync();
-
-            // Henter liste af notifikationer fra backend bagefter
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
-            hasSeenNotifications = true; // marker som læst (visuelt)
-            
-            StateHasChanged(); // Opdater UI
+            hasSeenNotifications = true;
+            StateHasChanged();
         }
     }
 
-    // Formål: Returnerer initialer ud fra brugerens fulde navn.
-    // Funktion:
-    // - Splitter navnet op ved mellemrum.
-    // - Hvis der er flere navne, bruges første bogstav i begge navne.
-    // - Hvis kun ét navn, bruges første bogstav.
-    private static string GetInitials(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName)) return "";
-        
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length switch
-        {
-            0 => "",
-            1 => parts[0][..1].ToUpper(),
-            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
-        };
-    }
-
-    // Sletter en notifikation for brugeren
-    // Formål: Bruges til at slette en specifik notifikation, når brugeren klikker på "Slet".
-    // Derefter hentes den opdaterede liste af notifikationer, så listen opdateres med det samme.
     private async Task DeleteNotification(int notificationId)
     {
         if (currentUser == null) return;
