@@ -4,140 +4,300 @@
 @inject IUserService UserService
 @inject NavigationManager Nav
 
-<h3>Brugere</h3>
-
-<!-- Filtersektion til søgning og filtrering af brugere -->
-<div class="filters">
-    <!-- Søg efter brugernavn -->
-    <input type="text" @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter bruger..."/>
-    
-    <!-- Filtrer efter rolle -->
-    <select @bind="selectedRole">
-        <option value="">Alle roller</option>
-        @foreach (var role in Roles)
+<!-- Modern Users Dashboard -->
+<div class="users-dashboard">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h3 class="page-title">
+                <i class="bi bi-people"></i>
+                Brugere
+            </h3>
+            <p class="welcome-text">Her er et samlet overblik over alle brugere i systemet.</p>
+        </div>
+        @if (currentUser?.Role == "HR")
         {
-            <option value="@role">@role</option>
+            <button class="create-user-btn" @onclick="CreateUser">
+                <i class="bi bi-person-plus"></i>
+                <span>Tilføj bruger</span>
+            </button>
         }
-    </select>
-    
-    <!-- Filtrer efter hotel -->
-    <select @bind="selectedHotel">
-        <option value="">Alle lokationer</option>
-        @foreach (var hotel in hotels)
-        {
-            <option value="@hotel">@hotel</option>
-        }
-    </select>
-    
-    <!-- Vis knap til oprettelse af bruger, hvis den loggede bruger er HR -->
-    @if (currentUser?.Role == "HR")
-    {
-        <button @onclick="CreateUser">+ Tilføj bruger</button>
-    }
-</div>
-
-<!-- Liste over brugere -->
-<div class="user-list">
-    <!-- Header til listen -->
-    <div class="user-card user-header">
-        <div></div>
-        <div class="header-label">Bruger</div>
-        <div class="header-label">Skole</div>
-        <div class="header-label">Lokation</div>
-        <div class="header-label">Status</div>
-        <div></div>
     </div>
 
-    <!-- Viser hver enkelt bruger som et kort -->
-    @foreach (var user in FilteredUsers)
-    {
-        <div class="user-card">
-            <div class="avatar">@GetInitials(user.Name)</div>
-            <div class="user-info">
-                <div class="user-name">@user.Name</div>
-                <div class="user-role">@user.Role</div>
-            </div>
-            <div class="user-school">
-                @(string.IsNullOrWhiteSpace(user.SchoolType) ? "-" : user.SchoolType)
-            </div>
-            <div class="user-location">
-                @(string.IsNullOrWhiteSpace(user.Hotel) ? "-" : user.Hotel)
-            </div>
-            <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
-                @user.Status
+    <!-- Stats Section -->
+    <div class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@users.Count</div>
+                    <div class="stat-label">Brugere i alt</div>
+                </div>
             </div>
             
-            <!-- Action-menu til HR-brugere -->
-            <div class="user-actions">
-                @if (currentUser?.Role == "HR")
+            @foreach (var role in Roles)
+            {
+                var count = users.Count(u => u.Role == role);
+                if (count > 0)
                 {
-                    <button @onclick="() => ToggleActionMenu(user.Id)">⋮</button>
-                    @if (activeActionMenuUserId == user.Id)
-                    {
-                        <div class="action-menu">
-                            <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
-                                @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
-                            </button>
-                            <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
-                                Slet
-                            </button>
+                    <div class="stat-card @GetRoleClass(role)">
+                        <div class="stat-icon">
+                            <i class="@GetRoleIcon(role)"></i>
                         </div>
-                    }
+                        <div class="stat-content">
+                            <div class="stat-value">@count</div>
+                            <div class="stat-label">@role</div>
+                        </div>
+                    </div>
                 }
+            }
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="bi bi-search"></i>
+                    Søg efter bruger
+                </label>
+                <input type="text" @bind="searchTerm" @bind:event="oninput" 
+                       placeholder="Skriv navn for at søge..." class="filter-input"/>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="bi bi-person-badge"></i>
+                    Rolle
+                </label>
+                <select @bind="selectedRole" class="filter-select">
+                    <option value="">Alle roller</option>
+                    @foreach (var role in Roles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="bi bi-geo-alt"></i>
+                    Lokation
+                </label>
+                <select @bind="selectedHotel" class="filter-select">
+                    <option value="">Alle lokationer</option>
+                    @foreach (var hotel in hotels)
+                    {
+                        <option value="@hotel">@hotel</option>
+                    }
+                </select>
             </div>
         </div>
-    }
+    </div>
+
+    <!-- Users Grid -->
+    <div class="users-grid">
+        @if (FilteredUsers?.Any() != true)
+        {
+            <div class="empty-state">
+                <i class="bi bi-person-x"></i>
+                <h4>Ingen brugere fundet</h4>
+                <p>Ingen brugere matcher de valgte filtre.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var user in FilteredUsers)
+            {
+                <div class="user-card">
+                    <!-- User Header -->
+                    <div class="user-header">
+                        <div class="user-avatar">
+                            <i class="@GetRoleIcon(user.Role)"></i>
+                        </div>
+                        <div class="user-info">
+                            <h4 class="user-name">@user.Name</h4>
+                            <span class="user-role">@user.Role</span>
+                        </div>
+                        @if (currentUser?.Role == "HR")
+                        {
+                            <div class="user-actions">
+                                <button class="action-menu-btn" @onclick="() => ToggleActionMenu(user.Id)">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                @if (activeActionMenuUserId == user.Id)
+                                {
+                                    <div class="action-menu">
+                                        <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
+                                            <i class="bi bi-@(user.Status == "Aktiv" ? "pause-circle" : "play-circle")"></i>
+                                            @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
+                                        </button>
+                                        <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
+                                            <i class="bi bi-trash"></i>
+                                            Slet
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- User Meta Information -->
+                    <div class="user-meta">
+                        <div class="meta-item">
+                            <div class="meta-label">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </div>
+                            <div class="meta-value">@user.Email</div>
+                        </div>
+                        
+                        @if (!string.IsNullOrWhiteSpace(user.Hotel))
+                        {
+                            <div class="meta-item">
+                                <div class="meta-label">
+                                    <i class="bi bi-building"></i>
+                                    Lokation
+                                </div>
+                                <div class="meta-value">@user.Hotel</div>
+                            </div>
+                        }
+                        
+                        @if (!string.IsNullOrWhiteSpace(user.SchoolType))
+                        {
+                            <div class="meta-item">
+                                <div class="meta-label">
+                                    <i class="bi bi-mortarboard"></i>
+                                    Skole
+                                </div>
+                                <div class="meta-value">@user.SchoolType</div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- User Status -->
+                    <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
+                        <i class="bi bi-@(user.Status == "Aktiv" ? "check-circle-fill" : "pause-circle-fill")"></i>
+                        <span>@user.Status</span>
+                    </div>
+                </div>
+            }
+        }
+    </div>
 </div>
 
-<!-- Modal til oprettelse af en ny bruger -->
+<!-- Modal for Opret Bruger -->
 @if (showCreateModal)
 {
-    <div class="modal-background">
-        <div class="modal-box">
-            <h5>Opret ny bruger</h5>
-            <!-- Formularfelter -->
-            <input @bind="newUser.Name" placeholder="Navn" />
-            <input @bind="newUser.Email" placeholder="Email" />
-            <input @bind="newUser.Password" placeholder="Adgangskode" type="password" />
-            <input @bind="newUser.Hotel" placeholder="Hotel" />
-            
-            <!-- Vælg rolle -->
-            <select @bind="newUser.Role">
-                <option disabled selected>Vælg rolle</option>
-                @foreach (var role in Roles)
+    <div class="modal-overlay" @onclick="CloseCreateModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    <i class="bi bi-person-plus"></i>
+                    Opret ny bruger
+                </h4>
+                <button class="modal-close" @onclick="CloseCreateModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <option value="@role">@role</option>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @errorMessage
+                    </div>
                 }
-            </select>
-            
-            <!-- Vælg status -->
-            <select @bind="newUser.Status">
-                <option disabled selected value="">Vælg status</option>
-                <option value="Aktiv">Aktiv</option>
-                <option value="Inaktiv">Inaktiv</option>
-            </select>
-            
-            <!-- Hvis rollen er Elev, vis valg af skoletype -->
-            @if (newUser.Role == "Elev")
-            {
-                <select @bind="newUser.SchoolType">
-                    <option disabled selected value="">Vælg skole</option>
-                    <option value="EUX">EUX</option>
-                    <option value="EUV">EUV</option>
-                    <option value="Voksenelev">Voksenelev</option>
-                    <option value="Ordinær">Ordinær</option>
-                </select>
-            }
-            
-            <!-- Knapper -->
-            <button @onclick="SaveUserAsync">Gem</button>
-            <button @onclick="CloseCreateModal">Luk</button>
-            
-            <!-- Viser besked ved oprettelse -->
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <p>@errorMessage</p>
-            }
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person"></i>
+                            Navn
+                        </label>
+                        <input @bind="newUser.Name" placeholder="Fulde navn" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-envelope"></i>
+                            Email
+                        </label>
+                        <input @bind="newUser.Email" placeholder="email@eksempel.dk" type="email" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-key"></i>
+                            Adgangskode
+                        </label>
+                        <input @bind="newUser.Password" placeholder="Indtast adgangskode" type="password" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-building"></i>
+                            Hotel/Lokation
+                        </label>
+                        <input @bind="newUser.Hotel" placeholder="Hotel navn" class="form-input" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-person-badge"></i>
+                            Rolle
+                        </label>
+                        <select @bind="newUser.Role" class="form-select">
+                            <option value="" disabled selected>Vælg rolle</option>
+                            @foreach (var role in Roles)
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="bi bi-activity"></i>
+                            Status
+                        </label>
+                        <select @bind="newUser.Status" class="form-select">
+                            <option value="" disabled selected>Vælg status</option>
+                            <option value="Aktiv">Aktiv</option>
+                            <option value="Inaktiv">Inaktiv</option>
+                        </select>
+                    </div>
+
+                    @if (newUser.Role == "Elev")
+                    {
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-mortarboard"></i>
+                                Skoletype
+                            </label>
+                            <select @bind="newUser.SchoolType" class="form-select">
+                                <option value="" disabled selected>Vælg skole</option>
+                                <option value="EUX">EUX</option>
+                                <option value="EUV">EUV</option>
+                                <option value="Voksenelev">Voksenelev</option>
+                                <option value="Ordinær">Ordinær</option>
+                            </select>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" @onclick="CloseCreateModal">Annuller</button>
+                    <button type="button" class="btn-primary" @onclick="SaveUserAsync">
+                        <i class="bi bi-check-lg"></i>
+                        Gem bruger
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 }
@@ -169,9 +329,6 @@
             (string.IsNullOrEmpty(selectedHotel) || u.Hotel == selectedHotel));
 
     // Formål: Initialiserer siden ved at hente den aktuelle bruger, brugerliste og hoteller.
-    // Funktion:
-    // 1. Henter den bruger, som er logget ind, via UserService.
-    // 2. Tjekker om den loggede bruger er "Elev" – i så fald sendes de til forsiden.
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
@@ -202,26 +359,20 @@
     private void CloseCreateModal() => showCreateModal = false;
 
     // Formål: Gemmer en ny bruger i databasen.
-    // Funktion:
-    // 1. Sender newUser til backend via UserService.
-    // 2. Hvis brugeren ikke blev oprettet korrekt vises fejlbesked.
     private async Task SaveUserAsync()
     {
         var result = await UserService.CreateUserAsync(newUser);
-        if (result == null) errorMessage = "Noget gik galt under oprettelsen";
-        
-        if (result != null)
+        if (result == null) 
         {
-            users = await UserService.GetAllUsersAsync();
-            showCreateModal = false;
+            errorMessage = "Noget gik galt under oprettelsen";
+            return;
         }
+        
+        users = await UserService.GetAllUsersAsync();
+        showCreateModal = false;
     }
 
     // Formål: Sletter en bruger.
-    // Funktion:
-    // 1. Tjekker om den loggede bruger er HR.
-    // 2. Kalder UserService for at slette brugeren med angivet ID.
-    // 3. Hvis sletningen lykkes, hentes listen af brugere igen.
     private async Task DeleteUserAsync(int userId)
     {
         if (currentUser?.Role == "HR" && await UserService.DeleteUserAsync(userId))
@@ -232,17 +383,10 @@
     }
 
     // Formål: Viser eller skjuler action-menuen (⋮) for en bestemt bruger.
-    // Funktion:
-    // - Hvis brugeren klikker på menuen igen, lukkes den.
-    // - Hvis en anden brugers menu åbnes, vises den i stedet.
     private void ToggleActionMenu(int userId) =>
         activeActionMenuUserId = activeActionMenuUserId == userId ? null : userId;
 
     // Formål: Returnerer initialer ud fra brugerens fulde navn.
-    // Funktion:
-    // - Splitter navnet op ved mellemrum.
-    // - Hvis der er flere navne, bruges første bogstav i begge navne.
-    // - Hvis kun ét navn, bruges første bogstav.
     private static string GetInitials(string fullName)
     {
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -255,9 +399,6 @@
     }
     
     // Formål: Skifter en brugers status mellem Aktiv og Inaktiv.
-    // Funktion:
-    // - Opdaterer status via UserService.
-    // - Når status er ændret, opdateres brugerlisten.
     private async Task ToggleUserStatusAsync(User user)
     {
         var newStatus = user.Status == "Aktiv" ? "Inaktiv" : "Aktiv";
@@ -267,4 +408,24 @@
         }
         activeActionMenuUserId = null;
     }
+
+    // Returnerer CSS klasse baseret på rolle
+    private static string GetRoleClass(string role) => role switch
+    {
+        "Elev" => "students",
+        "Køkkenchef" => "chef", 
+        "HR" => "hr",
+        "Kok" => "cook",
+        _ => "default"
+    };
+
+    // Returnerer bootstrap ikon baseret på rolle
+    private static string GetRoleIcon(string role) => role switch
+    {
+        "Elev" => "bi bi-mortarboard-fill",
+        "Køkkenchef" => "bi bi-award-fill",
+        "HR" => "bi bi-person-badge-fill",
+        "Kok" => "bi bi-egg-fried",
+        _ => "bi bi-person-fill"
+    };
 }

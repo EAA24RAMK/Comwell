@@ -7,90 +7,248 @@
 <!-- Hvis ingen bruger er logget ind -->
 @if (currentUser == null)
 {
-    <p><strong>Du skal være logget ind for at bruge opslagstavlen.</strong></p>
+    <div class="dashboard-container">
+        <div class="login-required">
+            <div class="login-icon">
+                <i class="bi bi-person-lock"></i>
+            </div>
+            <h4>Login påkrævet</h4>
+            <p>Du skal være logget ind for at bruge opslagstavlen.</p>
+        </div>
+    </div>
 }
 else
 {
-    <div class="posts-container">
-        <h3>Opslagstavle</h3>
-
-        <!-- Søgning og opret-knap -->
-        <div class="topbar">
-            <input @bind="searchTerm" @bind:event="oninput" placeholder="Søg efter titel eller indhold..." class="search-field" />
-            <button class="create-modal-button" @onclick="() => showModal = true">Opret opslag</button>
+    <div class="dashboard-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title-section">
+                <h1 class="page-title">
+                    <i class="bi bi-chat-square-text-fill me-3"></i>
+                    Opslagstavle
+                </h1>
+                <p class="page-description">Del nyheder, opdateringer og vigtige beskeder med teamet</p>
+            </div>
+            
+            <div class="page-actions">
+                <button class="btn-create" @onclick="() => showModal = true">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Opret opslag
+                </button>
+            </div>
         </div>
 
-        <!-- Liste over opslag -->
-        <div class="posts-list">
+        <!-- Stats Section -->
+        <div class="stats-grid">
+            <div class="stat-card posts">
+                <div class="stat-icon">
+                    <i class="bi bi-chat-square-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">@posts.Count</div>
+                    <div class="stat-label">Samlede opslag</div>
+                </div>
+            </div>
+            
+            <div class="stat-card my-posts">
+                <div class="stat-icon">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">@posts.Count(p => p.Author == currentUser?.Name)</div>
+                    <div class="stat-label">Mine opslag</div>
+                </div>
+            </div>
+            
+            <div class="stat-card with-links">
+                <div class="stat-icon">
+                    <i class="bi bi-link-45deg"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">@posts.Count(p => !string.IsNullOrWhiteSpace(p.Url))</div>
+                    <div class="stat-label">Med links</div>
+                </div>
+            </div>
+            
+            <div class="stat-card recent">
+                <div class="stat-icon">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-number">@posts.Count(p => p.CreatedAt >= DateTime.Today)</div>
+                    <div class="stat-label">I dag</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="search-section">
+            <div class="search-header">
+                <h5 class="search-title">
+                    <i class="bi bi-search me-2"></i>
+                    Søg i opslag
+                </h5>
+            </div>
+            <div class="search-content">
+                <div class="search-group">
+                    <input @bind="searchTerm" @bind:event="oninput" 
+                           placeholder="Søg efter titel eller indhold..." 
+                           class="search-input" />
+                    <div class="search-icon-wrapper">
+                        <i class="bi bi-search"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <i class="bi bi-collection-fill me-2"></i>
+                    Alle opslag
+                </h3>
+                <div class="section-meta">
+                    @{
+                        var filteredCount = FilteredPosts().Count();
+                    }
+                    @if (filteredCount != posts.Count)
+                    {
+                        <span class="filtered-count">Viser @filteredCount af @posts.Count opslag</span>
+                    }
+                    else
+                    {
+                        <span class="total-count">@posts.Count opslag</span>
+                    }
+                </div>
+            </div>
+
             @if (FilteredPosts().Any())
             {
-                @foreach (var post in FilteredPosts().OrderByDescending(p => p.Id))
-                {
-                    <div class="post-card">
-                        <!-- Header med forfatter og metadata -->
-                        <div class="post-header">
-                            <div class="post-author-avatar">@GetInitials(post.Author)</div>
-                            <div class="post-meta">
-                                <div class="post-title">@post.Title</div>
-                                <div class="post-author">af @post.Author – @post.CreatedAt.ToString("dd MMM yyyy HH:mm")</div>
-                                
-                                <!-- Viser målgruppe hvis bruger er HR eller Køkkenchef -->
-                                @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-                                {
-                                    if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
-                                    {
-                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
-                                            Synlig for alle
+                <div class="posts-timeline">
+                    @foreach (var post in FilteredPosts().OrderByDescending(p => p.Id))
+                    {
+                        <div class="post-card">
+                            <div class="post-header">
+                                <div class="post-author-section">
+                                    <div class="post-author-avatar">
+                                        <i class="bi bi-person-fill"></i>
+                                        <span class="avatar-initials">@GetInitials(post.Author)</span>
+                                    </div>
+                                    <div class="post-meta">
+                                        <div class="post-title">@post.Title</div>
+                                        <div class="post-author-info">
+                                            <span class="author-name">
+                                                <i class="bi bi-person me-1"></i>
+                                                @post.Author
+                                            </span>
+                                            <span class="post-date">
+                                                <i class="bi bi-clock me-1"></i>
+                                                @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                            </span>
                                         </div>
-                                    }
-                                    else
-                                    {
-                                        var targetNames = allUsers
-                                            .Where(u => post.TargetUserIds.Contains(u.Id))
-                                            .Select(u => u.Name)
-                                            .ToList();
+                                        
+                                        <!-- Viser målgruppe hvis bruger er HR eller Køkkenchef -->
+                                        @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+                                        {
+                                            <div class="post-target-info">
+                                                @if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
+                                                {
+                                                    <span class="target-badge public">
+                                                        <i class="bi bi-globe me-1"></i>
+                                                        Synlig for alle
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    var targetNames = allUsers
+                                                        .Where(u => post.TargetUserIds.Contains(u.Id))
+                                                        .Select(u => u.Name)
+                                                        .ToList();
 
-                                        <div style="font-style: italic; color: gray; font-size: 0.7em;">
-                                            Kun synlig for @(targetNames.Count == 1 ? targetNames[0] : string.Join(", ", targetNames))
+                                                    <span class="target-badge private">
+                                                        <i class="bi bi-people me-1"></i>
+                                                        @(targetNames.Count == 1 ? targetNames[0] : $"{targetNames.Count} personer")
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                
+                                <!-- Mulighed for at slette opslag hvis man må -->
+                                @if (CanDeletePost(post))
+                                {
+                                    <div class="post-actions">
+                                        <div class="dropdown">
+                                            <button class="btn-action" type="button" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <button class="dropdown-item text-danger" @onclick="() => ConfirmDelete(post.Id)">
+                                                        <i class="bi bi-trash me-2"></i>
+                                                        Slet opslag
+                                                    </button>
+                                                </li>
+                                            </ul>
                                         </div>
-                                    }
+                                    </div>
                                 }
                             </div>
                             
-                            <!-- Mulighed for at slette opslag hvis man må -->
-                            @if (CanDeletePost(post))
-                            {
-                                <div class="post-options">
-                                    <button class="delete-button" @onclick="() => ToggleDeletePopup(post.Id)">⋮</button>
-                                    @if (confirmDeletePostId == post.Id)
-                                    {
-                                        <div class="confirm-popup">
-                                            <button @onclick="() => ConfirmDelete(post.Id)">Slet</button>
-                                        </div>
-                                    }
-                                </div>
-                            }
+                            <!-- Opslagets indhold -->
+                            <div class="post-content">
+                                <p class="post-text">@post.Content</p>
+                                
+                                <!-- Eventuelt link tilknyttet opslag -->
+                                @if (!string.IsNullOrWhiteSpace(post.Url))
+                                {
+                                    <div class="post-link">
+                                        <a href="@post.Url" target="_blank" class="link-preview">
+                                            <div class="link-icon">
+                                                <i class="bi bi-link-45deg"></i>
+                                            </div>
+                                            <div class="link-info">
+                                                <div class="link-title">Åbn tilknyttet link</div>
+                                                <div class="link-url">@post.Url</div>
+                                            </div>
+                                            <div class="link-arrow">
+                                                <i class="bi bi-arrow-up-right"></i>
+                                            </div>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
                         </div>
-                        
-                        <!-- Opslagets indhold -->
-                        <p class="post-content">@post.Content</p>
-                        
-                        <!-- Eventuelt link tilknyttet opslag -->
-                        @if (!string.IsNullOrWhiteSpace(post.Url))
-                        {
-                            <h10 class="post-link">
-                                <a href="@post.Url" target="_blank">
-                                    <i class="bi bi-link-45deg"></i>
-                                    <span>Åbn link</span>
-                                </a>
-                            </h10>
-                        }
-                    </div>
-                }
+                    }
+                </div>
             }
             else
             {
-                <p>Ingen opslag matcher din søgning.</p>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-chat-square-x"></i>
+                    </div>
+                    <h4>Ingen opslag fundet</h4>
+                    <p>
+                        @if (string.IsNullOrWhiteSpace(searchTerm))
+                        {
+                            <text>Der er ikke oprettet nogle opslag endnu.</text>
+                        }
+                        else
+                        {
+                            <text>Ingen opslag matcher din søgning "@searchTerm".</text>
+                        }
+                    </p>
+                    @if (string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <button class="btn-create" @onclick="() => showModal = true">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Opret dit første opslag
+                        </button>
+                    }
+                </div>
             }
         </div>
     </div>
@@ -99,60 +257,116 @@ else
     @if (showModal)
     {
         <div class="modal-backdrop" @onclick="CloseModal"></div>
-        <div class="modal">
-            <h4>Opret nyt opslag</h4>
-            
-            <!-- Formularfelter til nyt opslag -->
-            <input @bind="newPost.Title" placeholder="Titel" class="input-field" />
-            <textarea @bind="newPost.Content" placeholder="Indhold" rows="4" class="textarea-field"></textarea>
-            <input @bind="newPost.Url" placeholder="Tilføj et link (valgfrit)" class="input-field" />
+        <div class="modal fade show d-block" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Opret nyt opslag
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-type me-2"></i>
+                                Titel
+                            </label>
+                            <input @bind="newPost.Title" placeholder="Hvad handler dit opslag om?" class="form-control" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-chat-text me-2"></i>
+                                Indhold
+                            </label>
+                            <textarea @bind="newPost.Content" placeholder="Skriv dit opslag her..." rows="4" class="form-control"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-link-45deg me-2"></i>
+                                Link (valgfrit)
+                            </label>
+                            <input @bind="newPost.Url" placeholder="https://..." class="form-control" />
+                        </div>
 
-            <!-- Kun HR og Køkkenchef kan vælge modtagere -->
-            @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-            {
-                <div class="role-selection-buttons">
-                    <button class="select-all-button @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
-                        @(selectedTargetGroup == "All" ? "Annuller valg" : "Vælg alle personer")
-                    </button>
-                    <button class="select-all-button @(selectedTargetGroup == "Elev" ? "active" : "")" @onclick='() => ToggleRoleSelection("Elev")'>
-                        @(selectedTargetGroup == "Elev" ? "Annuller valg" : "Vælg alle elever")
-                    </button>
-                    <button class="select-all-button @(selectedTargetGroup == "Køkkenchef" ? "active" : "")" @onclick='() => ToggleRoleSelection("Køkkenchef")'>
-                        @(selectedTargetGroup == "Køkkenchef" ? "Annuller valg" : "Vælg alle køkkenchefer")
-                    </button>
-                </div>
-
-                <!-- Dropdown for hoteller -->
-                <select @onchange="OnHotelChanged" class="form-select" hidden="@selectedAllUsers">
-                    <option value="">Vælg hotel</option>
-                    @foreach (var hotel in allHotels)
-                    {
-                        <option value="@hotel">@hotel</option>
-                    }
-                </select>
-
-                <!-- Checkbox-liste over brugere hvis der ikke vælges alle -->
-                @if (!selectedAllUsers)
-                {
-                    <label>Vælg modtagere:</label>
-                    <div class="user-checkboxes">
-                        @foreach (var user in filteredUsers)
+                        <!-- Kun HR og Køkkenchef kan vælge modtagere -->
+                        @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
                         {
-                            <div style="border-bottom: 1px solid #ccc; padding: 4px 0;">
-                                <input type="checkbox"
-                                       @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
-                                       checked="@selectedUserIds.Contains(user.Id)" />
-                                <label>@user.Name <span style="color: gray; font-style: italic;">(@user.Role)</span></label>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="bi bi-people me-2"></i>
+                                    Målgruppe
+                                </label>
+                                
+                                <div class="target-selection">
+                                    <div class="target-buttons">
+                                        <button type="button" class="target-btn @(selectedTargetGroup == "All" ? "active" : "")" @onclick="ToggleAllUsers">
+                                            <i class="bi bi-globe me-2"></i>
+                                            @(selectedTargetGroup == "All" ? "Alle valgt" : "Vælg alle personer")
+                                        </button>
+                                        <button type="button" class="target-btn @(selectedTargetGroup == "Elev" ? "active" : "")" @onclick='() => ToggleRoleSelection("Elev")'>
+                                            <i class="bi bi-mortarboard me-2"></i>
+                                            @(selectedTargetGroup == "Elev" ? "Elever valgt" : "Vælg alle elever")
+                                        </button>
+                                        <button type="button" class="target-btn @(selectedTargetGroup == "Køkkenchef" ? "active" : "")" @onclick='() => ToggleRoleSelection("Køkkenchef")'>
+                                            <i class="bi bi-award me-2"></i>
+                                            @(selectedTargetGroup == "Køkkenchef" ? "Køkkenchefer valgt" : "Vælg køkkenchefer")
+                                        </button>
+                                    </div>
+
+                                    <!-- Dropdown for hoteller -->
+                                    @if (!selectedAllUsers)
+                                    {
+                                        <div class="hotel-selection">
+                                            <select @onchange="OnHotelChanged" class="form-select">
+                                                <option value="">Vælg hotel for specifik målretning</option>
+                                                @foreach (var hotel in allHotels)
+                                                {
+                                                    <option value="@hotel">@hotel</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
+
+                                    <!-- Checkbox-liste over brugere hvis der ikke vælges alle -->
+                                    @if (!selectedAllUsers && filteredUsers.Any())
+                                    {
+                                        <div class="user-selection">
+                                            <label class="selection-label">Vælg specifikke modtagere:</label>
+                                            <div class="user-checkboxes">
+                                                @foreach (var user in filteredUsers)
+                                                {
+                                                    <div class="user-checkbox-item">
+                                                        <input type="checkbox"
+                                                               id="user-@user.Id"
+                                                               @onchange="@((ChangeEventArgs e) => ToggleUserSelection(user.Id, (bool)e.Value))"
+                                                               checked="@selectedUserIds.Contains(user.Id)" />
+                                                        <label for="user-@user.Id" class="user-label">
+                                                            <div class="user-info">
+                                                                <span class="user-name">@user.Name</span>
+                                                                <span class="user-role">@user.Role</span>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
-                }
-            }
-
-            <!-- Knapper til at annullere eller oprette opslag -->
-            <div class="modal-actions">
-                <button class="cancel-button" @onclick="CloseModal">Annuller</button>
-                <button class="create-button" @onclick="SubmitModal">Opret</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" @onclick="CloseModal">Annuller</button>
+                        <button type="button" class="btn-primary" @onclick="SubmitModal">
+                            <i class="bi bi-send me-2"></i>
+                            Publicer opslag
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     }

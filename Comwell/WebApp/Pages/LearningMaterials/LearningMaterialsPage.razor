@@ -6,91 +6,344 @@
 @inject IUserService UserService
 @inject NavigationManager Nav
 
-<h3>Læringsmateriale</h3>
-<p></p>
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <i class="bi bi-book-fill me-3"></i>
+                Læringsmaterialer
+            </h1>
+            <p class="page-description">Administrer og få adgang til alle læringsmaterialer og ressourcer</p>
+        </div>
+        
+        @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+        {
+            <div class="page-actions">
+                <button class="btn-create" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload materiale
+                </button>
+                <button class="btn-create-secondary" data-bs-toggle="modal" data-bs-target="#linkModal">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Tilføj link
+                </button>
+            </div>
+        }
+    </div>
 
-<!-- Viser succes- eller fejlbeskeder -->
-@if (!string.IsNullOrEmpty(successMessage))
-{
-    <p style="color: green">@successMessage</p>
-}
-@if (!string.IsNullOrEmpty(errorMessage))
-{
-    <p style="color: red">@errorMessage</p>
-}
-
-<!-- Sektion for upload og tilføjelse, kun synlig for HR og Køkkenchef -->
-@if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-{
-    <!-- Upload dokument sektion -->
-    <div class="section-card">
-        <h4>Upload dokument</h4>
-        <InputFile OnChange="HandleFileSelected" />
-        <input type="text" @bind="uploadTitle" placeholder="Titel" class="form-control mt-2" />
-        <select class="form-select mt-2" @bind="uploadSubtaskId">
-            <option value="">Vælg delmål</option>
-            @foreach (var s in subtasks)
-            {
-                <option value="@s.Id">@s.Text</option>
-            }
-        </select>
-        <div class="filters mt-3">
-            <button @onclick="UploadFile">Upload</button>
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card files">
+            <div class="stat-icon">
+                <i class="bi bi-file-earmark-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@materials.Count(m => !m.IsLink)</div>
+                <div class="stat-label">Dokumenter</div>
+            </div>
+        </div>
+        
+        <div class="stat-card links">
+            <div class="stat-icon">
+                <i class="bi bi-link-45deg"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@materials.Count(m => m.IsLink)</div>
+                <div class="stat-label">Links</div>
+            </div>
+        </div>
+        
+        <div class="stat-card total">
+            <div class="stat-icon">
+                <i class="bi bi-collection-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@materials.Count</div>
+                <div class="stat-label">Total materialer</div>
+            </div>
+        </div>
+        
+        <div class="stat-card subtasks">
+            <div class="stat-icon">
+                <i class="bi bi-list-check"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@subtasks.Count</div>
+                <div class="stat-label">Delmål</div>
+            </div>
         </div>
     </div>
 
-    <!-- Tilføj link sektion -->
-    <div class="section-card">
-        <h4>Tilføj link</h4>
-        <input type="text" @bind="linkTitle" placeholder="Titel" class="form-control" />
-        <input type="text" @bind="linkUrl" placeholder="https://..." class="form-control mt-2" />
-        <select class="form-select mt-2" @bind="linkSubtaskId">
-            <option value="">Vælg delmål</option>
-            @foreach (var s in subtasks)
-            {
-                <option value="@s.Id">@s.Text</option>
-            }
-        </select>
-        <div class="filters mt-3">
-            <button @onclick="AddLink">Tilføj link</button>
-        </div>
-    </div>
-}
-
-<!-- Liste over materialer -->
-<h4>Materialer</h4>
-@if (materials.Count == 0)
-{
-    <p>Ingen materialer endnu.</p>
-}
-else
-{
-    @foreach (var mat in materials.Where(m => !filteredSubtaskId.HasValue || m.SubtaskId == filteredSubtaskId))
+    <!-- Messages -->
+    @if (!string.IsNullOrEmpty(successMessage))
     {
-        var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
-
-        <div class="material-card">
-            <div class="material-title">@mat.Title</div>
-            <div class="material-subtask">Delmål: @subtaskName</div>
-
-            @if (mat.IsLink)
-            {
-                <a href="@mat.LinkUrl" target="_blank">[Åbn link]</a>
-            }
-            else
-            {
-                <a href="@($"https://comwelltpapi.azurewebsites.net/api/LearningMaterial/download/{mat.FileId}")" target="_blank" download="@mat.FileName">[Download]</a>
-            }
-
-            @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
-            {
-                <div class="filters material-delete">
-                    <button @onclick="() => DeleteMaterial(mat.Id)">Slet</button>
-                </div>
-            }
+        <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @successMessage
         </div>
     }
-}
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @errorMessage
+        </div>
+    }
+
+    <!-- Filter Section -->
+    @if (subtasks.Any())
+    {
+        <div class="filters-section">
+            <div class="filters-header">
+                <h5 class="filters-title">
+                    <i class="bi bi-funnel me-2"></i>
+                    Filtrer materialer
+                </h5>
+            </div>
+            <div class="filters-content">
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-list-check me-1"></i>
+                        Delmål
+                    </label>
+                    <select class="filter-select" @bind="filteredSubtaskId">
+                        <option value="">Alle delmål</option>
+                        @foreach (var s in subtasks)
+                        {
+                            <option value="@s.Id">@s.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Materials Section -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="bi bi-folder-fill me-2"></i>
+                Materialer
+            </h3>
+        </div>
+
+        @if (materials.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-folder-x"></i>
+                </div>
+                <h4>Ingen materialer endnu</h4>
+                <p>Der er ikke uploadet nogle materialer eller links endnu.</p>
+                @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+                {
+                    <button class="btn-create" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-cloud-upload me-2"></i>
+                        Upload dit første materiale
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="materials-grid">
+                @foreach (var mat in materials.Where(m => !filteredSubtaskId.HasValue || m.SubtaskId == filteredSubtaskId))
+                {
+                    var subtaskName = subtasks.FirstOrDefault(s => s.Id == mat.SubtaskId)?.Text ?? "Ukendt delmål";
+
+                    <div class="material-card">
+                        <div class="material-header">
+                            <div class="material-type-icon">
+                                @if (mat.IsLink)
+                                {
+                                    <i class="bi bi-link-45deg"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-file-earmark-text"></i>
+                                }
+                            </div>
+                            <div class="material-info">
+                                <h5 class="material-title">@mat.Title</h5>
+                                <div class="material-metadata">
+                                    <span class="material-subtask">
+                                        <i class="bi bi-tag me-1"></i>
+                                        @subtaskName
+                                    </span>
+                                    <span class="material-date">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        @mat.CreatedAt.ToString("dd/MM/yyyy")
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
+                            {
+                                <div class="material-actions">
+                                    <div class="dropdown">
+                                        <button class="btn-action" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <button class="dropdown-item text-danger" @onclick="() => DeleteMaterial(mat.Id)">
+                                                    <i class="bi bi-trash me-2"></i>
+                                                    Slet materiale
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="material-content">
+                            @if (mat.IsLink)
+                            {
+                                <div class="material-link">
+                                    <i class="bi bi-globe me-2"></i>
+                                    <span class="link-url">@mat.LinkUrl</span>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(mat.FileName))
+                            {
+                                <div class="material-file">
+                                    <i class="bi bi-paperclip me-2"></i>
+                                    <span class="file-name">@mat.FileName</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="material-footer">
+                            @if (mat.IsLink)
+                            {
+                                <a href="@mat.LinkUrl" target="_blank" class="btn-access">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i>
+                                    Åbn link
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="@($"https://comwelltpapi.azurewebsites.net/api/LearningMaterial/download/{mat.FileId}")" 
+                                   target="_blank" download="@mat.FileName" class="btn-access">
+                                    <i class="bi bi-download me-2"></i>
+                                    Download
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload dokument
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-file-earmark me-2"></i>
+                        Vælg fil
+                    </label>
+                    <InputFile OnChange="HandleFileSelected" class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-type me-2"></i>
+                        Titel
+                    </label>
+                    <input type="text" @bind="uploadTitle" placeholder="Indtast titel..." class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-list-check me-2"></i>
+                        Delmål
+                    </label>
+                    <select class="form-select" @bind="uploadSubtaskId">
+                        <option value="">Vælg delmål</option>
+                        @foreach (var s in subtasks)
+                        {
+                            <option value="@s.Id">@s.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Annuller</button>
+                <button @onclick="UploadFile" class="btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Link Modal -->
+<div class="modal fade" id="linkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Tilføj link
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-type me-2"></i>
+                        Titel
+                    </label>
+                    <input type="text" @bind="linkTitle" placeholder="Indtast titel..." class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-globe me-2"></i>
+                        URL
+                    </label>
+                    <input type="text" @bind="linkUrl" placeholder="https://..." class="form-control" />
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-list-check me-2"></i>
+                        Delmål
+                    </label>
+                    <select class="form-select" @bind="linkSubtaskId">
+                        <option value="">Vælg delmål</option>
+                        @foreach (var s in subtasks)
+                        {
+                            <option value="@s.Id">@s.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" data-bs-dismiss="modal">Annuller</button>
+                <button @onclick="AddLink" class="btn-primary" data-bs-dismiss="modal">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Tilføj link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     private User? currentUser;                        // Aktuelt loggede bruger

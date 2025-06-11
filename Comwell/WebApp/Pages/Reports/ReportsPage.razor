@@ -4,101 +4,309 @@
 @using Core.Models
 @using WebApp.Services
 
-<h3>Rapporter</h3>
-
-<!-- Dropdown: Vælg lokation for at filtrere brugere efter hotel -->
-<div class="section">
-    <label class="filter-label">Vælg lokation:</label>
-    <select class="filter-select" @bind="selectedLocation">
-        <option value="">Alle lokationer</option>
-        @foreach (var location in locations)
-        {
-            <option value="@location">@location</option>
-        }
-    </select>
-</div>
-
-<!-- Statistik: Antal ansatte samlet og pr. rolle -->
-<div class="section">
-    <h4 class="subsection-title">Statistik over ansatte</h4>
-    <div class="stats-container">
-        <!-- Total antal ansatte -->
-        <div class="stat-card">
-            <h5>Samlet antal</h5>
-            <div class="count">@filteredUsers.Count()</div>
+<div class="dashboard-container">
+    <!-- Executive Header -->
+    <div class="executive-header">
+        <div class="header-content">
+            <div class="header-title-section">
+                <h1 class="dashboard-title">
+                    <i class="bi bi-graph-up-arrow me-3"></i>
+                    HR Rapporter & Analyse
+                </h1>
+                <p class="dashboard-subtitle">Komplet overblik over medarbejderdata, progression og performance</p>
+            </div>
+            <div class="header-metrics">
+                <div class="quick-metric">
+                    <div class="metric-value">@filteredUsers.Count()</div>
+                    <div class="metric-label">Totale medarbejdere</div>
+                </div>
+                <div class="quick-metric">
+                    <div class="metric-value">@locations.Count</div>
+                    <div class="metric-label">Lokationer</div>
+                </div>
+            </div>
         </div>
-        <!-- Antal ansatte pr. rolle -->
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-header">
+            <h3 class="panel-title">
+                <i class="bi bi-sliders me-2"></i>
+                Analyse Kontrolpanel
+            </h3>
+            <div class="panel-actions">
+                <button class="btn-export">
+                    <i class="bi bi-download me-2"></i>
+                    Eksporter Data
+                </button>
+            </div>
+        </div>
+        
+        <div class="control-grid">
+            <div class="control-item">
+                <label class="control-label">
+                    <i class="bi bi-geo-alt me-2"></i>
+                    Filtrér efter lokation
+                </label>
+                <select class="control-select" @bind="selectedLocation">
+                    <option value="">📍 Alle lokationer</option>
+                    @foreach (var location in locations)
+                    {
+                        <option value="@location">🏨 @location</option>
+                    }
+                </select>
+            </div>
+            
+            <div class="control-item">
+                <label class="control-label">
+                    <i class="bi bi-target me-2"></i>
+                    Analyser specifikt mål (kun elever)
+                </label>
+                <select class="control-select" @bind="selectedGoalTitle">
+                    <option value="">🎯 Alle mål</option>
+                    @foreach (var title in goalTitles)
+                    {
+                        <option value="@title">📋 @title</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="summary-section">
+        <div class="summary-header">
+            <h3 class="summary-title">
+                <i class="bi bi-bar-chart-fill me-2"></i>
+                Executive Summary
+            </h3>
+        </div>
+        
+        <div class="summary-grid">
+            <!-- Total Summary Card -->
+            <div class="summary-card primary">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div class="card-meta">
+                        <h4>Total Medarbejdere</h4>
+                        <p>Aktive i systemet</p>
+                    </div>
+                </div>
+                <div class="card-value">@filteredUsers.Count()</div>
+                <div class="card-footer">
+                    <span class="trend positive">
+                        <i class="bi bi-arrow-up"></i>
+                        Fordelt på @roles.Count roller
+                    </span>
+                </div>
+            </div>
+
+            <!-- Role-specific Cards -->
+            @foreach (var role in roles)
+            {
+                var count = filteredUsers.Count(u => u.Role == role);
+                if (count > 0)
+                {
+                    var percentage = (double)count / filteredUsers.Count() * 100;
+                    var roleClass = GetRoleStyleClass(role);
+                    
+                    <div class="summary-card @roleClass">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="@GetRoleIcon(role)"></i>
+                            </div>
+                            <div class="card-meta">
+                                <h4>@role</h4>
+                                <p>@percentage.ToString("F1")% af total</p>
+                            </div>
+                        </div>
+                        <div class="card-value">@count</div>
+                        @if (role == "Elev")
+                        {
+                            var avgCompletion = CalculateAverageCompletion();
+                            <div class="card-footer">
+                                <div class="progress-indicator">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: @avgCompletion%"></div>
+                                    </div>
+                                    <span class="progress-text">@avgCompletion% gennemsnitlig fuldførelse</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="card-footer">
+                                <span class="status-indicator active">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    Aktive medarbejdere
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Detailed Analysis Section -->
+    <div class="analysis-section">
+        <div class="analysis-header">
+            <h3 class="analysis-title">
+                <i class="bi bi-table me-2"></i>
+                Detaljeret Medarbejder Analyse
+            </h3>
+            <div class="analysis-meta">
+                Viser @filteredUsers.Count() medarbejdere
+                @if (!string.IsNullOrWhiteSpace(selectedLocation))
+                {
+                    <span class="filter-badge">📍 @selectedLocation</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
+                {
+                    <span class="filter-badge">🎯 @selectedGoalTitle</span>
+                }
+            </div>
+        </div>
+
+        <!-- Data Tables for each Role -->
         @foreach (var role in roles)
         {
-            int count = filteredUsers.Count(u => u.Role == role);
-            if (count > 0)
-            {
-                <div class="stat-card">
-                    <h5>@role</h5>
-                    <div class="count">@count</div>
+            var usersInRole = filteredUsers.Where(u => u.Role == role).ToList();
+            if (!usersInRole.Any()) continue;
+
+            <div class="data-section" id="@role">
+                <div class="section-header">
+                    <div class="section-title-area">
+                        <h4 class="section-title">
+                            <i class="@GetRoleIcon(role) me-2"></i>
+                            @role Medarbejdere
+                        </h4>
+                        <div class="section-summary">
+                            <span class="count-badge">@usersInRole.Count medarbejdere</span>
+                            @if (role == "Elev")
+                            {
+                                var avgCompletion = CalculateRoleAverageCompletion(usersInRole);
+                                <span class="completion-badge" style="background: linear-gradient(90deg, #28a745 @avgCompletion%, #e9ecef @avgCompletion%)">
+                                    @avgCompletion% fuldført
+                                </span>
+                            }
+                        </div>
+                    </div>
                 </div>
-            }
+
+                <div class="table-container">
+                    <table class="professional-table">
+                        <thead>
+                            <tr>
+                                <th class="col-name">
+                                    <i class="bi bi-person me-1"></i>
+                                    Medarbejder
+                                </th>
+                                <th class="col-contact">
+                                    <i class="bi bi-envelope me-1"></i>
+                                    Kontakt
+                                </th>
+                                <th class="col-location">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Lokation
+                                </th>
+                                @if (role == "Elev")
+                                {
+                                    <th class="col-progress">
+                                        <i class="bi bi-graph-up me-1"></i>
+                                        Progression
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in usersInRole.OrderBy(u => u.Name))
+                            {
+                                var userPlans = allPlans.Where(p => p.StudentId == user.Id).ToList();
+                                var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+                                var percent = CalculateCompletionPercentage(allGoals, role, selectedGoalTitle);
+                                
+                                <tr class="data-row">
+                                    <td class="col-name">
+                                        <div class="employee-info">
+                                            <div class="employee-avatar">
+                                                @GetInitials(user.Name)
+                                            </div>
+                                            <div class="employee-details">
+                                                <div class="employee-name">@user.Name</div>
+                                                <div class="employee-id">ID: @user.Id</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="col-contact">
+                                        <div class="contact-info">
+                                            <a href="mailto:@user.Email" class="email-link">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                @user.Email
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="col-location">
+                                        <div class="location-badge">
+                                            <i class="bi bi-building me-1"></i>
+                                            @user.Hotel
+                                        </div>
+                                    </td>
+                                    @if (role == "Elev")
+                                    {
+                                        <td class="col-progress">
+                                            <div class="progress-cell">
+                                                <div class="progress-visual">
+                                                    <div class="progress-bar-detailed">
+                                                        <div class="progress-fill-detailed" style="width: @percent%"></div>
+                                                    </div>
+                                                    <span class="progress-percentage">@percent%</span>
+                                                </div>
+                                                <div class="progress-status">
+                                                    @if (percent >= 90)
+                                                    {
+                                                        <span class="status excellent">
+                                                            <i class="bi bi-trophy-fill"></i>
+                                                            Fremragende
+                                                        </span>
+                                                    }
+                                                    else if (percent >= 70)
+                                                    {
+                                                        <span class="status good">
+                                                            <i class="bi bi-check-circle-fill"></i>
+                                                            God progression
+                                                        </span>
+                                                    }
+                                                    else if (percent >= 40)
+                                                    {
+                                                        <span class="status moderate">
+                                                            <i class="bi bi-clock-fill"></i>
+                                                            I gang
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="status needs-attention">
+                                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                                            Behøver opmærksomhed
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         }
     </div>
 </div>
-
-<!-- Tabel for hver brugergruppe (Elev, HR, Køkkenchef, Kok) -->
-@foreach (var role in roles)
-{
-    var usersInRole = filteredUsers.Where(u => u.Role == role).ToList();
-    if (!usersInRole.Any()) continue;
-
-    <div class="section" id="@role">
-        <h4 class="subsection-title">@role</h4>
-
-        @if (role == "Elev")
-        {
-            <!-- Dropdown: Vælg mål for elever (for filtrering på specifikke mål) -->
-            <label class="filter-label">Vælg mål:</label>
-            <select class="filter-select" @bind="selectedGoalTitle">
-                <option value="">Vælg mål</option>
-                @foreach (var title in goalTitles)
-                {
-                    <option value="@title">@title</option>
-                }
-            </select>
-        }
-
-        <!-- Tabel: Viser navn, email, lokation og evt. fuldførelsesprocent -->
-        <table class="data-table @(role == "Elev" ? "" : "fixed-layout")">
-            <thead>
-            <tr>
-                <th>Navn</th>
-                <th>Email</th>
-                <th>Lokation</th>
-                @if (role == "Elev")
-                {
-                    <th>Fuldførelsesprocent</th> <!-- Kun for elever -->
-                }
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var user in usersInRole)
-            {
-                // Find alle elevplaner for brugeren
-                var userPlans = allPlans.Where(p => p.StudentId == user.Id).ToList();
-                var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
-                int percent = CalculateCompletionPercentage(allGoals, role, selectedGoalTitle);
-                <tr>
-                    <td>@user.Name</td>
-                    <td>@user.Email</td>
-                    <td>@user.Hotel</td>
-                    @if (role == "Elev")
-                    {
-                        <td>@percent %</td> <!-- Vis procent kun for elever -->
-                    }
-                </tr>
-            }
-            </tbody>
-        </table>
-
-    </div>
-}
 
 @code {
     private List<User> allUsers = new();             // Liste over alle brugere (elever, HR, kokke, køkkenchefer)
@@ -150,12 +358,6 @@
     }
     
     // Beregner fuldførelsesprocent for en bruger baseret på deres mål (goals)
-    // Returnerer: Et heltal (0-100) som viser procent færdiggørelse
-    // Parametre:
-    //   goals – Liste over alle mål for brugeren (Goals)
-    //   role – Brugerens rolle (fx "Elev", "HR", "Køkkenchef", "Kok")
-    //   goalTitle – Et specifikt mål der ønskes filtreret på
-    // Formål: Beregne hvor mange mål (eller et specifikt mål) der er fuldført for en elev
     private int CalculateCompletionPercentage(List<Goal> goals, string role, string goalTitle)
     {
         if (role != "Elev") return 0;
@@ -164,7 +366,6 @@
         if (string.IsNullOrWhiteSpace(goalTitle))
         {
             // Beregn procent: (Antal fuldførte mål / Total mål) * 100
-            // Hvis total er 0 (ingen mål), returner 0 for at undgå division med 0
             int total = goals.Count;
             int done = goals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
             return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
@@ -172,11 +373,76 @@
         // Hvis et specifikt mål er valgt
         else
         {
-            var selectedGoals = goals.Where(g => g.Title == goalTitle).ToList(); // Hvis et specifikt mål er valgt, filtrer kun mål med den titel
-            int total = selectedGoals.Count; // Antal mål med den valgte titel
-            int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført")); // Antal af disse mål hvor alle delmål er fuldført
+            var selectedGoals = goals.Where(g => g.Title == goalTitle).ToList();
+            int total = selectedGoals.Count;
+            int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
             
             return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
         }
+    }
+
+    // Helper methods for professional styling
+    private string GetRoleStyleClass(string role)
+    {
+        return role switch
+        {
+            "Elev" => "student",
+            "HR" => "hr",
+            "Køkkenchef" => "chef",
+            "Kok" => "cook",
+            _ => "default"
+        };
+    }
+
+    private string GetRoleIcon(string role)
+    {
+        return role switch
+        {
+            "Elev" => "bi-mortarboard-fill",
+            "HR" => "bi-person-badge-fill",
+            "Køkkenchef" => "bi-award-fill",
+            "Kok" => "bi-egg-fried",
+            _ => "bi-person-fill"
+        };
+    }
+
+    private int CalculateAverageCompletion()
+    {
+        var students = filteredUsers.Where(u => u.Role == "Elev").ToList();
+        if (!students.Any()) return 0;
+
+        var completions = students.Select(student =>
+        {
+            var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
+            var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+            return CalculateCompletionPercentage(allGoals, "Elev", selectedGoalTitle);
+        }).ToList();
+
+        return completions.Any() ? (int)completions.Average() : 0;
+    }
+
+    private int CalculateRoleAverageCompletion(List<User> usersInRole)
+    {
+        if (usersInRole.First().Role != "Elev") return 0;
+
+        var completions = usersInRole.Select(student =>
+        {
+            var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
+            var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+            return CalculateCompletionPercentage(allGoals, "Elev", selectedGoalTitle);
+        }).ToList();
+
+        return completions.Any() ? (int)completions.Average() : 0;
+    }
+
+    private static string GetInitials(string fullName)
+    {
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "",
+            1 => parts[0][..1].ToUpper(),
+            _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
+        };
     }
 } 
