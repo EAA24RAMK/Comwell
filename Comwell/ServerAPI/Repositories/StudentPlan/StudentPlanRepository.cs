@@ -198,6 +198,23 @@ public class StudentPlanRepository : IStudentPlanRepository
             var allUsers = await _userRepo.GetAllAsync();
             await _notificationRepo.NotifyPeriodApprovedAsync(updatedPlan, allUsers);
         }
+        
+        // Hvis en skoleperiode blev godkendt – send notifikation
+        if (existingPlan != null)
+        {
+            foreach (var updatedSchool in updatedPlan.SchoolPeriods)
+            {
+                var previousSchool = existingPlan.SchoolPeriods.FirstOrDefault(s => s.Id == updatedSchool.Id);
+
+                if (previousSchool != null &&
+                    !previousSchool.IsApproved &&
+                    updatedSchool.IsApproved)
+                {
+                    var allUsers = await _userRepo.GetAllAsync();
+                    await _notificationRepo.NotifySchoolPeriodApprovedAsync(updatedPlan, updatedSchool, allUsers);
+                }
+            }
+        }
     }
     
     // Returnerer: True hvis planen blev slettet, ellers false.

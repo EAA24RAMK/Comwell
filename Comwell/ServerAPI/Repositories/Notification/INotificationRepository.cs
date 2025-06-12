@@ -13,4 +13,5 @@ public interface INotificationRepository
     Task CreateNotificationAsync(StudentPlan plan, Goal goal, List<User> allUsers);
     Task NotifyGoalCompletedAsync(StudentPlan plan, Goal goal, List<User> allUsers);
     Task NotifyPeriodApprovedAsync(StudentPlan plan, List<User> allUsers);
+    Task NotifySchoolPeriodApprovedAsync(StudentPlan plan, SchoolPeriod schoolPeriod, List<User> allUsers);
 }
