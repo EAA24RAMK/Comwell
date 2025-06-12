@@ -182,11 +182,22 @@ public class StudentPlanRepository : IStudentPlanRepository
                     updatedGoal.Status == "Fuldført")
                 {
                     await _notificationRepo.RemoveGoalNotificationForAllUsersAsync(updatedPlan.Id, updatedGoal.Id); // Kalder RemoveGoal... metode i NotificationRepository.
+                    
+                    // Send notifikation til elev
+                    var allUsers = await _userRepo.GetAllAsync();
+                    await _notificationRepo.NotifyGoalCompletedAsync(updatedPlan, updatedGoal, allUsers);
                 }
             }
         }
 
         await _studentPlan.ReplaceOneAsync(p => p.Id == updatedPlan.Id, updatedPlan); // Udskift hele planen med den opdaterede version
+    
+        // Hvis perioden blev godkendt – send notifikation
+        if (!existingPlan.IsApprovedByChef && updatedPlan.IsApprovedByChef)
+        {
+            var allUsers = await _userRepo.GetAllAsync();
+            await _notificationRepo.NotifyPeriodApprovedAsync(updatedPlan, allUsers);
+        }
     }
     
     // Returnerer: True hvis planen blev slettet, ellers false.
