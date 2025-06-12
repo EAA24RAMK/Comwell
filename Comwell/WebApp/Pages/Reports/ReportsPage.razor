@@ -84,25 +84,6 @@
         </div>
         
         <div class="summary-grid">
-            <!-- Total Summary Card -->
-            <div class="summary-card primary">
-                <div class="card-header">
-                    <div class="card-icon">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="card-meta">
-                        <h4>Medarbejdere i alt</h4>
-                        <p>Aktive i systemet</p>
-                    </div>
-                </div>
-                <div class="card-value">@filteredUsers.Count()</div>
-                <div class="card-footer">
-                    <span class="trend positive">
-                        <i class="bi bi-arrow-up"></i>
-                        Fordelt på @roles.Count roller
-                    </span>
-                </div>
-            </div>
 
             <!-- Role-specific Cards -->
             @foreach (var role in roles)

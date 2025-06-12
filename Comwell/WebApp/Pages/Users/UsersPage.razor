@@ -29,16 +29,6 @@
 
     <!-- Stats Section -->
     <div class="stats-grid">
-        <div class="stat-card total">
-            <div class="stat-icon">
-                <i class="bi bi-people-fill"></i>
-            </div>
-            <div class="stat-info">
-                <div class="stat-number">@users.Count</div>
-                <div class="stat-label">Brugere i alt</div>
-            </div>
-        </div>
-        
         @foreach (var role in Roles)
         {
             var count = users.Count(u => u.Role == role);
