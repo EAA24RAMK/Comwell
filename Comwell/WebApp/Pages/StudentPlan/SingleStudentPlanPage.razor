@@ -8,186 +8,376 @@
 @inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
 
-<!-- Side til visning af en elevs egen elevplan -->
-<h3>@(currentUser?.Name) elevplan</h3>
-<p></p>
+<!-- Modern Single Student Plan Dashboard -->
+<div class="single-elevplan-dashboard">
+    <!-- Executive Header with Dark Blue Background -->
+    <div class="page-header">
+        <div class="header-content">
+            <h3>
+                <i class="bi bi-person-workspace"></i>
+                @(currentUser?.Name) - Min Elevplan
+            </h3>
+            <p class="welcome-text">Her er dit personlige overblik over din elevplan og fremskridt.</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-number">@(plans?.Count ?? 0)</div>
+                <div class="stat-label">
+                    <i class="bi bi-journal-bookmark"></i>
+                    Planer
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@GetTotalGoals()</div>
+                <div class="stat-label">
+                    <i class="bi bi-target"></i>
+                    Mål
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@GetCompletedGoalsPercentage()%</div>
+                <div class="stat-label">
+                    <i class="bi bi-trophy"></i>
+                    Gennemført
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Hvis der ikke findes nogen planer -->
-@if (plans?.Any() != true)
-{
-    <p>Ingen planer fundet.</p>
-}
-else
-{
-    <!-- Gennemløb alle planer -->
-    @foreach (var plan in plans)
-    {
-        <div class="plan-box">
-            <!-- Titel på skabelonen -->
-            <h4>@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
-            <!-- Periode og oprettet af -->
-            <p><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</p>
-            <p><strong>Oprettet af:</strong> @plan.CreatedBy</p>
-
-            <!-- Fold-ud knap til mål -->
-            <button class="fold-toggle" @onclick="() => TogglePlan(plan.Id)">
-                Mål
-                @if (openPlanIds.Contains(plan.Id))
-                {
-                    <span>▼</span>
-                }
-                else
-                {
-                    <span>▶</span>
-                }
-            </button>
-
-            <!-- Viser mål hvis planen er foldet ud -->
-            @if (openPlanIds.Contains(plan.Id))
+    <!-- Plans Content -->
+    <div class="plans-content">
+        @if (plans?.Any() != true)
+        {
+            <div class="empty-state">
+                <i class="bi bi-journal-x"></i>
+                <h4>Ingen planer fundet</h4>
+                <p>Der er ikke oprettet nogen planer til dig endnu. Kontakt din vejleder for at få oprettet en plan.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var plan in plans)
             {
-                @foreach (var goal in plan.Goals)
-                {
-                    <!-- Fold-ud knap til delmål -->
-                    <div style="margin-left: 1rem; margin-bottom: 1rem;">
-                        <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-                            <strong>@goal.Title</strong> - <GoalStatusComponent Goal="goal"/>
-                            @if (openGoalIds.Contains(goal.Id))
-                            {
-                                <span>▼</span>
-                            }
-                            else
-                            {
-                                <span>▶</span>
-                            }
-                        </button>
-
-                        <!-- Viser delmål hvis målet er foldet ud -->
-                        @if (openGoalIds.Contains(goal.Id))
+                <div class="plan-container">
+                    <!-- Plan Header -->
+                    <div class="plan-header">
+                        <div class="plan-info">
+                            <h4 class="plan-title">
+                                <i class="bi bi-clipboard2-check"></i>
+                                @templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title
+                            </h4>
+                            <div class="plan-meta">
+                                <div class="meta-item">
+                                    <i class="bi bi-calendar-range"></i>
+                                    <span><strong>Periode:</strong> @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="bi bi-person-check"></i>
+                                    <span><strong>Oprettet af:</strong> @plan.CreatedBy</span>
+                                </div>
+                            </div>
+                        </div>
+                        @if (plan.IsApprovedByChef)
                         {
-                            <ul>
-                                @foreach (var subtask in goal.Subtasks)
-                                {
-                                    <li class="d-flex align-items-center gap-2">
-                                        <!-- Checkbox til delmål -->
-                                        <input type="checkbox"
-                                               disabled="@(subtask.Status == "Ikke startet")"
-                                               checked="@(subtask.Status == "Fuldført")"
-                                               @onchange="e => RequestSubtaskCompletion(plan, subtask)"/>
-
-                                        <!-- Start-knap til delmål -->
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => StartSubtask(plan, subtask)">
-                                            Start
-                                        </button>
-
-                                        <!-- Tekst for delmålet -->
-                                        @subtask.Text
-
-                                        <!-- Status-badge -->
-                                        <span class="badge @GetStatusClass(subtask.Status)">
-                                            @subtask.Status
-                                        </span>
-
-                                        <!-- Viser badge hvis der er anmodet om fuldførelse -->
-                                        @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
-                                        {
-                                            <span class="badge bg-warning text-dark ms-2">Anmodet om fuldførelse</span>
-                                        }
-
-                                        <!-- Læringsmateriale knap hvis der er materiale -->
-                                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
-                                        {
-                                            <button class="btn btn-sm btn-info ms-2"
-                                                    @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
-                                                Læringsmateriale
-                                            </button>
-                                        }
-                                    </li>
-                                }
-                            </ul>
+                            <div class="approval-badge">
+                                <i class="bi bi-patch-check-fill"></i>
+                                <span>Godkendt</span>
+                            </div>
                         }
                     </div>
-                }
-            }
 
-            <!-- Skoleperioder -->
-            @foreach (var school in plan.SchoolPeriods)
-            {
-                <div class="mb-4 p-3 border rounded">
-                    <h5>@school.Title</h5>
-                    
-                    <!-- Viser start- og slutdato hvis valgt -->
-                    @if (school.StartDate.HasValue && school.IsDateConfirmed)
-                    {
-                        var start = school.StartDate.Value;
-                        var end = start.AddDays(7 * school.DurationWeeks);
-                        <p><strong>Dato:</strong> @start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
-                    }
-                    else
-                    {
-                        <p class="text-muted"><em>Dato ikke valgt endnu</em></p>
-                    }
+                    <!-- Goals Section -->
+                    <div class="section-container">
+                        <button class="section-toggle @(openPlanIds.Contains(plan.Id) ? "expanded" : "")" @onclick="() => TogglePlan(plan.Id)">
+                            <i class="bi bi-chevron-right"></i>
+                            <span>Mål (@plan.Goals.Count)</span>
+                            <div class="progress-indicator">
+                                <div class="progress-bar" style="width: @GetPlanProgressPercentage(plan)%"></div>
+                            </div>
+                        </button>
 
-                    <!-- Status på skoleperiode -->
-                    <span class="badge @GetStatusClass(school.Status)">
-                        @school.Status
-                    </span>
+                        @if (openPlanIds.Contains(plan.Id))
+                        {
+                            <div class="goals-grid">
+                                @foreach (var goal in plan.Goals)
+                                {
+                                    <div class="goal-card">
+                                        <div class="goal-header">
+                                            <div class="goal-info">
+                                                <h5 class="goal-title">
+                                                    <i class="bi bi-bullseye"></i>
+                                                    @goal.Title
+                                                </h5>
+                                                <div class="goal-meta">
+                                                    <span class="goal-category">
+                                                        <i class="bi bi-tag"></i>
+                                                        @goal.Category
+                                                    </span>
+                                                    <span class="goal-deadline @(goal.Deadline < DateTime.Today ? "overdue" : "")">
+                                                        <i class="bi bi-clock"></i>
+                                                        @goal.Deadline.ToString("dd-MM-yyyy")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="goal-status">
+                                                @if (goal.Status == "Ikke startet")
+                                                {
+                                                    <span class="status-badge not-started">
+                                                        <i class="bi bi-hourglass"></i>
+                                                        Ikke startet
+                                                    </span>
+                                                }
+                                                else if (goal.Status == "I gang")
+                                                {
+                                                    <span class="status-badge in-progress">
+                                                        <i class="bi bi-play-circle"></i>
+                                                        I gang
+                                                    </span>
+                                                }
+                                                else if (goal.Status == "Fuldført")
+                                                {
+                                                    <span class="status-badge completed">
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                        Fuldført
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
 
-                    <!-- Godkendt besked hvis skoleperiode er godkendt -->
-                    @if (school.IsApproved)
-                    {
-                        <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
-                    }
+                                        <button class="subtasks-toggle @(openGoalIds.Contains(goal.Id) ? "expanded" : "")" @onclick="() => ToggleGoal(goal.Id)">
+                                            <i class="bi bi-chevron-right"></i>
+                                            <span>Delmål (@goal.Subtasks.Count)</span>
+                                            <div class="subtask-progress">
+                                                @{
+                                                    var completedSubtasks = goal.Subtasks.Count(s => s.Status == "Fuldført");
+                                                    var totalSubtasks = goal.Subtasks.Count;
+                                                }
+                                                <span class="progress-text">@completedSubtasks / @totalSubtasks</span>
+                                            </div>
+                                        </button>
+
+                                        @if (openGoalIds.Contains(goal.Id))
+                                        {
+                                            <div class="subtasks-list">
+                                                @foreach (var subtask in goal.Subtasks)
+                                                {
+                                                    <div class="subtask-item @(subtask.Status.ToLower().Replace(" ", "-"))">
+                                                        <div class="subtask-controls">
+                                                            <input type="checkbox"
+                                                                   disabled="@(subtask.Status == "Ikke startet")"
+                                                                   checked="@(subtask.Status == "Fuldført")"
+                                                                   @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)"/>
+                                                            @if (subtask.Status == "Ikke startet")
+                                                            {
+                                                                <button class="start-btn" @onclick="() => StartSubtask(plan, subtask)">
+                                                                    <i class="bi bi-play-fill"></i>
+                                                                    Start
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                        
+                                                        <div class="subtask-content">
+                                                            <span class="subtask-text">@subtask.Text</span>
+                                                            <div class="subtask-meta">
+                                                                @if (subtask.Status == "Ikke startet")
+                                                                {
+                                                                    <span class="subtask-status not-started">
+                                                                        <i class="bi bi-circle"></i>
+                                                                        Ikke startet
+                                                                    </span>
+                                                                }
+                                                                else if (subtask.Status == "I gang")
+                                                                {
+                                                                    <span class="subtask-status in-progress">
+                                                                        <i class="bi bi-arrow-clockwise"></i>
+                                                                        I gang
+                                                                    </span>
+                                                                }
+                                                                else if (subtask.Status == "Fuldført")
+                                                                {
+                                                                    <span class="subtask-status completed">
+                                                                        <i class="bi bi-check-circle-fill"></i>
+                                                                        Fuldført
+                                                                    </span>
+                                                                }
+
+                                                                @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
+                                                                {
+                                                                    <span class="subtask-status requested">
+                                                                        <i class="bi bi-clock-history"></i>
+                                                                        Anmodet
+                                                                    </span>
+                                                                }
+                                                            </div>
+                                                        </div>
+
+                                                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                                                        {
+                                                            <button class="material-btn" @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
+                                                                <i class="bi bi-book"></i>
+                                                                Materiale
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- School Periods Section -->
+                    <div class="section-container">
+                        <div class="section-header">
+                            <h4>
+                                <i class="bi bi-building"></i>
+                                Skoleperioder
+                            </h4>
+                        </div>
+                        
+                        <div class="school-periods-grid">
+                            @foreach (var school in plan.SchoolPeriods)
+                            {
+                                <div class="school-period-card @(school.Status.ToLower().Replace(" ", "-"))">
+                                    <div class="period-header">
+                                        <h5 class="period-title">
+                                            <i class="bi bi-mortarboard"></i>
+                                            @school.Title
+                                        </h5>
+                                        <div class="period-status">
+                                            @if (school.Status == "Ikke startet")
+                                            {
+                                                <span class="status-badge not-started">
+                                                    <i class="bi bi-hourglass"></i>
+                                                    Ikke startet
+                                                </span>
+                                            }
+                                            else if (school.Status == "I gang")
+                                            {
+                                                <span class="status-badge in-progress">
+                                                    <i class="bi bi-play-circle"></i>
+                                                    I gang
+                                                </span>
+                                            }
+                                            else if (school.Status == "Fuldført")
+                                            {
+                                                <span class="status-badge completed">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Fuldført
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="period-details">
+                                        @if (school.StartDate.HasValue && school.IsDateConfirmed)
+                                        {
+                                            var start = school.StartDate.Value;
+                                            var end = start.AddDays(7 * school.DurationWeeks);
+                                            <div class="period-dates">
+                                                <i class="bi bi-calendar-check"></i>
+                                                <span><strong>Dato:</strong> @start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="period-dates pending">
+                                                <i class="bi bi-calendar-x"></i>
+                                                <span>Dato ikke valgt endnu</span>
+                                            </div>
+                                        }
+
+                                        <div class="period-duration">
+                                            <i class="bi bi-clock"></i>
+                                            <span><strong>Varighed:</strong> @school.DurationWeeks uger</span>
+                                        </div>
+
+                                        @if (school.IsApproved)
+                                        {
+                                            <div class="approval-status">
+                                                <i class="bi bi-patch-check-fill"></i>
+                                                <span>Godkendt af køkkenchef</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Notes Section -->
+                    <div class="section-container">
+                        <button class="section-toggle @(openNotePlanIds.Contains(plan.Id) ? "expanded" : "")" @onclick="() => ToggleNotes(plan.Id)">
+                            <i class="bi bi-chevron-right"></i>
+                            <span>
+                                <i class="bi bi-journal-text"></i>
+                                Noter (@plan.Notes.Count)
+                            </span>
+                        </button>
+
+                        @if (openNotePlanIds.Contains(plan.Id))
+                        {
+                            <div class="notes-section">
+                                @if (plan.Notes.Any())
+                                {
+                                    <div class="notes-list">
+                                        @foreach (var note in plan.Notes)
+                                        {
+                                            <div class="note-item">
+                                                <div class="note-header">
+                                                    <i class="bi bi-sticky"></i>
+                                                    <span class="note-date">@note.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                                                </div>
+                                                <div class="note-content">@note.Text</div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="no-notes">
+                                        <i class="bi bi-journal"></i>
+                                        <p>Ingen noter endnu</p>
+                                    </div>
+                                }
+
+                                <div class="add-note-section">
+                                    @if (addingNoteForPlanId == plan.Id)
+                                    {
+                                        <div class="note-form">
+                                            <textarea class="note-input" 
+                                                      placeholder="Skriv din note her..."
+                                                      @bind="newNoteTexts[plan.Id]"></textarea>
+                                            <div class="note-actions">
+                                                <button class="btn-cancel" @onclick="() => CancelAddNote(plan.Id)">
+                                                    <i class="bi bi-x-lg"></i>
+                                                    Annuller
+                                                </button>
+                                                <button class="btn-primary" @onclick="() => SaveNote(plan)">
+                                                    <i class="bi bi-check-lg"></i>
+                                                    Gem note
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <button class="add-note-btn" @onclick="() => StartAddingNote(plan.Id)">
+                                            <i class="bi bi-plus-circle"></i>
+                                            Tilføj note
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             }
-
-            <!-- Fold-ud knap til noter -->
-            <h5>
-                <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
-                    Noter
-                    @if (openNotePlanIds.Contains(plan.Id))
-                    {
-                        <span>▼</span>
-                    }
-                    else
-                    {
-                        <span>▶</span>
-                    }
-                </button>
-            </h5>
-
-            <!-- Viser noter hvis de er foldet ud -->
-            @if (openNotePlanIds.Contains(plan.Id))
-            {
-                @foreach (var note in plan.Notes)
-                {
-                    <div>
-                        <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
-                    </div>
-                }
-
-                <!-- Formular til at tilføje ny note -->
-                @if (addingNoteForPlanId == plan.Id)
-                {
-                    <div>
-                        <textarea class="form-control mb-2"
-                                  @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
-                            @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
-                        </textarea>
-                        <button @onclick="() => SaveNote(plan)">Gem note</button>
-                        <button @onclick="CancelAddNote">Annuller</button>
-                    </div>
-                }
-                else
-                {
-                    <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">
-                        Tilføj note
-                    </button>
-                }
-            }
-        </div>
-    }
-}
+        }
+    </div>
+</div>
 
 @code {
     private List<StudentPlan> plans = new(); // Liste over alle elevens planer
@@ -225,6 +415,30 @@ else
         templates = await TemplateService.GetAllTemplatesAsync();
     }
 
+    // Nye metoder til dashboard statistikker
+    private int GetTotalGoals()
+    {
+        return plans?.Sum(p => p.Goals.Count) ?? 0;
+    }
+
+    private int GetCompletedGoalsPercentage()
+    {
+        var totalGoals = GetTotalGoals();
+        if (totalGoals == 0) return 0;
+        
+        var completedGoals = plans?.Sum(p => p.Goals.Count(g => g.Status == "Fuldført")) ?? 0;
+        return (int)Math.Round((double)completedGoals / totalGoals * 100);
+    }
+
+    private int GetPlanProgressPercentage(StudentPlan plan)
+    {
+        var totalSubtasks = plan.Goals.Sum(g => g.Subtasks.Count);
+        if (totalSubtasks == 0) return 0;
+        
+        var completedSubtasks = plan.Goals.Sum(g => g.Subtasks.Count(s => s.Status == "Fuldført"));
+        return (int)Math.Round((double)completedSubtasks / totalSubtasks * 100);
+    }
+
     // Parametre: planId – ID på planen der foldes ud/skjules.
     // Formål: Fold-ud/fold-ind funktion for visning af mål under en plan.
     private void TogglePlan(int planId)
@@ -241,87 +455,109 @@ else
             openGoalIds.Remove(goalId);
     }
 
-    // Parametre: planId – ID på planen hvor noter skal foldes ud/skjules.
-    // Formål: Fold-ud/fold-ind funktion for visning af noter under en plan.
+    // Parametre: planId – ID på planen hvor noter skal vises/skjules.
+    // Formål: Fold-ud/fold-ind funktion for visning af noter for en plan.
     private void ToggleNotes(int planId)
     {
         if (!openNotePlanIds.Add(planId))
             openNotePlanIds.Remove(planId);
     }
 
-    // Parametre: 
-    //   plan – Den elevplan delmålet hører til.
-    //   subtask – Det delmål brugeren anmoder om at fuldføre.
-    // Formål: Eleven kan anmode om at få et delmål markeret som fuldført.
-    // Ændrer status til "Anmodet om fuldførelse" og opdaterer planen i databasen.
-    private async Task RequestSubtaskCompletion(StudentPlan plan, Subtask subtask)
+    // Parametre:
+    //   plan – Den plan delmålet hører til.
+    //   goal – Målet som delmålet hører til.
+    //   subtask – Det delmål der toggles.
+    //   isCompleted – True hvis delmålet er fuldført, ellers false.
+    // Formål: Skifter status på et delmål og opdaterer målets status baseret på delmålenes tilstand.
+    private async Task ToggleSubtaskCompletion(StudentPlan plan, Goal goal, Subtask subtask, bool isCompleted)
     {
-        if (subtask.Status == "I gang")
+        subtask.Status = isCompleted ? "Fuldført" : "I gang";
+
+        // Opdater status for hele målet baseret på subtasks
+        if (goal.Subtasks.All(s => s.Status == "Fuldført"))
         {
-            subtask.IsRequestedCompleted = true;
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-            await LoadData();
+            goal.Status = "Fuldført";
         }
+        else if (goal.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"))
+        {
+            goal.Status = "I gang";
+        }
+        else
+        {
+            goal.Status = "Ikke startet";
+        }
+
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        await LoadData();
     }
 
-    // Parametre: 
-    //   plan – Den elevplan delmålet hører til.
-    //   subtask – Det delmål brugeren vil starte.
-    // Formål: Eleven kan starte et delmål, ændrer status fra "Ikke startet" til "I gang".
+    // Parametre:
+    //   plan – Den plan delmålet hører til.
+    //   subtask – Det delmål der startes.
+    // Formål: Skifter status på et delmål fra "Ikke startet" til "I gang".
     private async Task StartSubtask(StudentPlan plan, Subtask subtask)
     {
-        if (subtask.Status == "Ikke startet")
-        {
-            subtask.Status = "I gang";
-            await StudentPlanService.UpdateStudentPlanAsync(plan);
-            await LoadData();
-        }
+        subtask.Status = "I gang";
+        await StudentPlanService.UpdateStudentPlanAsync(plan);
+        await LoadData();
     }
 
-    // Parametre: planId – ID på den plan der skal tilføjes en ny note til.
-    // Formål: Starter processen for at tilføje en ny note til en plan.
-    private void StartAddNote(int planId)
+    // Parametre: planId – ID på den plan hvor der skal tilføjes en note.
+    // Formål: Starter processen med at tilføje en ny note til planen.
+    private void StartAddingNote(int planId)
     {
         addingNoteForPlanId = planId;
         if (!newNoteTexts.ContainsKey(planId))
         {
-            newNoteTexts[planId] = string.Empty;
+            newNoteTexts[planId] = "";
         }
     }
 
-    // Formål: Annullerer tilføjelse af en ny note.
-    private void CancelAddNote() => addingNoteForPlanId = -1;
+    // Parametre: planId – ID på den plan hvor tilføjelse af note annulleres.
+    // Formål: Annullerer tilføjelse af ny note.
+    private void CancelAddNote(int planId)
+    {
+        addingNoteForPlanId = -1;
+        if (newNoteTexts.ContainsKey(planId))
+        {
+            newNoteTexts[planId] = "";
+        }
+    }
 
-    // Parametre: plan – Den elevplan som noten skal tilføjes til.
-    // Formål: Gemmer en ny note. 
-    // Opretter en note med unikt ID og nuværende dato, tilføjer den til planen, gemmer opdateringen i databasen, 
-    // og opdaterer visningen med den nye note.
+    // Parametre: plan – Den plan hvor noten skal gemmes.
+    // Formål: Gemmer en ny note til planen og opdaterer databasen.
     private async Task SaveNote(StudentPlan plan)
     {
-        if (!newNoteTexts.TryGetValue(plan.Id, out var noteText) || string.IsNullOrWhiteSpace(noteText))
-            return;
-
-        var newNote = new Note
+        var noteText = newNoteTexts.GetValueOrDefault(plan.Id, "").Trim();
+        if (string.IsNullOrEmpty(noteText))
         {
-            Id = plan.Notes.Any() ? plan.Notes.Max(n => n.Id) + 1 : 1,
-            Text = noteText.Trim(),
+            return;
+        }
+
+        var note = new Note
+        {
+            Text = noteText,
             CreatedAt = DateTime.Now
         };
 
-        plan.Notes.Add(newNote);
+        plan.Notes.Add(note);
         await StudentPlanService.UpdateStudentPlanAsync(plan);
-        newNoteTexts[plan.Id] = string.Empty;
+
+        // Reset UI
         addingNoteForPlanId = -1;
+        newNoteTexts[plan.Id] = "";
+        
         await LoadData();
     }
 
-    // Returnerer: En CSS-klasse baseret på status.
-    // Parametre: status – Status på skoleperiode eller mål.
-    // Formål: Returnerer korrekt baggrundsfarve baseret på status (bruges til badges i UI).
-    private static string GetStatusClass(string status) => status switch
+    // Legacy metode - bruges stadig af komponenter
+    private string GetStatusClass(string status)
     {
-        "Fuldført" => "bg-success",
-        "I gang" => "bg-warning text-dark",
-        _ => "bg-secondary"
-    };
+        return status switch
+        {
+            "Fuldført" => "bg-success",
+            "I gang" => "bg-warning text-dark",
+            _ => "bg-secondary"
+        };
+    }
 }

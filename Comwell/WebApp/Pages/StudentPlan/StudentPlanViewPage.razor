@@ -181,51 +181,112 @@
                         </div>
                     }
 
-                    <!-- Viser skoleperioder -->
-                    @foreach (var school in plan.SchoolPeriods)
-                    {
-                        <div class="school-period">
-                            <h5>@school.Title</h5>
-
-                            @if (!school.IsDateConfirmed)
+                    <!-- Skoleperioder Section -->
+                    <div class="section-container">
+                        <div class="section-header">
+                            <h4>
+                                <i class="bi bi-building"></i>
+                                Skoleperioder
+                            </h4>
+                        </div>
+                        
+                        <div class="school-periods-grid">
+                            @foreach (var school in plan.SchoolPeriods)
                             {
-                                <!-- Formular til at vælge startdato -->
-                                <div>
-                                    <label>Startdato:</label>
-                                    <InputDate @bind-Value="school.StartDate" class="form-control mb-2"/>
-                                    <button @onclick="() => SaveSchoolPeriodDate(plan, school)">Gem dato</button>
+                                <div class="school-period-card @(school.Status.ToLower().Replace(" ", "-"))">
+                                    <div class="period-header">
+                                        <h5 class="period-title">
+                                            <i class="bi bi-mortarboard"></i>
+                                            @school.Title
+                                        </h5>
+                                        <div class="period-status">
+                                            @if (school.Status == "Ikke startet")
+                                            {
+                                                <span class="status-badge not-started">
+                                                    <i class="bi bi-hourglass"></i>
+                                                    Ikke startet
+                                                </span>
+                                            }
+                                            else if (school.Status == "I gang")
+                                            {
+                                                <span class="status-badge in-progress">
+                                                    <i class="bi bi-play-circle"></i>
+                                                    I gang
+                                                </span>
+                                            }
+                                            else if (school.Status == "Fuldført")
+                                            {
+                                                <span class="status-badge completed">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Fuldført
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <div class="period-details">
+                                        @if (!school.IsDateConfirmed)
+                                        {
+                                            <div class="date-selector">
+                                                <label class="date-label">
+                                                    <i class="bi bi-calendar-event"></i>
+                                                    Startdato:
+                                                </label>
+                                                <div class="date-input-group">
+                                                    <InputDate @bind-Value="school.StartDate" class="form-input date-input"/>
+                                                    <button class="save-date-btn" @onclick="() => SaveSchoolPeriodDate(plan, school)">
+                                                        <i class="bi bi-check2"></i>
+                                                        Gem
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @if (school.StartDate.HasValue)
+                                            {
+                                                var end = school.StartDate.Value.AddDays(7 * school.DurationWeeks);
+                                                <div class="period-dates">
+                                                    <i class="bi bi-calendar-check"></i>
+                                                    <span><strong>Dato:</strong> @school.StartDate.Value.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="period-dates pending">
+                                                    <i class="bi bi-calendar-x"></i>
+                                                    <span>Dato ikke angivet</span>
+                                                </div>
+                                            }
+                                        }
+
+                                        <div class="period-duration">
+                                            <i class="bi bi-clock"></i>
+                                            <span><strong>Varighed:</strong> @school.DurationWeeks uger</span>
+                                        </div>
+
+                                        <!-- Godkendelse af skoleperioder -->
+                                        <div class="approval-section">
+                                            @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
+                                            {
+                                                <button class="approval-button" @onclick="() => ApproveSchoolPeriod(plan, school)">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    Godkend skoleperiode
+                                                </button>
+                                            }
+                                            else if (school.IsApproved)
+                                            {
+                                                <div class="approval-status">
+                                                    <i class="bi bi-patch-check-fill"></i>
+                                                    <span>Skoleperiode godkendt af køkkenchef</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
                                 </div>
                             }
-                            else
-                            {
-                                @if (school.StartDate.HasValue)
-                                {
-                                    var end = school.StartDate.Value.AddDays(7 * school.DurationWeeks);
-                                    <p><strong>Dato:</strong> @school.StartDate.Value.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
-                                }
-                                else
-                                {
-                                    <p><strong>Dato:</strong> Ikke angivet</p>
-                                }
-                            }
-
-                            <!-- Godkendelse af skoleperioder -->
-                            <div class="d-flex align-items-center gap-2">
-                                @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
-                                {
-                                    <button @onclick="() => ApproveSchoolPeriod(plan, school)">
-                                        Godkend skoleperiode
-                                    </button>
-                                }
-                                else if (school.IsApproved)
-                                {
-                                    <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
-                                }
-
-                                <span class="badge @GetStatusClass(school.Status)">@school.Status</span>
-                            </div>
                         </div>
-                    }
+                    </div>
 
                     <!-- Vis og skjul noter -->
                     <h5>

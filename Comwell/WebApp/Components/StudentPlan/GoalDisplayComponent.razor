@@ -3,133 +3,194 @@
 @inject IStudentPlanService StudentPlanService
 @inject NavigationManager Nav
 
-<div style="margin-left: 1rem; margin-bottom: 1rem;">
-    <!-- Knap der fold-ud/folder-ind målet og viser målets titel og status -->
-    <button class="fold-toggle" @onclick="() => ToggleGoal(goal.Id)">
-        <!-- Komponent -->
-        <strong>@goal.Title</strong> - <GoalStatusComponent goal="goal"/>
-
-        <!-- Viser pil op eller ned alt efter om målet er foldet ud -->
-        @if (openGoalIds.Contains(goal.Id))
-        {
-            <span>▼</span>
-        }
-        else
-        {
-            <span>▶</span>
-        }
+<div class="goal-display-component">
+    <!-- Goal Toggle Header -->
+    <button class="goal-toggle @(openGoalIds.Contains(goal.Id) ? "expanded" : "")" @onclick="() => ToggleGoal(goal.Id)">
+        <i class="bi bi-chevron-right"></i>
+        <div class="goal-title-section">
+            <span class="goal-title">
+                <i class="bi bi-bullseye"></i>
+                @goal.Title
+            </span>
+            <div class="goal-meta-inline">
+                <span class="goal-category">
+                    <i class="bi bi-tag"></i>
+                    @goal.Category
+                </span>
+                <GoalStatusComponent goal="goal"/>
+            </div>
+        </div>
+        <div class="goal-deadline @(goal.Deadline < DateTime.Today ? "overdue" : "")">
+            <i class="bi bi-clock"></i>
+            <span>@goal.Deadline.ToString("dd-MM-yyyy")</span>
+        </div>
     </button>
 
-    <!-- Hvis målet er foldet ud -->
+    <!-- Goal Content -->
     @if (openGoalIds.Contains(goal.Id))
     {
-        <!-- Hvis brugeren redigerer målet -->
-        @if (editingGoalId == goal.Id)
-        {
-            <div>
-                <!-- Formular til at redigere målets titel -->
-                <label>Titel:</label>
-                <InputText @bind-Value="editableGoalTitle"/>
+        <div class="goal-content">
+            <!-- Edit Mode -->
+            @if (editingGoalId == goal.Id)
+            {
+                <div class="goal-edit-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-type"></i>
+                                Titel:
+                            </label>
+                            <InputText @bind-Value="editableGoalTitle" class="form-input"/>
+                        </div>
 
-                <!-- Formular til at redigere målets kategori -->
-                <label>Kategori:</label>
-                <select @bind="editableGoalCategory">
-                    <option value="Skole">Skole</option>
-                    <option value="Praktik">Praktik</option>
-                </select>
-            </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i>
+                                Kategori:
+                            </label>
+                            <select @bind="editableGoalCategory" class="form-select">
+                                <option value="Skole">Skole</option>
+                                <option value="Praktik">Praktik</option>
+                            </select>
+                        </div>
+                    </div>
 
-            <ul>
-                <!-- Liste over delmål under redigering -->
-                @for (int i = 0; i < editableSubtasks.Count; i++)
-                {
-                    var index = i;
-                    <li @key="index">
-                        <!-- Tekstfelt for delmål-tekst -->
-                        <input value="@editableSubtasks[index]"
-                               @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty"/>
-                        <!-- Knap til at fjerne delmålet -->
-                        <button @onclick="() => RemoveSubtask(index)">Slet</button>
-                    </li>
-                }
-                <!-- Knap til at tilføje nyt delmål -->
-                <li>
-                    <button class="bi bi-plus" @onclick="AddSubtask"> Tilføj delmål</button>
-                </li>
-            </ul>
-
-            <!-- Gem og annuller knapper for redigering -->
-            <button @onclick="() => SaveGoalChanges(plan, goal)"> Gem</button>
-            <button @onclick="CancelEditing">Annuller</button>
-        }
-        else
-        {
-            <ul>
-                <!-- Liste over eksisterende delmål -->
-                @foreach (var subtask in goal.Subtasks)
-                {
-                    <li class="d-flex align-items-center gap-2">
-                        <!-- Checkbox til at markere delmål som fuldført -->
-                        <input type="checkbox"
-                               disabled="@((subtask.Status == "Ikke startet"))"
-                               checked="@(subtask.Status == "Fuldført")"
-                               @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)"/>
-
-                        <!-- Start-knap for delmål -->
-                        <button class="btn btn-sm btn-outline-secondary"
-                                @onclick="() => StartSubtask(plan, subtask)">
-                            Start
-                        </button>
-
-                        <!-- Tekst for delmålet -->
-                        @subtask.Text
-
-                        <!-- Badge der viser status på delmålet -->
-                        @if (subtask.Status == "Ikke startet")
-                        {
-                            <span class="badge bg-secondary">Ikke startet</span>
-                        }
-
-                        @if (subtask.Status == "I gang")
-                        {
-                            <span class="badge bg-warning text-dark">I gang</span>
-                        }
-
-                        @if (subtask.Status == "Fuldført")
-                        {
-                            <span class="badge bg-success">Fuldført</span>
-                        }
-
-                        <!-- Badge hvis der er anmodet om fuldførelse -->
-                        @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
-                        {
-                            <span class="badge bg-warning text-dark ms-2">Anmodet</span>
-                        }
+                    <div class="subtasks-editor">
+                        <h5 class="editor-title">
+                            <i class="bi bi-list-check"></i>
+                            Delmål
+                        </h5>
                         
-                        <!-- Læringsmateriale knap hvis der findes materiale til delmålet -->
-                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                        <div class="subtasks-list">
+                            @for (int i = 0; i < editableSubtasks.Count; i++)
+                            {
+                                var index = i;
+                                <div class="subtask-edit-item">
+                                    <input class="subtask-edit-input" 
+                                           value="@editableSubtasks[index]"
+                                           @oninput="e => editableSubtasks[index] = e.Value?.ToString() ?? string.Empty"
+                                           placeholder="Skriv delmål..."/>
+                                    <button class="remove-subtask-btn" @onclick="() => RemoveSubtask(index)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                            
+                            <button class="add-subtask-btn" @onclick="AddSubtask">
+                                <i class="bi bi-plus-circle"></i>
+                                <span>Tilføj delmål</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-cancel" @onclick="CancelEditing">
+                            <i class="bi bi-x-lg"></i>
+                            Annuller
+                        </button>
+                        <button class="btn-primary" @onclick="() => SaveGoalChanges(plan, goal)">
+                            <i class="bi bi-check-lg"></i>
+                            Gem ændringer
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- View Mode -->
+                <div class="goal-view">
+                    <div class="subtasks-section">
+                        @if (goal.Subtasks.Any())
                         {
-                            <button class="btn btn-sm btn-info ms-2"
-                                    @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
-                                Læringsmateriale
+                            <div class="subtasks-grid">
+                                @foreach (var subtask in goal.Subtasks)
+                                {
+                                    <div class="subtask-card @(subtask.Status.ToLower().Replace(" ", "-"))">
+                                        <div class="subtask-controls">
+                                            <input type="checkbox"
+                                                   disabled="@(subtask.Status == "Ikke startet")"
+                                                   checked="@(subtask.Status == "Fuldført")"
+                                                   @onchange="e => ToggleSubtaskCompletion(plan, goal, subtask, (bool)e.Value)"/>
+                                            @if (subtask.Status == "Ikke startet")
+                                            {
+                                                <button class="start-subtask-btn" @onclick="() => StartSubtask(plan, subtask)">
+                                                    <i class="bi bi-play-fill"></i>
+                                                    Start
+                                                </button>
+                                            }
+                                        </div>
+
+                                        <div class="subtask-content">
+                                            <span class="subtask-text">@subtask.Text</span>
+                                            <div class="subtask-meta">
+                                                @if (subtask.Status == "Ikke startet")
+                                                {
+                                                    <span class="subtask-status not-started">
+                                                        <i class="bi bi-circle"></i>
+                                                        Ikke startet
+                                                    </span>
+                                                }
+                                                else if (subtask.Status == "I gang")
+                                                {
+                                                    <span class="subtask-status in-progress">
+                                                        <i class="bi bi-arrow-clockwise"></i>
+                                                        I gang
+                                                    </span>
+                                                }
+                                                else if (subtask.Status == "Fuldført")
+                                                {
+                                                    <span class="subtask-status completed">
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                        Fuldført
+                                                    </span>
+                                                }
+
+                                                @if (subtask.IsRequestedCompleted && subtask.Status != "Fuldført")
+                                                {
+                                                    <span class="subtask-status requested">
+                                                        <i class="bi bi-clock-history"></i>
+                                                        Anmodet
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        @if (allMaterials.Any(m => m.SubtaskId == subtask.Id))
+                                        {
+                                            <button class="material-link-btn" @onclick="@(() => Nav.NavigateTo($"/learningmaterials?subtaskId={subtask.Id}"))">
+                                                <i class="bi bi-book"></i>
+                                                Materiale
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="no-subtasks">
+                                <i class="bi bi-list"></i>
+                                <p>Ingen delmål defineret endnu</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="goal-actions">
+                        @if (currentUser.Role != "Elev")
+                        {
+                            <button class="edit-goal-btn" @onclick="() => StartEditing(goal)">
+                                <i class="bi bi-pencil-square"></i>
+                                Rediger mål
+                            </button>
+                            <button class="delete-goal-btn" @onclick="() => DeleteGoal(plan, goal)">
+                                <i class="bi bi-trash"></i>
+                                Slet mål
                             </button>
                         }
-                    </li>
-                }
-            </ul>
-
-            <!-- Deadline for målet, vises i rød hvis overskredet -->
-            <p>
-                <strong>Deadline:</strong>
-                <span style="color:@(goal.Deadline < DateTime.Today ? "red" : "black")">
-                    @goal.Deadline.ToString("dd-MM-yyyy")
-                </span>
-            </p>
-
-            <!-- Knapper til at redigere eller slette målet -->
-            <button class="bi bi-pencil-square" @onclick="() => StartEditing(goal)"> Rediger</button>
-            <button class="bi bi-trash" @onclick="() => DeleteGoal(plan, goal)"> ️Slet</button>
-        }
+                    </div>
+                </div>
+            }
+        </div>
     }
 </div>
 
