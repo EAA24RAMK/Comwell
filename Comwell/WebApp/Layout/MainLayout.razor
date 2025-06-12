@@ -5,6 +5,8 @@
 @inject HttpClient Http
 @using Core.Models
 @using WebApp.Services
+@using System.Timers
+@implements IDisposable
 
 <!-- Layout vises kun hvis brugeren ikke er på login-siden -->
 @if (!NavManager.Uri.Contains("/login"))
@@ -43,7 +45,14 @@
                                     {
                                         <div class="notification-item">
                                             <div class="notification-content">
-                                                <div class="notification-message">@note.Message</div>
+                                                @if (!string.IsNullOrWhiteSpace(note.Link))
+                                                {
+                                                    <a href="@note.Link" class="notification-message">@note.Message</a>
+                                                }
+                                                else
+                                                {
+                                                    <div class="notification-message">@note.Message</div>
+                                                }
                                                 <div class="notification-meta">
                                                     Deadline: @note.Deadline.ToShortDateString() | 
                                                     Modtaget: @note.CreatedAt.ToShortDateString()
@@ -88,6 +97,7 @@ else
     private bool showNotifications = false;
     private List<Notification> notifications = new();
     private bool hasSeenNotifications = false;
+    private Timer? notificationTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,8 +105,36 @@ else
 
         if (currentUser != null)
         {
+            await LoadNotifications();
+
+            // Start en timer der opdaterer hvert minut (60.000 ms)
+            notificationTimer = new Timer(60000);
+            notificationTimer.Elapsed += async (_, _) =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadNotifications();
+                    StateHasChanged(); // Opdaterer UI med nye notifikationer
+                });
+            };
+            notificationTimer.AutoReset = true;
+            notificationTimer.Enabled = true;
+        }
+    }
+    
+    private async Task LoadNotifications()
+    {
+        if (currentUser != null)
+        {
+            await NotificationService.GenererateNotificationsAsync(); // valgfrit – hvis du vil generere nye
             notifications = await NotificationService.GetNotificationsByUserAsync(currentUser.Id);
         }
+    }
+    
+    public void Dispose()
+    {
+        notificationTimer?.Stop();
+        notificationTimer?.Dispose();
     }
 
     private async Task ToggleNotifications()

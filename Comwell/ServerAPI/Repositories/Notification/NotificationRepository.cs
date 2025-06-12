@@ -173,4 +173,71 @@ public class NotificationRepository : INotificationRepository
 
         await AddAsync(notification);
     }
+    
+    public async Task NotifyGoalCompletedAsync(StudentPlan plan, Goal goal, List<User> allUsers)
+    {
+        var student = allUsers.FirstOrDefault(u => u.Id == plan.StudentId);
+        var studentName = student?.Name ?? "En elev";
+
+        var notifyUserIds = new List<int> { plan.StudentId };
+
+        var notification = new Notification
+        {
+            Id = await GetNextNotificationId(),
+            Message = $"{studentName} dit mål: \"{goal.Title}\" er nu fuldført.",
+            CreatedAt = DateTime.Now,
+            Deadline = DateTime.Now,
+            PlanId = plan.Id,
+            GoalId = goal.Id,
+            NotifyUserId = notifyUserIds
+        };
+
+        await _notifications.InsertOneAsync(notification);
+    }
+
+    public async Task NotifyPeriodApprovedAsync(StudentPlan plan, List<User> allUsers)
+    {
+        var student = allUsers.FirstOrDefault(u => u.Id == plan.StudentId);
+        var studentName = student?.Name ?? "En elev";
+
+        var notifyUserIds = new List<int> { plan.StudentId };
+
+        var notification = new Notification
+        {
+            Id = await GetNextNotificationId(),
+            Message = $"{studentName} praktikperioden er nu godkendt af køkkenchefen.",
+            CreatedAt = DateTime.Now,
+            Deadline = DateTime.Now,
+            PlanId = plan.Id,
+            NotifyUserId = notifyUserIds
+        };
+
+        await _notifications.InsertOneAsync(notification);
+    }
+    
+    private async Task<int> GetNextNotificationId()
+    {
+        var allNotifications = await _notifications.Find(_ => true).ToListAsync();
+        return allNotifications.Any() ? allNotifications.Max(n => n.Id) + 1 : 1;
+    }
+    
+    public async Task NotifySchoolPeriodApprovedAsync(StudentPlan plan, SchoolPeriod schoolPeriod, List<User> allUsers)
+    {
+        var student = allUsers.FirstOrDefault(u => u.Id == plan.StudentId);
+        if (student == null) return;
+
+        var message = $"Din skoleperiode \"{schoolPeriod.Title}\" er nu godkendt af køkkenchefen.";
+
+        var notification = new Notification
+        {
+            Id = await GetNextNotificationId(),
+            Message = message,
+            CreatedAt = DateTime.Now,
+            Deadline = DateTime.Now,
+            PlanId = plan.Id,
+            NotifyUserId = new List<int> { student.Id }
+        };
+
+        await _notifications.InsertOneAsync(notification);
+    }
 }

@@ -220,7 +220,18 @@ else
         {
             isLoggedIn = true;
             var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
-            goals = plans.SelectMany(p => p.Goals).ToList();
+            var allGoals = plans.SelectMany(p => p.Goals).ToList();
+
+            // Marker mål som "Vær opmærksom på", hvis deadline er om mindre end 5 dage og de ikke er fuldført
+            foreach (var goal in allGoals)
+            {
+                if (goal.Status != "Fuldført" && (goal.Deadline - DateTime.Now).TotalDays <= 5)
+                {
+                    goal.Status = "Vær opmærksom på";
+                }
+            }
+
+            goals = allGoals;
         }
     }
 

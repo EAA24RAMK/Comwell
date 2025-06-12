@@ -13,11 +13,13 @@ namespace ServerAPI.Controllers;
 public class PostsController : ControllerBase
 {
     private readonly IPostRepository _postRepository; // Instansvariabel til at kommunikere med opslag i databasen
-
+    private readonly INotificationRepository _notificationRepository;
+    
     // Konstruktør hvor PostRepository bliver injected, så controlleren kan bruge den.
-    public PostsController(IPostRepository postRepository)
+    public PostsController(IPostRepository postRepository, INotificationRepository notificationRepository)
     {
         _postRepository = postRepository;
+        _notificationRepository = notificationRepository;
     }
 
     // Returnerer: Det oprettede opslag eller fejl (BadRequest).
@@ -28,11 +30,33 @@ public class PostsController : ControllerBase
     public async Task<ActionResult<Post>> CreatePost([FromBody] Post post)
     {
         if (post == null)
-            return BadRequest();
+            return BadRequest("Post er null");
 
+        // 1. Opret opslaget
         var createdPost = await _postRepository.Create(post);
+
+        // 2. Opret notifikationer til målrettede brugere
+        if (post.TargetUserIds.Any())
+        {
+            foreach (var userId in post.TargetUserIds)
+            {
+                var notification = new Notification
+                {
+                    Message = $"Nyt opslag: {post.Title}",
+                    CreatedAt = DateTime.Now,
+                    Deadline = DateTime.Now.AddDays(7), // Valgfri: kan ændres
+                    IsRead = false,
+                    NotifyUserId = new List<int> { userId },
+                    Link = post.Url ?? "/posts" // Hvis ingen specifik URL er angivet, linkes til /posts
+                };
+
+                await _notificationRepository.AddAsync(notification);
+            }
+        }
+
         return Ok(createdPost);
     }
+
 
     // Returnerer: Liste med alle opslag.
     // Formål: Henter alle opslag fra databasen.
