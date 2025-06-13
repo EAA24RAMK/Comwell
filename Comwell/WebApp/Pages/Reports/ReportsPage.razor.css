@@ -849,6 +849,63 @@ h3 {
     .progress-percentage {
         text-align: center;
     }
+
+    .stats-section {
+        margin: 2rem 0;
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
+
+    /* Styling til diagram-filters lige under overskriften */
+    .diagram-filters {
+        margin-bottom: 1rem;
+        padding: 0.5rem 1rem;
+        background-color: #f9f9f9;
+        border-left: 4px solid #0d6efd;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        color: #333;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    /* Match badge-stil fra tabeller */
+    .filter-badge {
+        background-color: #e0e7ff;
+        color: #1e40af;
+        padding: 0.3rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    /* Gør diagramkortet lidt flottere */
+    .chart-card {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 1rem;
+        box-shadow: 0 0 0 1px #eee, 0 4px 8px rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
 }
 
 

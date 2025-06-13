@@ -1,8 +1,10 @@
 @page "/rapporter"
 @inject IUserService UserService
 @inject IStudentPlanService StudentPlanService
+@inject ITemplateService TemplateService
 @using Core.Models
 @using WebApp.Services
+@using WebApp.Components.StudentPlan
 
 <div class="dashboard-container">
     <!-- Executive Header -->
@@ -60,6 +62,20 @@
             
             <div class="control-item">
                 <label class="control-label">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    Filtrér efter periode
+                </label>
+                <select class="control-select" @bind="selectedPeriod">
+                    <option value="">📆 Alle perioder</option>
+                    <option value="1. praktikperiode">1. praktikperiode</option>
+                    <option value="2. praktikperiode">2. praktikperiode</option>
+                    <option value="3. praktikperiode">3. praktikperiode</option>
+                    <option value="Afslutning">Afslutning</option>
+                </select>
+            </div>
+            
+            <div class="control-item">
+                <label class="control-label">
                     <i class="bi bi-target me-2"></i>
                     Analyser specifikt mål (kun elever)
                 </label>
@@ -92,7 +108,6 @@
                     </div>
                     <div class="card-meta">
                         <h4>Medarbejdere i alt</h4>
-                        <p>Aktive i systemet</p>
                     </div>
                 </div>
                 <div class="card-value">@filteredUsers.Count()</div>
@@ -123,9 +138,9 @@
                                 <p>@percentage.ToString("F1")% af total</p>
                             </div>
                         </div>
-                        <div class="card-value">@count</div>
                         @if (role == "Elev")
                         {
+                            <div class="card-value">@filteredStudents.Count</div>
                             var avgCompletion = CalculateAverageCompletion();
                             <div class="card-footer">
                                 <div class="progress-indicator">
@@ -138,6 +153,7 @@
                         }
                         else
                         {
+                            <div class="card-value">@count</div>
                             <div class="card-footer">
                                 <span class="status-indicator active">
                                     <i class="bi bi-check-circle-fill"></i>
@@ -148,6 +164,46 @@
                     </div>
                 }
             }
+        </div>
+    </div>
+    
+    <!-- Statistik og Visualisering -->
+    <div class="summary-section">
+        <div class="summary-header">
+            <h3 class="summary-title">
+                <i class="bi bi-pie-chart-fill me-2"></i>
+                Statistik og visualisering
+            </h3>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(selectedLocation) || 
+             !string.IsNullOrWhiteSpace(selectedPeriod) || 
+             !string.IsNullOrWhiteSpace(selectedGoalTitle))
+        {
+            <div class="diagram-filters">
+                <span class="filter-title">Filtreret visning:</span>
+                @if (!string.IsNullOrWhiteSpace(selectedLocation)) {
+                    <span class="filter-badge">📍 @selectedLocation</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(selectedPeriod)) {
+                    <span class="filter-badge">📆 @selectedPeriod</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle)) {
+                    <span class="filter-badge">🎯 @selectedGoalTitle</span>
+                }
+            </div>
+        }
+
+        <div class="summary-grid">
+            <div class="summary-card chart-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                    <div class="card-meta">
+                        NotStarted="@GoalsNotStarted"/>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -163,10 +219,6 @@
                 @if (!string.IsNullOrWhiteSpace(selectedLocation))
                 {
                     <span class="filter-badge">📍 @selectedLocation</span>
-                }
-                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle))
-                {
-                    <span class="filter-badge">🎯 @selectedGoalTitle</span>
                 }
             </div>
         </div>
@@ -219,6 +271,18 @@
                                         <i class="bi bi-graph-up me-1"></i>
                                         Progression
                                     </th>
+                                    <th>
+                                        <i class="bi bi-calendar2-week me-1"></i>
+                                        Aktuel periode
+                                    </th>
+                                    <th>
+                                        <i class="bi bi-check2-square me-1"></i>
+                                        Praktik godkendt
+                                    </th>
+                                    <th>
+                                        <i class="bi bi-check2-square me-1"></i>
+                                        Skole godkendt
+                                    </th>
                                 }
                             </tr>
                         </thead>
@@ -237,7 +301,6 @@
                                             </div>
                                             <div class="employee-details">
                                                 <div class="employee-name">@user.Name</div>
-                                                <div class="employee-id">ID: @user.Id</div>
                                             </div>
                                         </div>
                                     </td>
@@ -265,37 +328,16 @@
                                                     </div>
                                                     <span class="progress-percentage">@percent%</span>
                                                 </div>
-                                                <div class="progress-status">
-                                                    @if (percent >= 90)
-                                                    {
-                                                        <span class="status excellent">
-                                                            <i class="bi bi-trophy-fill"></i>
-                                                            Fremragende
-                                                        </span>
-                                                    }
-                                                    else if (percent >= 70)
-                                                    {
-                                                        <span class="status good">
-                                                            <i class="bi bi-check-circle-fill"></i>
-                                                            God progression
-                                                        </span>
-                                                    }
-                                                    else if (percent >= 40)
-                                                    {
-                                                        <span class="status moderate">
-                                                            <i class="bi bi-clock-fill"></i>
-                                                            I gang
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="status needs-attention">
-                                                            <i class="bi bi-exclamation-triangle-fill"></i>
-                                                            Behøver opmærksomhed
-                                                        </span>
-                                                    }
-                                                </div>
                                             </div>
+                                        </td>
+                                        <td>
+                                            @GetCurrentPeriod(user.Id)
+                                        </td>
+                                        <td>
+                                            @(IsPracticeApproved(user.Id) ? "✅ Ja" : "❌ Nej")
+                                        </td>
+                                        <td>
+                                            @(IsSchoolApproved(user.Id) ? "✅ Ja" : "❌ Nej")
                                         </td>
                                     }
                                 </tr>
@@ -311,26 +353,50 @@
 @code {
     private List<User> allUsers = new();             // Liste over alle brugere (elever, HR, kokke, køkkenchefer)
     private List<StudentPlan> allPlans = new();       // Liste over alle elevplaner i systemet
+    private List<Template> allTemplates = new(); // Liste over alle templates
 
     // Filtre
     private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
     private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
+    private string selectedPeriod = "";
 
+    
     // Hjælpelister
     private List<string> roles = new();               // Liste over unikke roller (Elev, HR, osv.)
     private List<string> locations = new();           // Liste over unikke lokationer (hoteller)
     private List<string> goalTitles = new();          // Liste over unikke mål (goal-titler)
 
-    // Filtreret brugerliste baseret på valgt lokation
-    private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
-        ? allUsers
-        : allUsers.Where(u => u.Hotel == selectedLocation).ToList();
+    // Bruges overalt – filtrerer elever på periode, men lader andre roller være
+    private List<User> filteredUsers => allUsers.Where(u =>
+    {
+        // Filtrér på lokation
+        if (!string.IsNullOrWhiteSpace(selectedLocation) && u.Hotel != selectedLocation)
+            return false;
+
+        // Kun filtrér elever på valgt praktikperiode
+        if (u.Role == "Elev" && !string.IsNullOrWhiteSpace(selectedPeriod))
+        {
+            var plan = allPlans.FirstOrDefault(p => p.StudentId == u.Id);
+            var template = allTemplates.FirstOrDefault(t => t.Id == plan?.TemplateId);
+            return template?.Title == selectedPeriod;
+        }
+
+        return true;
+    }).ToList();
+    
+    // Bruges til gennemsnitsprogression i elevkortet
+    private List<User> filteredStudents => filteredUsers.Where(u => u.Role == "Elev").ToList();
+    
+    private List<StudentPlan> FilteredStudentPlans => allPlans
+        .Where(plan => filteredStudents.Any(s => s.Id == plan.StudentId))
+        .ToList();
 
     // Initialisering ved sideindlæsning
     protected override async Task OnInitializedAsync()
     {
         allUsers = await UserService.GetAllUsersAsync();
         allPlans = await StudentPlanService.GetAllPlansAsync();
+        allTemplates = await TemplateService.GetAllTemplatesAsync();
 
         // Find unikke roller, sorter så "Elev" står først
         roles = allUsers
@@ -408,10 +474,9 @@
 
     private int CalculateAverageCompletion()
     {
-        var students = filteredUsers.Where(u => u.Role == "Elev").ToList();
-        if (!students.Any()) return 0;
+        if (!filteredStudents.Any()) return 0;
 
-        var completions = students.Select(student =>
+        var completions = filteredStudents.Select(student =>
         {
             var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
             var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
@@ -445,4 +510,62 @@
             _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
         };
     }
+    
+    private string GetCurrentPeriod(int studentId)
+    {
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        if (plan == null) return "Ukendt";
+
+        var template = allTemplates.FirstOrDefault(t => t.Id == plan.TemplateId);
+        return template?.Title ?? "Ingen praktikperiode";
+    }
+    
+    private bool IsPracticeApproved(int studentId)
+    {
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        return plan?.IsApprovedByChef ?? false;
+    }
+
+    private bool IsSchoolApproved(int studentId)
+    {
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        return plan?.SchoolPeriods.Any(sp => sp.IsApproved) ?? false;
+    }
+    
+    private List<Goal> GetFilteredGoals()
+    {
+        var goals = new List<Goal>();
+
+        foreach (var plan in FilteredStudentPlans)
+        {
+            if (plan.Goals == null) continue;
+
+            foreach (var goal in plan.Goals)
+            {
+                if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && goal.Title != selectedGoalTitle)
+                    continue;
+
+                goals.Add(goal);
+            }
+        }
+
+        return goals;
+    }
+
+    private int GoalsCompleted => GetFilteredGoals().Count(g =>
+        g.Subtasks.All(s => s.Status == "Fuldført"));
+
+    private int GoalsNotStarted => GetFilteredGoals().Count(g =>
+        g.Subtasks.All(s => s.Status == "Ikke startet"));
+
+    private int GoalsNeedsAttention => GetFilteredGoals().Count(g =>
+        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført") &&
+        !g.Subtasks.All(s => s.Status == "Fuldført") &&
+        g.Deadline != default &&
+        (g.Deadline - DateTime.Now).TotalDays <= 5);
+
+    private int GoalsInProgress => GetFilteredGoals().Count(g =>
+        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført") &&
+        !g.Subtasks.All(s => s.Status == "Fuldført") &&
+        !(g.Deadline != default && (g.Deadline - DateTime.Now).TotalDays <= 5));
 } 

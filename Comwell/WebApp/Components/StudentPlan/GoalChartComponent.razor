@@ -1,0 +1,82 @@
+@namespace WebApp.Components.StudentPlan
+
+<div class="goal-pie-chart">
+    <svg viewBox="0 0 36 36" class="pie-chart">
+        <circle class="circle-bg" cx="18" cy="18" r="15.9155" />
+
+        @if (Total > 0)
+        {
+            var rawSegments = new List<(string CssClass, int Value)>
+            {
+                ("completed", Completed),
+                ("inprogress", InProgress),
+                ("attention", Attention),
+                ("not-started", NotStarted)
+            }.Where(s => s.Value > 0).ToList();
+
+            var total = rawSegments.Sum(s => s.Value);
+
+            // Lav liste med procenter afrundet til int
+            var segments = rawSegments
+                .Select(s => (s.CssClass, Percent: (int)Math.Round((s.Value * 100.0) / total)))
+                .ToList();
+
+            // Justér så summen altid er nøjagtigt 100
+            int percentSum = segments.Sum(s => s.Percent);
+            if (percentSum != 100)
+            {
+                // Juster sidste segment (eller første hvis kun 1)
+                var last = segments.Count - 1;
+                segments[last] = (segments[last].CssClass, segments[last].Percent + (100 - percentSum));
+            }
+
+            double offset = 0;
+
+            foreach (var segment in segments)
+            {
+                if (segment.Percent <= 0)
+                    continue;
+
+                <circle class="circle @segment.CssClass" cx="18" cy="18" r="15.9155"
+                        stroke-dasharray="@segment.Percent, 100"
+                        stroke-dashoffset="-@offset" />
+                offset += segment.Percent;
+            }
+        }
+
+        <text x="18" y="20.5" class="pie-total" text-anchor="middle">
+            @Total mål
+        </text>
+    </svg>
+    <div style="font-size: 12px; color: darkred; margin-top: 4px;">
+        Debug: @Completed + @InProgress + @Attention + @NotStarted = @(Completed + InProgress + Attention + NotStarted) | Total = @Total
+    </div>
+    
+    <div class="pie-legend">
+        <div class="legend-item">
+            <span class="dot completed"></span>
+            <span class="legend-text">Fuldført (@Completed)</span>
+        </div>
+        <div class="legend-item">
+            <span class="dot inprogress"></span>
+            <span class="legend-text">I gang (@InProgress)</span>
+        </div>
+        <div class="legend-item">
+            <span class="dot attention"></span>
+            <span class="legend-text">Vær opmærksom på (@Attention)</span>
+        </div>
+        <div class="legend-item">
+            <span class="dot not-started"></span>
+            <span class="legend-text">Ikke startet (@NotStarted)</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Completed { get; set; }
+    [Parameter] public int InProgress { get; set; }
+    [Parameter] public int Attention { get; set; }
+    [Parameter] public int NotStarted { get; set; }
+
+    private int Total => Completed + InProgress + Attention + NotStarted;
+}

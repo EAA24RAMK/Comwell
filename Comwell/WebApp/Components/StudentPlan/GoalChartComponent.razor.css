@@ -1,0 +1,78 @@
+.goal-pie-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pie-chart {
+    width: 140px;
+    height: 140px;
+    transform: rotate(-90deg);
+}
+
+.circle-bg {
+    fill: none;
+    stroke: #f1f1f1;
+    stroke-width: 3;
+}
+
+.circle {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.circle.completed {
+    stroke: #28a745; /* grøn */
+}
+
+.circle.inprogress {
+    stroke: #ffc107; /* gul */
+}
+
+.circle.attention {
+    stroke: #dc3545; /* rød */
+}
+
+.circle.not-started {
+    stroke: #6c757d; /* grå */
+}
+
+.pie-total {
+    font-size: 0.3rem;
+    fill: #333;
+    transform: rotate(90deg);
+}
+
+.pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #212529;
+}
+
+.pie-legend .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.pie-legend .dot.completed {
+    background-color: #28a745;
+}
+
+.pie-legend .dot.inprogress {
+    background-color: #ffc107;
+}
+
+.pie-legend .dot.attention {
+    background-color: #dc3545;
+}
+
+.pie-legend .dot.not-started {
+    background-color: #6c757d;
+}
