@@ -201,6 +201,16 @@
                         <i class="bi bi-pie-chart"></i>
                     </div>
                     <div class="card-meta">
+                        <h4>Målstatus fordelt</h4>
+                        <p>Viser antal mål pr. status</p>
+                    </div>
+                </div>
+
+                <div class="card-value">
+                    <GoalChartComponent
+                        Completed="@GoalsCompleted"
+                        InProgress="@GoalsInProgress"
+                        Attention="@GoalsNeedsAttention" 
                         NotStarted="@GoalsNotStarted"/>
                 </div>
             </div>
