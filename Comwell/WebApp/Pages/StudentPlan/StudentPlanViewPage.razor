@@ -9,28 +9,86 @@
 @inject NavigationManager Nav
 
 <!-- Modern StudentPlan Dashboard -->
-<div class="elevplaner-dashboard">
+<div class="dashboard-container">
     <!-- Page Header -->
     <div class="page-header">
-        <div class="header-content">
-            <h3>Elevplaner</h3>
-            <p class="welcome-text">Her er et samlet overblik over alle elevplaner.</p>
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <i class="bi bi-file-earmark-text me-3"></i>
+                Elevplaner
+            </h1>
+            <p class="page-description">Her er et samlet overblik over alle elevplaner.</p>
         </div>
+        
         @if (currentUser != null && currentUser.Role != "Elev" && currentUser.Role != "Kok")
         {
-            <button class="create-plan-btn" @onclick="OpenCreatePlanModal">
-                <i class="bi bi-plus-circle"></i>
-                <span>Opret plan</span>
-            </button>
+            <div class="page-actions">
+                <button class="btn-create" @onclick="OpenCreatePlanModal">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Opret plan
+                </button>
+            </div>
         }
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">
+                <i class="bi bi-file-earmark-text-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@(plans?.Count ?? 0)</div>
+                <div class="stat-label">Totale planer</div>
+            </div>
+        </div>
+        
+        <div class="stat-card active">
+            <div class="stat-icon">
+                <i class="bi bi-play-circle-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@(plans?.Count(p => p.Goals.Any(g => g.Subtasks.Any(s => s.Status == "I gang"))) ?? 0)</div>
+                <div class="stat-label">Aktive planer</div>
+            </div>
+        </div>
+        
+        <div class="stat-card approved">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@(plans?.Count(p => p.IsApprovedByChef) ?? 0)</div>
+                <div class="stat-label">Godkendte planer</div>
+            </div>
+        </div>
+        
+        <div class="stat-card students">
+            <div class="stat-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@(plans?.Select(p => p.StudentId).Distinct().Count() ?? 0)</div>
+                <div class="stat-label">Elever med planer</div>
+            </div>
+        </div>
     </div>
 
     <!-- Filters Section -->
     <div class="filters-section">
-        <div class="filters-grid">
+        <div class="filters-header">
+            <h3 class="filters-title">
+                <i class="bi bi-funnel me-2"></i>
+                Filtrer planer
+            </h3>
+        </div>
+        <div class="filters-content">
             <div class="filter-group">
-                <label class="filter-label">Hotel</label>
-                <select @bind="selectedHotel" class="form-select">
+                <label class="filter-label">
+                    <i class="bi bi-building me-2"></i>
+                    Hotel
+                </label>
+                <select @bind="selectedHotel" class="filter-select">
                     <option value="">Alle hoteller</option>
                     @foreach (var hotel in allHotels)
                     {
@@ -39,8 +97,11 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label class="filter-label">Elev</label>
-                <select @bind="selectedStudentId" class="form-select">
+                <label class="filter-label">
+                    <i class="bi bi-person me-2"></i>
+                    Elev
+                </label>
+                <select @bind="selectedStudentId" class="filter-select">
                     <option value="-1">Alle elever</option>
                     @foreach (var user in FilteredUsers)
                     {
@@ -53,225 +114,264 @@
         </div>
     </div>
 
-    <!-- Plans Grid -->
-    <div class="plans-grid">
+    <!-- Content Section -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="bi bi-list-ul me-2"></i>
+                Elevplaner (@(FilteredPlans().Count()))
+            </h3>
+        </div>
+
         @if (plans?.Any() != true)
         {
             <div class="empty-state">
-                <i class="bi bi-file-earmark-text"></i>
+                <div class="empty-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
                 <h4>Ingen planer fundet</h4>
                 <p>Der er ikke oprettet nogen elevplaner endnu.</p>
+                @if (currentUser != null && currentUser.Role != "Elev" && currentUser.Role != "Kok")
+                {
+                    <button class="btn-create" @onclick="OpenCreatePlanModal">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Opret første plan
+                    </button>
+                }
             </div>
         }
         else
         {
-            @foreach (var plan in FilteredPlans())
-            {
-                <div class="plan-card">
-                    <!-- Plan Header -->
-                    <div class="plan-header">
-                        <h4 class="plan-title">@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h4>
-                        <div class="plan-actions">
-                            <button class="action-menu-btn" @onclick="() => ToggleActionMenu(plan.Id)">
-                                <i class="bi bi-three-dots"></i>
-                            </button>
-                            @if (activeActionMenuPlanId == plan.Id)
-                            {
-                                <div class="action-menu">
-                                    <button class="delete-button" @onclick="() => DeleteStudentPlanAsync(plan.Id)">
-                                        <i class="bi bi-trash"></i> Slet
-                                    </button>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                    
-                    <!-- Plan Meta Information -->
-                    <div class="plan-meta">
-                        <div class="meta-item">
-                            <div class="meta-label">Elev</div>
-                            <div class="meta-value">@userNamesById.GetValueOrDefault(plan.StudentId, "(Ukendt)")</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Oprettet af</div>
-                            <div class="meta-value">@plan.CreatedBy</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Periode</div>
-                            <div class="meta-value">@plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()</div>
-                        </div>
-                    </div>
-
-                    <!-- Approval Section -->
-                    @if (currentUser?.Role == "Køkkenchef")
-                    {
-                        if (!plan.IsApprovedByChef)
-                        {
-                            <button class="approval-button" @onclick="() => ApprovePlan(plan)">
-                                <i class="bi bi-check-circle"></i> Godkend praktikperiode
-                            </button>
-                        }
-                        else
-                        {
-                            <div class="approval-status">
-                                <i class="bi bi-check-circle-fill"></i>
-                                <span>Praktikperiode godkendt af køkkenchef</span>
+            <div class="materials-grid">
+                @foreach (var plan in FilteredPlans())
+                {
+                    <div class="material-card">
+                        <!-- Plan Header -->
+                        <div class="material-header">
+                            <div class="material-type-icon">
+                                <i class="bi bi-file-earmark-text-fill"></i>
                             </div>
-                        }
-                    }
-                    else if (plan.IsApprovedByChef)
-                    {
-                        <div class="approval-status">
-                            <i class="bi bi-check-circle-fill"></i>
-                            <span>Praktikperiode godkendt af køkkenchef</span>
-                        </div>
-                    }
-
-                    <!-- Goals Toggle -->
-                    <button class="goals-toggle @(openPlanIds.Contains(plan.Id) ? "expanded" : "")" @onclick="() => TogglePlan(plan.Id)">
-                        <i class="bi bi-chevron-right"></i>
-                        <span>Mål (@plan.Goals.Count)</span>
-                    </button>
-
-                    <!-- Goals Section -->
-                    @if (openPlanIds.Contains(plan.Id))
-                    {
-                        <div class="goals-section">
-                            @foreach (var goal in plan.Goals)
-                            {
-                                <GoalDisplayComponent
-                                    goal="goal"
-                                    plans="plans"
-                                    plan="plan"
-                                    allMaterials="allMaterials"
-                                    currentUser="currentUser"
-                                    refresh="EventCallback.Factory.Create(this, () => StateHasChanged())"/>
-                            }
-
-                            <button class="add-goal-btn" @onclick="() => StartAddingNewGoal(plan.Id)">
-                                <i class="bi bi-plus"></i>
-                                <span>Tilføj nyt mål</span>
-                            </button>
-
-                            @if (newGoalPlanId == plan.Id)
-                            {
-                                <div class="new-goal-form">
-                                    <h5>Nyt mål</h5>
-                                    <div class="form-group">
-                                        <label class="form-label">Titel:</label>
-                                        <InputText @bind-Value="newGoalTitle" class="form-input"/>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="form-label">Kategori:</label>
-                                        <select @bind="newGoalCategory" class="form-select">
-                                            <option value="Skole">Skole</option>
-                                            <option value="Praktik">Praktik</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-actions">
-                                        <button class="btn-secondary" @onclick="CancelAddGoal">Annuller</button>
-                                        <button class="btn-primary" @onclick="() => ConfirmAddGoal(plan)">
-                                            <i class="bi bi-plus"></i> Tilføj
+                            <div class="material-info">
+                                <h5 class="material-title">@templates.FirstOrDefault(t => t.Id == plan.TemplateId)?.Title</h5>
+                                <div class="material-metadata">
+                                    <span class="material-subtask">
+                                        <i class="bi bi-person me-1"></i>
+                                        @userNamesById.GetValueOrDefault(plan.StudentId, "(Ukendt)")
+                                    </span>
+                                    <span class="material-date">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        @plan.PeriodStart.ToShortDateString() - @plan.PeriodEnd.ToShortDateString()
+                                    </span>
+                                    <span class="material-date">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        @plan.CreatedBy
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="material-actions">
+                                <button class="action-menu-btn" @onclick="() => ToggleActionMenu(plan.Id)">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                @if (activeActionMenuPlanId == plan.Id)
+                                {
+                                    <div class="action-menu">
+                                        <button class="delete-button" @onclick="() => DeleteStudentPlanAsync(plan.Id)">
+                                            <i class="bi bi-trash me-1"></i> Slet
                                         </button>
                                     </div>
-                                </div>
-                            }
+                                }
+                            </div>
                         </div>
-                    }
 
-                    <!-- Viser skoleperioder -->
-                    @foreach (var school in plan.SchoolPeriods)
-                    {
-                        <div class="school-period">
-                            <h5>@school.Title</h5>
-
-                            @if (!school.IsDateConfirmed)
+                        <!-- Plan Content -->
+                        <div class="material-content">
+                            <!-- Approval Section -->
+                            @if (currentUser?.Role == "Køkkenchef")
                             {
-                                <!-- Formular til at vælge startdato -->
-                                <div>
-                                    <label>Startdato:</label>
-                                    <InputDate @bind-Value="school.StartDate" class="form-control mb-2"/>
-                                    <button @onclick="() => SaveSchoolPeriodDate(plan, school)">Gem dato</button>
-                                </div>
-                            }
-                            else
-                            {
-                                @if (school.StartDate.HasValue)
+                                if (!plan.IsApprovedByChef)
                                 {
-                                    var end = school.StartDate.Value.AddDays(7 * school.DurationWeeks);
-                                    <p><strong>Dato:</strong> @school.StartDate.Value.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</p>
+                                    <div class="approval-section">
+                                        <button class="btn-approve" @onclick="() => ApprovePlan(plan)">
+                                            <i class="bi bi-check-circle me-2"></i> Godkend praktikperiode
+                                        </button>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <p><strong>Dato:</strong> Ikke angivet</p>
+                                    <div class="approval-status approved">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <span>Praktikperiode godkendt af køkkenchef</span>
+                                    </div>
                                 }
                             }
+                            else if (plan.IsApprovedByChef)
+                            {
+                                <div class="approval-status approved">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    <span>Praktikperiode godkendt af køkkenchef</span>
+                                </div>
+                            }
 
-                            <!-- Godkendelse af skoleperioder -->
-                            <div class="d-flex align-items-center gap-2">
-                                @if (currentUser?.Role == "Køkkenchef" && !school.IsApproved)
-                                {
-                                    <button @onclick="() => ApproveSchoolPeriod(plan, school)">
-                                        Godkend skoleperiode
-                                    </button>
-                                }
-                                else if (school.IsApproved)
-                                {
-                                    <p class="text-success mt-2">✔ Skoleperiode godkendt af køkkenchef</p>
-                                }
-
-                                <span class="badge @GetStatusClass(school.Status)">@school.Status</span>
+                            <!-- Goals Summary -->
+                            <div class="goals-summary">
+                                <div class="summary-item">
+                                    <i class="bi bi-target me-2"></i>
+                                    <span>@plan.Goals.Count mål</span>
+                                </div>
+                                <div class="summary-item">
+                                    <i class="bi bi-list-task me-2"></i>
+                                    <span>@plan.Goals.Sum(g => g.Subtasks.Count) delmål</span>
+                                </div>
+                                <div class="summary-item">
+                                    <i class="bi bi-check-square me-2"></i>
+                                    <span>@plan.Goals.Sum(g => g.Subtasks.Count(s => s.Status == "Fuldført")) fuldført</span>
+                                </div>
                             </div>
+
+                            <!-- School Periods Summary -->
+                            @if (plan.SchoolPeriods.Any())
+                            {
+                                <div class="school-periods-summary">
+                                    <h6>
+                                        <i class="bi bi-mortarboard me-2"></i>
+                                        Skoleperioder (@plan.SchoolPeriods.Count)
+                                    </h6>
+                                    <div class="periods-list">
+                                        @foreach (var school in plan.SchoolPeriods.Take(3))
+                                        {
+                                            <div class="period-item">
+                                                <span class="period-title">@school.Title</span>
+                                                <span class="period-status @school.Status.ToLower().Replace(" ", "-")">@school.Status</span>
+                                            </div>
+                                        }
+                                        @if (plan.SchoolPeriods.Count > 3)
+                                        {
+                                            <div class="period-item">
+                                                <span class="period-more">+@(plan.SchoolPeriods.Count - 3) flere...</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         </div>
-                    }
 
-                    <!-- Vis og skjul noter -->
-                    <h5>
-                        <button class="btn fold-toggle" @onclick="() => ToggleNotes(plan.Id)">
-                            Noter
-                            @if (openNotePlanIds.Contains(plan.Id))
-                            {
-                                <span>▼</span>
-                            }
-                            else
-                            {
-                                <span>▶</span>
-                            }
-                        </button>
-                    </h5>
+                        <!-- Plan Footer -->
+                        <div class="material-footer">
+                            <button class="btn-expand @(openPlanIds.Contains(plan.Id) ? "expanded" : "")" @onclick="() => TogglePlan(plan.Id)">
+                                <i class="bi bi-chevron-right me-2"></i>
+                                <span>@(openPlanIds.Contains(plan.Id) ? "Skjul detaljer" : "Vis detaljer")</span>
+                            </button>
+                        </div>
 
-                    <!-- Viser noter -->
-                    @if (openNotePlanIds.Contains(plan.Id))
-                    {
-                        @foreach (var note in plan.Notes)
+                        <!-- Expanded Details -->
+                        @if (openPlanIds.Contains(plan.Id))
                         {
-                            <div class="note-item">
-                                <em>@note.CreatedAt.ToShortDateString()</em>: @note.Text
-                                <button class="btn btn-sm btn-outline-danger ms-2" @onclick="() => DeleteNote(plan, note.Id)">Slet</button>
+                            <div class="expanded-details">
+                                <!-- Goals Section -->
+                                <div class="goals-section">
+                                    <h6>
+                                        <i class="bi bi-target me-2"></i>
+                                        Mål (@plan.Goals.Count)
+                                    </h6>
+                                    @foreach (var goal in plan.Goals)
+                                    {
+                                        <GoalDisplayComponent
+                                            goal="goal"
+                                            plans="plans"
+                                            plan="plan"
+                                            allMaterials="allMaterials"
+                                            currentUser="currentUser"
+                                            refresh="EventCallback.Factory.Create(this, () => StateHasChanged())"/>
+                                    }
+
+                                    <button class="btn-add-goal" @onclick="() => StartAddingNewGoal(plan.Id)">
+                                        <i class="bi bi-plus me-2"></i>
+                                        <span>Tilføj nyt mål</span>
+                                    </button>
+
+                                    @if (newGoalPlanId == plan.Id)
+                                    {
+                                        <div class="new-goal-form">
+                                            <h6>Nyt mål</h6>
+                                            <div class="form-group">
+                                                <label class="form-label">Titel:</label>
+                                                <input type="text" @bind="newGoalTitle" class="form-input" />
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label">Kategori:</label>
+                                                <select @bind="newGoalCategory" class="form-select">
+                                                    <option value="Skole">Skole</option>
+                                                    <option value="Praktik">Praktik</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-actions">
+                                                <button class="btn-secondary" @onclick="CancelAddGoal">Annuller</button>
+                                                <button class="btn-primary" @onclick="() => ConfirmAddGoal(plan)">
+                                                    <i class="bi bi-plus me-2"></i> Tilføj
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- School Periods Section -->
+                                <div class="school-periods-section">
+                                    <h6>
+                                        <i class="bi bi-mortarboard me-2"></i>
+                                        Skoleperioder
+                                    </h6>
+                                    
+                                    <div class="school-periods-grid">
+                                        @foreach (var school in plan.SchoolPeriods)
+                                        {
+                                            <div class="school-period-card @(school.Status.ToLower().Replace(" ", "-"))">
+                                                <div class="period-header">
+                                                    <h6 class="period-title">
+                                                        <i class="bi bi-mortarboard me-2"></i>
+                                                        @school.Title
+                                                    </h6>
+                                                    <span class="status-badge @school.Status.ToLower().Replace(" ", "-")">
+                                                        @school.Status
+                                                    </span>
+                                                </div>
+                                                
+                                                <div class="period-details">
+                                                    @if (school.StartDate.HasValue && school.IsDateConfirmed)
+                                                    {
+                                                        var start = school.StartDate.Value;
+                                                        var end = start.AddDays(7 * school.DurationWeeks);
+                                                        <div class="period-dates confirmed">
+                                                            <i class="bi bi-calendar-check me-2"></i>
+                                                            <span>@start.ToString("dd.MM.yyyy") - @end.ToString("dd.MM.yyyy")</span>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="period-dates pending">
+                                                            <i class="bi bi-calendar-x me-2"></i>
+                                                            <span>Dato ikke valgt endnu</span>
+                                                        </div>
+                                                    }
+
+                                                    @if (school.IsApproved)
+                                                    {
+                                                        <div class="approval-status approved">
+                                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                                            <span>Skoleperiode godkendt af køkkenchef</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         }
-
-                        @if (addingNoteForPlanId == plan.Id)
-                        {
-                            <!-- Formular til at tilføje ny note -->
-                            <div class="note-form">
-                                <textarea class="form-control mb-2"
-                                          @oninput="e => newNoteTexts[plan.Id] = e.Value?.ToString() ?? string.Empty">
-                                    @newNoteTexts.GetValueOrDefault(plan.Id, string.Empty)
-                                </textarea>
-                                <button @onclick="() => SaveNote(plan)">Gem note</button>
-                                <button @onclick="CancelAddNote">Annuller</button>
-                            </div>
-                        }
-                        else
-                        {
-                            <button class="bi bi-plus" @onclick="() => StartAddNote(plan.Id)">Tilføj note</button>
-                        }
-                    }
-                </div>
-            }
+                    </div>
+                }
+            </div>
         }
     </div>
 </div>

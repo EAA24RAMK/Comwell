@@ -3,6 +3,7 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 @inject IUserService UserService
+@inject IJSRuntime JSRuntime
 
 <!-- Floating Island Navigation -->
 <div class="floating-nav">
@@ -233,13 +234,22 @@
     protected override async Task OnInitializedAsync()
     {
         var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
+        if (user == null)
+        {
+            var userJson = await JSRuntime.InvokeAsync<string>("sessionStorageInterop.getItem", "loggedInUser");
+            if (!string.IsNullOrEmpty(userJson))
+            {
+                user = System.Text.Json.JsonSerializer.Deserialize<User>(userJson);
+            }
+        }
         isLoggedIn = user != null;
-        currentUser = await UserService.GetCurrentUserAsync();
+        currentUser = user;
     }
 
     private async Task HandleLogout()
     {
         await LocalStorage.RemoveItemAsync("loggedInUser");
+        await JSRuntime.InvokeVoidAsync("sessionStorageInterop.removeItem", "loggedInUser");
         isLoggedIn = false;
         showUserMenu = false;
         showMobileMenu = false;

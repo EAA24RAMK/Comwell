@@ -8,8 +8,8 @@
 @if (currentUser == null)
 {
     <div class="dashboard-container">
-        <div class="login-required">
-            <div class="login-icon">
+        <div class="empty-state">
+            <div class="empty-icon">
                 <i class="bi bi-person-lock"></i>
             </div>
             <h4>Login påkrævet</h4>
@@ -81,27 +81,28 @@ else
             </div>
         </div>
 
-        <!-- Search and Filter Section -->
-        <div class="search-section">
-            <div class="search-header">
-                <h5 class="search-title">
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filters-header">
+                <h3 class="filters-title">
                     <i class="bi bi-search me-2"></i>
                     Søg i opslag
-                </h5>
+                </h3>
             </div>
-            <div class="search-content">
-                <div class="search-group">
+            <div class="filters-content">
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="bi bi-search me-1"></i>
+                        Søg efter titel eller indhold
+                    </label>
                     <input @bind="searchTerm" @bind:event="oninput" 
-                           placeholder="Søg efter titel eller indhold..." 
-                           class="search-input" />
-                    <div class="search-icon-wrapper">
-                        <i class="bi bi-search"></i>
-                    </div>
+                           placeholder="Skriv for at søge..." 
+                           class="filter-select" />
                 </div>
             </div>
         </div>
 
-        <!-- Posts Section -->
+        <!-- Content Section -->
         <div class="content-section">
             <div class="section-header">
                 <h3 class="section-title">
@@ -125,53 +126,48 @@ else
 
             @if (FilteredPosts().Any())
             {
-                <div class="posts-timeline">
+                <div class="materials-grid">
                     @foreach (var post in FilteredPosts().OrderByDescending(p => p.Id))
                     {
-                        <div class="post-card">
-                            <div class="post-header">
-                                <div class="post-author-section">
-                                    <div class="post-author-avatar">
-                                        <i class="bi bi-person-fill"></i>
-                                        <span class="avatar-initials">@GetInitials(post.Author)</span>
-                                    </div>
-                                    <div class="post-meta">
-                                        <div class="post-title">@post.Title</div>
-                                        <div class="post-author-info">
-                                            <span class="author-name">
-                                                <i class="bi bi-person me-1"></i>
-                                                @post.Author
-                                            </span>
-                                            <span class="post-date">
-                                                <i class="bi bi-clock me-1"></i>
-                                                @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
-                                            </span>
-                                        </div>
+                        <div class="material-card">
+                            <div class="material-header">
+                                <div class="material-type-icon">
+                                    <i class="bi bi-chat-square-text-fill"></i>
+                                </div>
+                                <div class="material-info">
+                                    <h5 class="material-title">@post.Title</h5>
+                                    <div class="material-metadata">
+                                        <span class="material-subtask">
+                                            <i class="bi bi-person me-1"></i>
+                                            @post.Author
+                                        </span>
+                                        <span class="material-date">
+                                            <i class="bi bi-clock me-1"></i>
+                                            @post.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                        </span>
                                         
                                         <!-- Viser målgruppe hvis bruger er HR eller Køkkenchef -->
                                         @if (currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef")
                                         {
-                                            <div class="post-target-info">
-                                                @if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
-                                                {
-                                                    <span class="target-badge public">
-                                                        <i class="bi bi-globe me-1"></i>
-                                                        Synlig for alle
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    var targetNames = allUsers
-                                                        .Where(u => post.TargetUserIds.Contains(u.Id))
-                                                        .Select(u => u.Name)
-                                                        .ToList();
+                                            @if (post.TargetUserIds.Count == 0 || post.TargetUserIds.Count == allUsers.Count)
+                                            {
+                                                <span class="material-subtask">
+                                                    <i class="bi bi-globe me-1"></i>
+                                                    Synlig for alle
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                var targetNames = allUsers
+                                                    .Where(u => post.TargetUserIds.Contains(u.Id))
+                                                    .Select(u => u.Name)
+                                                    .ToList();
 
-                                                    <span class="target-badge private">
-                                                        <i class="bi bi-people me-1"></i>
-                                                        @(targetNames.Count == 1 ? targetNames[0] : $"{targetNames.Count} personer")
-                                                    </span>
-                                                }
-                                            </div>
+                                                <span class="material-subtask">
+                                                    <i class="bi bi-people me-1"></i>
+                                                    @(targetNames.Count == 1 ? targetNames[0] : $"{targetNames.Count} personer")
+                                                </span>
+                                            }
                                         }
                                     </div>
                                 </div>
@@ -179,7 +175,7 @@ else
                                 <!-- Mulighed for at slette opslag hvis man må -->
                                 @if (CanDeletePost(post))
                                 {
-                                    <div class="post-actions">
+                                    <div class="material-actions">
                                         <div class="dropdown">
                                             <button class="btn-action" type="button" data-bs-toggle="dropdown">
                                                 <i class="bi bi-three-dots-vertical"></i>
@@ -198,28 +194,27 @@ else
                             </div>
                             
                             <!-- Opslagets indhold -->
-                            <div class="post-content">
-                                <p class="post-text">@post.Content</p>
+                            <div class="material-content">
+                                <div class="post-text">@post.Content</div>
                                 
-                                <!-- Eventuelt link tilknyttet opslag -->
                                 @if (!string.IsNullOrWhiteSpace(post.Url))
                                 {
-                                    <div class="post-link">
-                                        <a href="@post.Url" target="_blank" class="link-preview">
-                                            <div class="link-icon">
-                                                <i class="bi bi-link-45deg"></i>
-                                            </div>
-                                            <div class="link-info">
-                                                <div class="link-title">Åbn tilknyttet link</div>
-                                                <div class="link-url">@post.Url</div>
-                                            </div>
-                                            <div class="link-arrow">
-                                                <i class="bi bi-arrow-up-right"></i>
-                                            </div>
-                                        </a>
+                                    <div class="material-link">
+                                        <i class="bi bi-link-45deg me-2"></i>
+                                        <a href="@post.Url" target="_blank" class="link-url">@post.Url</a>
                                     </div>
                                 }
                             </div>
+
+                            @if (!string.IsNullOrWhiteSpace(post.Url))
+                            {
+                                <div class="material-footer">
+                                    <a href="@post.Url" target="_blank" class="btn-access">
+                                        <i class="bi bi-box-arrow-up-right me-2"></i>
+                                        Åbn link
+                                    </a>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
@@ -231,23 +226,11 @@ else
                         <i class="bi bi-chat-square-x"></i>
                     </div>
                     <h4>Ingen opslag fundet</h4>
-                    <p>
-                        @if (string.IsNullOrWhiteSpace(searchTerm))
-                        {
-                            <text>Der er ikke oprettet nogle opslag endnu.</text>
-                        }
-                        else
-                        {
-                            <text>Ingen opslag matcher din søgning "@searchTerm".</text>
-                        }
-                    </p>
-                    @if (string.IsNullOrWhiteSpace(searchTerm))
-                    {
-                        <button class="btn-create" @onclick="() => showModal = true">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Opret dit første opslag
-                        </button>
-                    }
+                    <p>Der er ingen opslag der matcher din søgning.</p>
+                    <button class="btn-create" @onclick="() => showModal = true">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Opret første opslag
+                    </button>
                 </div>
             }
         </div>

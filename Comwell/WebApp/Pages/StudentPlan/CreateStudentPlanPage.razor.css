@@ -1,60 +1,364 @@
-h3 {
-    font-size: 1.6rem;
-    font-weight: bold;
-    margin-bottom: 0.2rem;
-    margin-top: 0.5rem;
-}
+/* Modern Create Student Plan Page - Executive Style */
 
+/* Main Layout */
 .page-container {
-    max-width: 600px;
-    margin: 2rem auto;
-    background-color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    font-family: system-ui, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 
+        0 20px 48px rgba(0, 0, 0, 0.12),
+        0 8px 32px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
 }
 
-.page-container h3 {
-    font-size: 1.6rem;
-    margin-bottom: 1.5rem;
+/* Page Header */
+.form-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 8px 0;
+    padding: 40px 48px 24px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+    position: relative;
+    overflow: hidden;
 }
 
+.form-title::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.form-title::after {
+    content: "\F5A6";
+    font-family: "Bootstrap Icons";
+    color: #60a5fa;
+    font-size: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Form Content */
+.form-content {
+    padding: 40px 48px 48px;
+    background: #fefefe;
+}
+
+/* Form Groups */
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 32px;
     display: flex;
     flex-direction: column;
+    gap: 12px;
 }
 
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Labels */
 label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
-    margin-bottom: 0.3rem;
-    font-size: 0.95rem;
+    font-size: 16px;
+    color: #374151;
+    margin-bottom: 8px;
 }
 
+label::before {
+    font-family: "Bootstrap Icons";
+    color: #1e40af;
+    font-size: 16px;
+}
+
+.form-group:nth-child(1) label::before {
+    content: "\F4DA";
+}
+
+.form-group:nth-child(2) label::before {
+    content: "\F5A2";
+}
+
+.form-group:nth-child(3) label::before {
+    content: "\F4A6";
+}
+
+/* Form Controls */
 select,
 input[type="date"] {
-    padding: 0.6rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: #f9f9f9;
+    padding: 16px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    font-size: 16px;
+    background: white;
+    color: #1e293b;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-button {
-    background-color: #172C39;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 1.5rem;
+select:focus,
+input[type="date"]:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 
+        0 0 0 4px rgba(30, 64, 175, 0.1),
+        0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+select:hover,
+input[type="date"]:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Select Styling */
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 16px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 48px;
+    appearance: none;
+}
+
+/* Submit Button */
+button[type="submit"] {
     width: 100%;
-    transition: background-color 0.3s;
+    padding: 18px 32px;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 32px;
+    box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-button:hover {
-    background-color: #0d1a22;
+button[type="submit"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(30, 64, 175, 0.4);
+}
+
+button[type="submit"]:hover::before {
+    left: 100%;
+}
+
+button[type="submit"]:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+}
+
+button[type="submit"]:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Feedback Messages */
+.feedback-message {
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.feedback-message.error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 2px solid #fecaca;
+}
+
+.feedback-message.error::before {
+    content: "\F618";
+    font-family: "Bootstrap Icons";
+    font-size: 18px;
+}
+
+.feedback-message.success {
+    background: #dcfdf7;
+    color: #065f46;
+    border: 2px solid #6ee7b7;
+}
+
+.feedback-message.success::before {
+    content: "\F633";
+    font-family: "Bootstrap Icons";
+    font-size: 18px;
+}
+
+/* Form Validation */
+.validation-summary {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 2px solid #fecaca;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-weight: 500;
+}
+
+.validation-summary::before {
+    content: "\F618";
+    font-family: "Bootstrap Icons";
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+/* Loading State */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.loading::before {
+    content: "\F4B1";
+    font-family: "Bootstrap Icons";
+    font-size: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Form Helper Text */
+.form-helper {
+    font-size: 14px;
+    color: #64748b;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+/* Required Field Indicator */
+.required::after {
+    content: " *";
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* Form Section Divider */
+.form-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    margin: 32px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-container {
+        margin: 20px;
+        max-width: none;
+        border-radius: 16px;
+    }
+    
+    .form-title {
+        font-size: 28px;
+        padding: 32px 24px 20px;
+    }
+    
+    .form-content {
+        padding: 32px 24px 40px;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    label {
+        font-size: 15px;
+    }
+    
+    select,
+    input[type="date"] {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+    
+    select {
+        padding-right: 40px;
+        background-size: 14px;
+        background-position: right 12px center;
+    }
+    
+    button[type="submit"] {
+        padding: 16px 24px;
+        font-size: 16px;
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        margin: 16px;
+        border-radius: 12px;
+    }
+    
+    .form-title {
+        font-size: 24px;
+        padding: 24px 20px 16px;
+    }
+    
+    .form-content {
+        padding: 24px 20px 32px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    label {
+        font-size: 14px;
+    }
+    
+    select,
+    input[type="date"] {
+        padding: 12px 14px;
+        font-size: 15px;
+    }
+    
+    button[type="submit"] {
+        padding: 14px 20px;
+        font-size: 15px;
+        margin-top: 20px;
+    }
 }

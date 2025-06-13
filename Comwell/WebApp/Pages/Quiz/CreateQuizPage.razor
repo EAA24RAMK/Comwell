@@ -5,6 +5,7 @@
 @inject IQuizService QuizService
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Opret Quiz</PageTitle>
 
@@ -193,7 +194,14 @@
     protected override async Task OnInitializedAsync()
     {
         loggedInUser = await LocalStorage.GetItemAsync<User>("loggedInUser");
-        
+        if (loggedInUser == null)
+        {
+            var userJson = await JSRuntime.InvokeAsync<string>("sessionStorageInterop.getItem", "loggedInUser");
+            if (!string.IsNullOrEmpty(userJson))
+            {
+                loggedInUser = System.Text.Json.JsonSerializer.Deserialize<User>(userJson);
+            }
+        }
         // Initialize default values
         newQuiz.Difficulty = "Medium";
         newQuiz.TimeLimitMinutes = 5;

@@ -5,72 +5,69 @@
 @inject NavigationManager Nav
 
 <!-- Modern Users Dashboard -->
-<div class="users-dashboard">
+<div class="dashboard-container">
     <!-- Page Header -->
     <div class="page-header">
-        <div class="header-content">
-            <h3 class="page-title">
-                <i class="bi bi-people"></i>
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <i class="bi bi-people me-3"></i>
                 Brugere
-            </h3>
-            <p class="welcome-text">Her er et samlet overblik over alle brugere i systemet.</p>
+            </h1>
+            <p class="page-description">Her er et samlet overblik over alle brugere i systemet.</p>
         </div>
+        
         @if (currentUser?.Role == "HR")
         {
-            <button class="create-user-btn" @onclick="CreateUser">
-                <i class="bi bi-person-plus"></i>
-                <span>Tilføj bruger</span>
-            </button>
+            <div class="page-actions">
+                <button class="btn-create" @onclick="CreateUser">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Tilføj bruger
+                </button>
+            </div>
         }
     </div>
 
     <!-- Stats Section -->
-    <div class="stats-section">
-        <div class="stats-grid">
-            <div class="stat-card total">
-                <div class="stat-icon">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value">@users.Count</div>
-                    <div class="stat-label">Brugere i alt</div>
-                </div>
-            </div>
-            
-            @foreach (var role in Roles)
+    <div class="stats-grid">
+        @foreach (var role in Roles)
+        {
+            var count = users.Count(u => u.Role == role);
+            if (count > 0)
             {
-                var count = users.Count(u => u.Role == role);
-                if (count > 0)
-                {
-                    <div class="stat-card @GetRoleClass(role)">
-                        <div class="stat-icon">
-                            <i class="@GetRoleIcon(role)"></i>
-                        </div>
-                        <div class="stat-content">
-                            <div class="stat-value">@count</div>
-                            <div class="stat-label">@role</div>
-                        </div>
+                <div class="stat-card @GetRoleClass(role)">
+                    <div class="stat-icon">
+                        <i class="@GetRoleIcon(role)"></i>
                     </div>
-                }
+                    <div class="stat-info">
+                        <div class="stat-number">@count</div>
+                        <div class="stat-label">@role</div>
+                    </div>
+                </div>
             }
-        </div>
+        }
     </div>
 
     <!-- Filters Section -->
     <div class="filters-section">
-        <div class="filters-grid">
+        <div class="filters-header">
+            <h3 class="filters-title">
+                <i class="bi bi-funnel me-2"></i>
+                Filtrér brugere
+            </h3>
+        </div>
+        <div class="filters-content">
             <div class="filter-group">
                 <label class="filter-label">
-                    <i class="bi bi-search"></i>
+                    <i class="bi bi-search me-1"></i>
                     Søg efter bruger
                 </label>
                 <input type="text" @bind="searchTerm" @bind:event="oninput" 
-                       placeholder="Skriv navn for at søge..." class="filter-input"/>
+                       placeholder="Skriv navn for at søge..." class="filter-select"/>
             </div>
             
             <div class="filter-group">
                 <label class="filter-label">
-                    <i class="bi bi-person-badge"></i>
+                    <i class="bi bi-person-badge me-1"></i>
                     Rolle
                 </label>
                 <select @bind="selectedRole" class="filter-select">
@@ -84,7 +81,7 @@
             
             <div class="filter-group">
                 <label class="filter-label">
-                    <i class="bi bi-geo-alt"></i>
+                    <i class="bi bi-geo-alt me-1"></i>
                     Lokation
                 </label>
                 <select @bind="selectedHotel" class="filter-select">
@@ -98,93 +95,105 @@
         </div>
     </div>
 
-    <!-- Users Grid -->
-    <div class="users-grid">
+    <!-- Content Section -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="bi bi-people me-2"></i>
+                Brugere
+            </h3>
+        </div>
+
         @if (FilteredUsers?.Any() != true)
         {
             <div class="empty-state">
-                <i class="bi bi-person-x"></i>
+                <div class="empty-icon">
+                    <i class="bi bi-person-x"></i>
+                </div>
                 <h4>Ingen brugere fundet</h4>
                 <p>Ingen brugere matcher de valgte filtre.</p>
             </div>
         }
         else
         {
-            @foreach (var user in FilteredUsers)
-            {
-                <div class="user-card">
-                    <!-- User Header -->
-                    <div class="user-header">
-                        <div class="user-avatar">
-                            <i class="@GetRoleIcon(user.Role)"></i>
-                        </div>
-                        <div class="user-info">
-                            <h4 class="user-name">@user.Name</h4>
-                            <span class="user-role">@user.Role</span>
-                        </div>
-                        @if (currentUser?.Role == "HR")
-                        {
-                            <div class="user-actions">
-                                <button class="action-menu-btn" @onclick="() => ToggleActionMenu(user.Id)">
-                                    <i class="bi bi-three-dots-vertical"></i>
-                                </button>
-                                @if (activeActionMenuUserId == user.Id)
-                                {
-                                    <div class="action-menu">
-                                        <button class="action-button" @onclick="() => ToggleUserStatusAsync(user)">
-                                            <i class="bi bi-@(user.Status == "Aktiv" ? "pause-circle" : "play-circle")"></i>
-                                            @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
+            <div class="materials-grid">
+                @foreach (var user in FilteredUsers)
+                {
+                    <div class="material-card">
+                        <!-- User Header -->
+                        <div class="material-header">
+                            <div class="material-type-icon">
+                                <i class="@GetRoleIcon(user.Role)"></i>
+                            </div>
+                            <div class="material-info">
+                                <h5 class="material-title">@user.Name</h5>
+                                <div class="material-metadata">
+                                    <span class="material-subtask">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        @user.Role
+                                    </span>
+                                    <span class="material-date">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        @user.Email
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            @if (currentUser?.Role == "HR")
+                            {
+                                <div class="material-actions">
+                                    <div class="dropdown">
+                                        <button class="btn-action" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical"></i>
                                         </button>
-                                        <button class="action-button delete-button" @onclick="() => DeleteUserAsync(user.Id)">
-                                            <i class="bi bi-trash"></i>
-                                            Slet
-                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <button class="dropdown-item" @onclick="() => ToggleUserStatusAsync(user)">
+                                                    <i class="bi bi-@(user.Status == "Aktiv" ? "pause-circle" : "play-circle") me-2"></i>
+                                                    @(user.Status == "Aktiv" ? "Gør inaktiv" : "Gør aktiv")
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button class="dropdown-item text-danger" @onclick="() => DeleteUserAsync(user.Id)">
+                                                    <i class="bi bi-trash me-2"></i>
+                                                    Slet
+                                                </button>
+                                            </li>
+                                        </ul>
                                     </div>
-                                }
-                            </div>
-                        }
-                    </div>
-
-                    <!-- User Meta Information -->
-                    <div class="user-meta">
-                        <div class="meta-item">
-                            <div class="meta-label">
-                                <i class="bi bi-envelope"></i>
-                                Email
-                            </div>
-                            <div class="meta-value">@user.Email</div>
+                                </div>
+                            }
                         </div>
-                        
-                        @if (!string.IsNullOrWhiteSpace(user.Hotel))
-                        {
-                            <div class="meta-item">
-                                <div class="meta-label">
-                                    <i class="bi bi-building"></i>
-                                    Lokation
-                                </div>
-                                <div class="meta-value">@user.Hotel</div>
-                            </div>
-                        }
-                        
-                        @if (!string.IsNullOrWhiteSpace(user.SchoolType))
-                        {
-                            <div class="meta-item">
-                                <div class="meta-label">
-                                    <i class="bi bi-mortarboard"></i>
-                                    Skole
-                                </div>
-                                <div class="meta-value">@user.SchoolType</div>
-                            </div>
-                        }
-                    </div>
 
-                    <!-- User Status -->
-                    <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
-                        <i class="bi bi-@(user.Status == "Aktiv" ? "check-circle-fill" : "pause-circle-fill")"></i>
-                        <span>@user.Status</span>
+                        <!-- User Meta Information -->
+                        <div class="material-content">
+                            @if (!string.IsNullOrWhiteSpace(user.Hotel))
+                            {
+                                <div class="material-link">
+                                    <i class="bi bi-building me-2"></i>
+                                    <span class="link-url">@user.Hotel</span>
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrWhiteSpace(user.SchoolType))
+                            {
+                                <div class="material-link">
+                                    <i class="bi bi-mortarboard me-2"></i>
+                                    <span class="link-url">@user.SchoolType</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- User Status -->
+                        <div class="material-footer">
+                            <div class="user-status @(user.Status == "Aktiv" ? "active" : "inactive")">
+                                <i class="bi bi-@(user.Status == "Aktiv" ? "check-circle-fill" : "pause-circle-fill") me-2"></i>
+                                @user.Status
+                            </div>
+                        </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         }
     </div>
 </div>
