@@ -375,20 +375,32 @@
     // Bruges overalt – filtrerer elever på periode, men lader andre roller være
     private List<User> filteredUsers => allUsers.Where(u =>
     {
-        // Filtrér på lokation
+        // Lokation
         if (SelectedLocations.Any() && !SelectedLocations.Contains(u.Hotel))
             return false;
 
-        // Kun filtrér elever på valgt praktikperiode
-        if (u.Role == "Elev" && !string.IsNullOrWhiteSpace(selectedPeriod))
+        if (u.Role == "Elev")
         {
             var plan = allPlans.FirstOrDefault(p => p.StudentId == u.Id);
             var template = allTemplates.FirstOrDefault(t => t.Id == plan?.TemplateId);
-            return template?.Title == selectedPeriod;
+
+            // Praktikperiode filter
+            if (!string.IsNullOrWhiteSpace(selectedPeriod) && template?.Title != selectedPeriod)
+                return false;
+
+            // Mål-filter (fjerner emoji før sammenligning)
+            if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "🎯 Alle mål")
+            {
+                var cleanTitle = selectedGoalTitle.Replace("📋 ", "");
+                var hasGoal = plan?.Goals?.Any(g => g.Title == cleanTitle) ?? false;
+                if (!hasGoal)
+                    return false;
+            }
         }
 
         return true;
     }).ToList();
+
     
     // Bruges til gennemsnitsprogression i elevkortet
     private List<User> filteredStudents => filteredUsers.Where(u => u.Role == "Elev").ToList();
@@ -593,6 +605,17 @@
         "Afslutning"
     };
     
-    private List<string> goalOptions => 
-        goalTitles.Select(t => "📋 " + t).Prepend("Alle mål").ToList();
+    private List<string> goalOptions =>
+        allPlans
+            .Where(p =>
+                allUsers.Any(u => u.Id == p.StudentId && u.Role == "Elev") &&
+                (string.IsNullOrWhiteSpace(selectedPeriod) ||
+                 allTemplates.FirstOrDefault(t => t.Id == p.TemplateId)?.Title == selectedPeriod))
+            .SelectMany(p => p.Goals)
+            .Select(g => g.Title)
+            .Distinct()
+            .OrderBy(t => t)
+            .Select(t => "📋 " + t)
+            .Prepend("🎯 Alle mål")
+            .ToList();
 } 
