@@ -181,10 +181,10 @@
                         <span class="filter-badge">📍 @loc</span>
                     }
                 }
-                @if (!string.IsNullOrWhiteSpace(selectedPeriod)) {
+                @if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Alle perioder" && selectedPeriod != "📆 Alle perioder") {
                     <span class="filter-badge">📆 @selectedPeriod</span>
                 }
-                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle)) {
+                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "Alle mål" && selectedGoalTitle != "🎯 Alle mål") {
                     <span class="filter-badge">🎯 @selectedGoalTitle</span>
                 }
             </div>
@@ -385,11 +385,11 @@
             var template = allTemplates.FirstOrDefault(t => t.Id == plan?.TemplateId);
 
             // Praktikperiode filter
-            if (!string.IsNullOrWhiteSpace(selectedPeriod) && template?.Title != selectedPeriod)
+            if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Alle perioder" && template?.Title != selectedPeriod)
                 return false;
 
             // Mål-filter (fjerner emoji før sammenligning)
-            if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "🎯 Alle mål")
+            if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "🎯 Alle mål" && selectedGoalTitle != "Alle mål")
             {
                 var cleanTitle = selectedGoalTitle.Replace("📋 ", "");
                 var hasGoal = plan?.Goals?.Any(g => g.Title == cleanTitle) ?? false;
@@ -447,7 +447,7 @@
         if (role != "Elev") return 0;
         
         // Hvis intet specifikt mål (goalTitle) er valgt
-        if (string.IsNullOrWhiteSpace(goalTitle))
+        if (string.IsNullOrWhiteSpace(goalTitle) || goalTitle == "🎯 Alle mål" || goalTitle == "Alle mål")
         {
             // Beregn procent: (Antal fuldførte mål / Total mål) * 100
             int total = goals.Count;
@@ -560,7 +560,9 @@
 
             foreach (var goal in plan.Goals)
             {
-                if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && goal.Title != selectedGoalTitle)
+                var selectedGoalTitleClean = selectedGoalTitle.Replace("📋 ", "").Trim();
+
+                if (!string.IsNullOrWhiteSpace(selectedGoalTitleClean) && selectedGoalTitleClean != "Alle mål" && goal.Title != selectedGoalTitleClean)
                     continue;
 
                 goals.Add(goal);
@@ -577,15 +579,14 @@
         g.Subtasks.All(s => s.Status == "Ikke startet"));
 
     private int GoalsNeedsAttention => GetFilteredGoals().Count(g =>
-        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført") &&
         !g.Subtasks.All(s => s.Status == "Fuldført") &&
         g.Deadline != default &&
         (g.Deadline - DateTime.Now).TotalDays <= 5);
 
     private int GoalsInProgress => GetFilteredGoals().Count(g =>
-        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført") &&
         !g.Subtasks.All(s => s.Status == "Fuldført") &&
-        !(g.Deadline != default && (g.Deadline - DateTime.Now).TotalDays <= 5));
+        (g.Deadline == default || (g.Deadline - DateTime.Now).TotalDays > 5) &&
+        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"));
    
     private List<string> SelectedLocations = new();
     
@@ -609,13 +610,12 @@
         allPlans
             .Where(p =>
                 allUsers.Any(u => u.Id == p.StudentId && u.Role == "Elev") &&
-                (string.IsNullOrWhiteSpace(selectedPeriod) ||
-                 allTemplates.FirstOrDefault(t => t.Id == p.TemplateId)?.Title == selectedPeriod))
+                (string.IsNullOrWhiteSpace(selectedPeriod) || selectedPeriod == "Alle perioder" ||
+                 allTemplates.FirstOrDefault(t => t.Id == p.TemplateId)?.Title == selectedPeriod.Replace("📆 ", "").Trim()))
             .SelectMany(p => p.Goals)
             .Select(g => g.Title)
             .Distinct()
             .OrderBy(t => t)
-            .Select(t => "📋 " + t)
-            .Prepend("🎯 Alle mål")
+            .Prepend("Alle mål")
             .ToList();
 } 
