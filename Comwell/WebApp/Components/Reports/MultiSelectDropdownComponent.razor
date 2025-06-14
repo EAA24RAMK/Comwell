@@ -10,8 +10,8 @@
         <div class="dropdown-options">
             <label class="dropdown-option">
                 <input type="checkbox"
-                       checked="@AllSelected"
-                       @onchange="ToggleAll" />
+                       @bind="IsAllSelected"
+                       @bind:event="onchange" />
                 <span>Alle lokationer</span>
             </label>
 
@@ -38,24 +38,9 @@
     private void ToggleDropdown()
     {
         IsOpen = !IsOpen;
-        Console.WriteLine($"Klikket – IsOpen: {IsOpen}");
     }
 
     private bool AllSelected => SelectedItems.Count == 0 || SelectedItems.Count == Options.Count;
-
-    private async Task ToggleAll(ChangeEventArgs e)
-    {
-        if (AllSelected)
-        {
-            SelectedItems = new();
-        }
-        else
-        {
-            SelectedItems = new(Options);
-        }
-
-        await SelectedItemsChanged.InvokeAsync(SelectedItems);
-    }
 
     private async Task ToggleItem(string item, bool isChecked)
     {
@@ -78,5 +63,18 @@
             return "Alle lokationer";
 
         return string.Join(", ", SelectedItems);
+    }
+    
+    private bool IsAllSelected
+    {
+        get => SelectedItems.Count == 0;
+        set
+        {
+            if (value)
+            {
+                SelectedItems.Clear();
+                SelectedItemsChanged.InvokeAsync(SelectedItems);
+            }
+        }
     }
 }

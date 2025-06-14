@@ -520,7 +520,7 @@
     private string GetCurrentPeriod(int studentId)
     {
         var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
-        if (plan == null) return "Ukendt";
+        if (plan == null) return "Ingen plan";
 
         var template = allTemplates.FirstOrDefault(t => t.Id == plan.TemplateId);
         return template?.Title ?? "Ingen praktikperiode";
