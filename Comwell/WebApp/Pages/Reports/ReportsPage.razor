@@ -4,7 +4,7 @@
 @inject ITemplateService TemplateService
 @using Core.Models
 @using WebApp.Services
-@using WebApp.Components.StudentPlan
+@using WebApp.Components.Reports
 
 <div class="dashboard-container">
     <!-- Executive Header -->
@@ -51,13 +51,11 @@
                     <i class="bi bi-geo-alt me-2"></i>
                     Filtrér efter lokation
                 </label>
-                <select class="control-select" @bind="selectedLocation">
-                    <option value="">📍 Alle lokationer</option>
-                    @foreach (var location in locations)
-                    {
-                        <option value="@location">🏨 @location</option>
-                    }
-                </select>
+
+                <MultiSelectDropdownComponent 
+                    Options="locations" 
+                    SelectedItems="SelectedLocations" 
+                    SelectedItemsChanged="OnLocationSelectionChanged" />
             </div>
             
             <div class="control-item">
@@ -65,13 +63,11 @@
                     <i class="bi bi-calendar3 me-2"></i>
                     Filtrér efter periode
                 </label>
-                <select class="control-select" @bind="selectedPeriod">
-                    <option value="">📆 Alle perioder</option>
-                    <option value="1. praktikperiode">1. praktikperiode</option>
-                    <option value="2. praktikperiode">2. praktikperiode</option>
-                    <option value="3. praktikperiode">3. praktikperiode</option>
-                    <option value="Afslutning">Afslutning</option>
-                </select>
+                <SingleSelectDropdownComponent
+                    Options="periodOptions"
+                    SelectedOption="@selectedPeriod"
+                    SelectedOptionChanged="@(value => selectedPeriod = value)" />
+
             </div>
             
             <div class="control-item">
@@ -79,13 +75,10 @@
                     <i class="bi bi-target me-2"></i>
                     Analyser specifikt mål (kun elever)
                 </label>
-                <select class="control-select" @bind="selectedGoalTitle">
-                    <option value="">🎯 Alle mål</option>
-                    @foreach (var title in goalTitles)
-                    {
-                        <option value="@title">📋 @title</option>
-                    }
-                </select>
+                <SingleSelectDropdownComponent
+                    Options="goalOptions"
+                    SelectedOption="@selectedGoalTitle"
+                    SelectedOptionChanged="@(value => selectedGoalTitle = value)" />
             </div>
         </div>
     </div>
@@ -182,8 +175,11 @@
         {
             <div class="diagram-filters">
                 <span class="filter-title">Filtreret visning:</span>
-                @if (!string.IsNullOrWhiteSpace(selectedLocation)) {
-                    <span class="filter-badge">📍 @selectedLocation</span>
+                @if (SelectedLocations.Any()) {
+                    @foreach (var loc in SelectedLocations)
+                    {
+                        <span class="filter-badge">📍 @loc</span>
+                    }
                 }
                 @if (!string.IsNullOrWhiteSpace(selectedPeriod)) {
                     <span class="filter-badge">📆 @selectedPeriod</span>
@@ -367,8 +363,8 @@
 
     // Filtre
     private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
-    private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
     private string selectedPeriod = "";
+    private string selectedGoalTitle = "";
 
     
     // Hjælpelister
@@ -380,7 +376,7 @@
     private List<User> filteredUsers => allUsers.Where(u =>
     {
         // Filtrér på lokation
-        if (!string.IsNullOrWhiteSpace(selectedLocation) && u.Hotel != selectedLocation)
+        if (SelectedLocations.Any() && !SelectedLocations.Contains(u.Hotel))
             return false;
 
         // Kun filtrér elever på valgt praktikperiode
@@ -578,4 +574,25 @@
         g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført") &&
         !g.Subtasks.All(s => s.Status == "Fuldført") &&
         !(g.Deadline != default && (g.Deadline - DateTime.Now).TotalDays <= 5));
+   
+    private List<string> SelectedLocations = new();
+    
+    private void OnLocationSelectionChanged(List<string> newSelection)
+    {
+        Console.WriteLine("Ny lokation valgt: " + string.Join(", ", newSelection));
+        SelectedLocations = newSelection;
+        StateHasChanged();
+    }
+
+    private List<string> periodOptions = new()
+    {
+        "Alle perioder",
+        "1. praktikperiode",
+        "2. praktikperiode",
+        "3. praktikperiode",
+        "Afslutning"
+    };
+    
+    private List<string> goalOptions => 
+        goalTitles.Select(t => "📋 " + t).Prepend("Alle mål").ToList();
 } 

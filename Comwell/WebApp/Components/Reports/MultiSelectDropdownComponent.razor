@@ -1,0 +1,82 @@
+@namespace WebApp.Components.Reports
+
+<div class="dropdown-wrapper" @onclick:stopPropagation="true">
+    <div class="control-select" @onclick="ToggleDropdown">
+        @GetSelectedText()
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="dropdown-options">
+            <label class="dropdown-option">
+                <input type="checkbox"
+                       checked="@AllSelected"
+                       @onchange="ToggleAll" />
+                <span>Alle lokationer</span>
+            </label>
+
+            @foreach (var item in Options)
+            {
+                <label class="dropdown-option">
+                    <input type="checkbox"
+                           checked="@SelectedItems.Contains(item)"
+                           @onchange="(e) => ToggleItem(item, (bool)e.Value)" />
+                    <span>@item</span>
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> Options { get; set; } = new();
+    [Parameter] public List<string> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<string>> SelectedItemsChanged { get; set; }
+
+    private bool IsOpen = false;
+
+    private void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+        Console.WriteLine($"Klikket – IsOpen: {IsOpen}");
+    }
+
+    private bool AllSelected => SelectedItems.Count == 0 || SelectedItems.Count == Options.Count;
+
+    private async Task ToggleAll(ChangeEventArgs e)
+    {
+        if (AllSelected)
+        {
+            SelectedItems = new();
+        }
+        else
+        {
+            SelectedItems = new(Options);
+        }
+
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private async Task ToggleItem(string item, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!SelectedItems.Contains(item))
+                SelectedItems.Add(item);
+        }
+        else
+        {
+            SelectedItems.Remove(item);
+        }
+
+        await SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private string GetSelectedText()
+    {
+        if (AllSelected)
+            return "Alle lokationer";
+
+        return string.Join(", ", SelectedItems);
+    }
+}

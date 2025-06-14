@@ -76,3 +76,13 @@
 .pie-legend .dot.not-started {
     background-color: #6c757d;
 }
+
+.control-item {
+    position: relative;
+    overflow: visible !important;
+    z-index: 100;
+}
+
+.dropdown-options {
+    display: block !important;
+}
