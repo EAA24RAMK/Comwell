@@ -1,0 +1,37 @@
+@namespace WebApp.Components.Reports
+@using Microsoft.AspNetCore.Components
+
+<div class="bar-chart">
+    @for (int i = 0; i < Labels.Count && i < 5; i++)
+    {
+        var percentage = Percentages[i];
+        var label = Labels[i];
+        var color = Colors[i % Colors.Count];
+
+        // Dynamisk højde – minimum 4px, maksimum 200px (baseret på 2px per procent)
+        var pixelHeight = Math.Max(percentage * 2, 4);
+
+        <div class="bar-container">
+            <div class="bar"
+                 style="height:@pixelHeight.ToString("F0")px; background-color:@color"
+                 title="@label: @percentage.ToString("0.##")%">
+            </div>
+            <div class="bar-label">@label</div>
+            <div class="bar-value">@Math.Round(percentage)%</div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> Labels { get; set; } = new();
+    [Parameter] public List<double> Percentages { get; set; } = new();
+
+    private List<string> Colors = new()
+    {
+        "#4CAF50", // grøn
+        "#2196F3", // blå
+        "#FF9800", // orange
+        "#E91E63", // pink
+        "#9C27B0"  // lilla
+    };
+}

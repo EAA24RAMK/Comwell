@@ -83,10 +83,11 @@
     
     <script>
         // File download utility
-        window.downloadFile = (filename, contentStreamReference) => {
+        window.downloadFile = (dataUrl, filename) => {
             try {
-                const data = contentStreamReference;
-                const bytes = new Uint8Array(atob(data).split('').map(c => c.charCodeAt(0)));
+                // Extract base64 data from data URL
+                const base64Data = dataUrl.split(',')[1];
+                const bytes = new Uint8Array(atob(base64Data).split('').map(c => c.charCodeAt(0)));
                 const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -97,8 +98,10 @@
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
+                console.log('Excel fil downloaded:', filename);
             } catch (error) {
                 console.error('Download fejl:', error);
+                alert('Der opstod en fejl under download af filen. Se konsollen for detaljer.');
             }
         };
         

@@ -1,0 +1,46 @@
+@namespace WebApp.Components.Reports
+
+<div class="dropdown-wrapper" @onclick:stopPropagation="true">
+    <div class="control-select" @onclick="ToggleDropdown">
+        @GetSelectedText()
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="dropdown-options">
+            @foreach (var option in Options)
+            {
+                <label class="dropdown-option" @onclick="@(() => SelectOption(option))">
+                    <input type="radio" name="singleselect"
+                           checked="@(SelectedOption == option)" />
+                    <span>@option</span>
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> Options { get; set; } = new();
+    [Parameter] public string SelectedOption { get; set; }
+    [Parameter] public EventCallback<string> SelectedOptionChanged { get; set; }
+
+    private bool IsOpen = false;
+
+    private void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+    }
+
+    private async Task SelectOption(string option)
+    {
+        SelectedOption = option;
+        IsOpen = false;
+        await SelectedOptionChanged.InvokeAsync(option);
+    }
+
+    private string GetSelectedText()
+    {
+        return string.IsNullOrWhiteSpace(SelectedOption) ? "Vælg..." : SelectedOption;
+    }
+}

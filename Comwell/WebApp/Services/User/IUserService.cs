@@ -5,7 +5,7 @@ namespace WebApp.Services;
 public interface IUserService
 {
     Task<List<User>> GetAllUsersAsync();
-    Task<User> CreateUserAsync(User user);
+    Task<User?> CreateUserAsync(User user);
     
     // Henter den aktuelle bruger fra localstorage
     Task<User?> GetCurrentUserAsync();
