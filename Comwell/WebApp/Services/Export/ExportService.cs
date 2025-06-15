@@ -112,6 +112,10 @@ namespace WebApp.Services.Export
                 range.AutoFitColumns();
             }
 
+            // Add chart data section
+            row += 3;
+            await CreateChartDataSection(worksheet, row, plans, filteredUsers, selectedGoalTitle);
+
             await Task.CompletedTask;
         }
 
@@ -197,6 +201,113 @@ namespace WebApp.Services.Export
             {
                 range.Style.Border.BorderAround(ExcelBorderStyle.Thin);
                 range.AutoFitColumns();
+            }
+
+            await Task.CompletedTask;
+        }
+
+        private async Task CreateChartDataSection(ExcelWorksheet worksheet, int startRow, List<StudentPlan> plans, List<User> filteredUsers, string selectedGoalTitle)
+        {
+            var row = startRow;
+
+            // Chart data section title
+            worksheet.Cells[$"A{row}"].Value = "Diagram Data - Målstatus Statistik";
+            worksheet.Cells[$"A{row}"].Style.Font.Size = 14;
+            worksheet.Cells[$"A{row}"].Style.Font.Bold = true;
+            worksheet.Cells[$"A{row}:D{row}"].Merge = true;
+
+            row += 2;
+
+            // Get all filtered goals
+            var allGoals = new List<Goal>();
+            var students = filteredUsers.Where(u => u.Role == "Elev").ToList();
+            
+            foreach (var student in students)
+            {
+                var studentPlans = plans.Where(p => p.StudentId == student.Id).ToList();
+                foreach (var plan in studentPlans)
+                {
+                    if (plan.Goals != null)
+                    {
+                        foreach (var goal in plan.Goals)
+                        {
+                            var cleanGoalTitle = selectedGoalTitle?.Replace("🎯", "").Replace("📋", "").Trim();
+                            
+                            if (string.IsNullOrWhiteSpace(cleanGoalTitle) || cleanGoalTitle == "Alle mål" || goal.Title == cleanGoalTitle)
+                            {
+                                allGoals.Add(goal);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Calculate statistics
+            var completed = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+            var notStarted = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Ikke startet"));
+            var needsAttention = allGoals.Count(g =>
+                !g.Subtasks.All(s => s.Status == "Fuldført") &&
+                g.Deadline != default &&
+                (g.Deadline - DateTime.Now).TotalDays <= 5);
+            var inProgress = allGoals.Count(g =>
+                !g.Subtasks.All(s => s.Status == "Fuldført") &&
+                (g.Deadline == default || (g.Deadline - DateTime.Now).TotalDays > 5) &&
+                g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"));
+
+            // Chart data table headers
+            worksheet.Cells[$"A{row}"].Value = "Status";
+            worksheet.Cells[$"B{row}"].Value = "Antal Mål";
+            worksheet.Cells[$"C{row}"].Value = "Procent";
+
+            // Style headers
+            using (var range = worksheet.Cells[$"A{row}:C{row}"])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(Color.LightGreen);
+                range.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            }
+
+            row++;
+
+            // Chart data rows
+            var total = allGoals.Count;
+            var chartData = new[]
+            {
+                ("Fuldført", completed, Color.Green),
+                ("I gang", inProgress, Color.Orange),
+                ("Behøver opmærksomhed", needsAttention, Color.Red),
+                ("Ikke startet", notStarted, Color.Gray)
+            };
+
+            foreach (var (status, count, color) in chartData)
+            {
+                var percentage = total > 0 ? (double)count / total * 100 : 0;
+                
+                worksheet.Cells[$"A{row}"].Value = status;
+                worksheet.Cells[$"B{row}"].Value = count;
+                worksheet.Cells[$"C{row}"].Value = $"{percentage:F1}%";
+
+                // Color code the status
+                using (var range = worksheet.Cells[$"A{row}:C{row}"])
+                {
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(color.A, color.R, color.G, color.B));
+                    range.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                }
+
+                row++;
+            }
+
+            // Total row
+            worksheet.Cells[$"A{row}"].Value = "Total";
+            worksheet.Cells[$"B{row}"].Value = total;
+            worksheet.Cells[$"C{row}"].Value = "100%";
+            
+            using (var range = worksheet.Cells[$"A{row}:C{row}"])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Border.BorderAround(ExcelBorderStyle.Thick);
             }
 
             await Task.CompletedTask;
