@@ -210,6 +210,24 @@
                         NotStarted="@GoalsNotStarted"/>
                 </div>
             </div>
+            
+            <div class="summary-card chart-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="bi bi-bar-chart-fill"></i>
+                    </div>
+                    <div class="card-meta">
+                        <h4>Sammenligning af lokationer</h4>
+                        <p>Viser målopfyldelse i % for udvalgte hoteller</p>
+                    </div>
+                </div>
+
+                <div class="card-value">
+                    <LocationComparisonChart
+                        Labels="@LocationLabels"
+                        Percentages="@CompletionPercentages" />
+                </div>
+            </div>
         </div>
     </div>
 
@@ -401,6 +419,56 @@
         return true;
     }).ToList();
 
+    private List<string> LocationLabels =>
+        (SelectedLocations.Any() ? SelectedLocations : locations
+            .Where(l => l != "HR"))
+        .Take(5)
+        .ToList();
+
+    private List<double> CompletionPercentages => LocationLabels
+        .Select(location =>
+        {
+            // Først: prøv filtrerede elever
+            var students = filteredStudents
+                .Where(s => s.Hotel == location)
+                .ToList();
+
+            // Hvis der ikke er nogen pga. tomme filtre, prøv alle elever på lokationen
+            if (!students.Any())
+            {
+                students = allUsers
+                    .Where(u => u.Role == "Elev" && u.Hotel == location)
+                    .ToList();
+            }
+
+            if (!students.Any()) return 0;
+
+            var completions = students.Select(student =>
+            {
+                var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
+                var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+
+                // Brug neutral sammenligning her – ikke selectedGoalTitle, som kan være tom/ukendt
+                var cleanGoalTitle = selectedGoalTitle?.Replace("🎯", "").Replace("📋", "").Trim();
+
+                if (string.IsNullOrWhiteSpace(cleanGoalTitle) || cleanGoalTitle == "Alle mål")
+                {
+                    int total = allGoals.Count;
+                    int done = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+                    return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                }
+                else
+                {
+                    var selectedGoals = allGoals.Where(g => g.Title == cleanGoalTitle).ToList();
+                    int total = selectedGoals.Count;
+                    int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+                    return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                }
+            }).ToList();
+
+            return completions.Any() ? Math.Round(completions.Average(), 2) : 0;
+        })
+        .ToList();
     
     // Bruges til gennemsnitsprogression i elevkortet
     private List<User> filteredStudents => filteredUsers.Where(u => u.Role == "Elev").ToList();
