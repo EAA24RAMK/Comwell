@@ -21,19 +21,10 @@
         @if (currentUser?.Role == "HR")
         {
             <div class="page-actions">
-                <button type="button" class="btn-create" @onclick="CreateUser" @onclick:preventDefault="true">
+                <button type="button" class="btn-create" @onclick="CreateUser">
                     <i class="bi bi-person-plus me-2"></i>
-                    Tilføj bruger
+                    Opret bruger
                 </button>
-            </div>
-        }
-        else
-        {
-            <!-- Debug info for testing -->
-            <div class="page-actions">
-                <small style="color: #666;">
-                    Debug: Current user role = "@(currentUser?.Role ?? "null")" (knap vises kun for HR)
-                </small>
             </div>
         }
     </div>
@@ -383,30 +374,24 @@
     // Formål: Åbner modal-vinduet til oprettelse af en ny bruger.
     private async Task CreateUser()
     {
-        try
+        // Log til console for at bekræfte at metoden kaldes
+        await JSRuntime.InvokeVoidAsync("console.log", "CreateUser clicked");
+        
+        showCreateModal = true;
+        newUser = new();
+        errorMessage = "";
+        
+        // Prevent body scroll
+        try 
         {
-            showCreateModal = true;
-            newUser = new();
-            errorMessage = "";
-            
-            // Force UI update
-            StateHasChanged();
-            
-            // Prevent body scroll - with error handling
-            try 
-            {
-                await JSRuntime.InvokeVoidAsync("preventBodyScroll", true);
-            }
-            catch (Exception)
-            {
-                // Ignore JavaScript errors - modal should still work
-            }
+            await JSRuntime.InvokeVoidAsync("preventBodyScroll", true);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error in CreateUser: {ex.Message}");
-            errorMessage = $"Fejl ved åbning af modal: {ex.Message}";
+            // Continue if JavaScript fails
         }
+        
+        StateHasChanged();
     }
     
     // Formål: Lukker modal-vinduet uden at gemme noget.
@@ -414,14 +399,14 @@
     {
         showCreateModal = false;
         
-        // Restore body scroll - with error handling
+        // Restore body scroll
         try 
         {
             await JSRuntime.InvokeVoidAsync("preventBodyScroll", false);
         }
-        catch (Exception)
+        catch
         {
-            // Ignore JavaScript errors
+            // Continue if JavaScript fails
         }
     }
 
@@ -477,14 +462,14 @@
             users = await UserService.GetAllUsersAsync();
             showCreateModal = false;
             
-            // Restore body scroll - with error handling
+            // Restore body scroll
             try 
             {
                 await JSRuntime.InvokeVoidAsync("preventBodyScroll", false);
             }
-            catch (Exception)
+            catch
             {
-                // Ignore JavaScript errors
+                // Continue if JavaScript fails
             }
         }
         catch (Exception ex)
