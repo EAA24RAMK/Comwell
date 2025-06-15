@@ -1,6 +1,7 @@
 @page "/rapporter"
 @inject IUserService UserService
 @inject IStudentPlanService StudentPlanService
+@inject ITemplateService TemplateService
 @inject IExportService ExportService
 @inject IJSRuntime JSRuntime
 @using Core.Models
@@ -399,9 +400,6 @@
     // Filtre
     private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
     private string selectedPeriod = "";
-    private string selectedGoalTitle = "";
-
-    
     private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
     
     // Export state
@@ -708,4 +706,35 @@
             .OrderBy(t => t)
             .Prepend("Alle mål")
             .ToList();
+
+    // Export functionality
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            isExporting = true;
+            StateHasChanged();
+
+            var excelData = await ExportService.ExportToExcelAsync(
+                filteredUsers, 
+                FilteredStudentPlans, 
+                string.Join(", ", SelectedLocations), 
+                selectedGoalTitle
+            );
+
+            // Download the file using JavaScript
+            await JSRuntime.InvokeVoidAsync("downloadFile", 
+                "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + Convert.ToBase64String(excelData),
+                $"Comwell_Report_{DateTime.Now:yyyy-MM-dd}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Export error: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
 } 
