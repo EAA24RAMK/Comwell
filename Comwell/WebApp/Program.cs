@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.Authorization;
 using WebApp;
 using WebApp.Services;
+using WebApp.Services.Export;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -27,6 +28,7 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ILearningMaterialService, LearningMaterialService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 // Konfigurerer HttpClient til at sende requests til backend
 // BaseAddress: Angiver hvilket API vi arbejder imod 

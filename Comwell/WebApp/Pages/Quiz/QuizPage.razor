@@ -7,24 +7,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-@if (currentUser == null)
-{
-    <div class="dashboard-container">
-        <div class="empty-state">
-            <div class="empty-icon">
-                <i class="bi bi-lock"></i>
-            </div>
-            <h4>Adgang krævet</h4>
-            <p>Du skal være logget ind for at bruge quiz-funktionen.</p>
-            <a href="/login" class="btn-create">
-                <i class="bi bi-box-arrow-in-right me-2"></i>
-                Log ind
-            </a>
-        </div>
-    </div>
-}
-else
-{
     <div class="dashboard-container">
         <!-- Page Header -->
         <div class="page-header">

@@ -1,8 +1,12 @@
 @page "/rapporter"
 @inject IUserService UserService
 @inject IStudentPlanService StudentPlanService
+@inject IExportService ExportService
+@inject IJSRuntime JSRuntime
 @using Core.Models
 @using WebApp.Services
+@using WebApp.Services.Export
+@using Microsoft.JSInterop
 
 <div class="dashboard-container">
     <!-- Executive Header -->
@@ -36,9 +40,9 @@
                 Analyse Kontrolpanel
             </h3>
             <div class="panel-actions">
-                <button class="btn-export">
-                    <i class="bi bi-download me-2"></i>
-                    Eksporter Data
+                <button class="btn-export" @onclick="ExportToExcel" disabled="@isExporting">
+                    <i class="bi @(isExporting ? "bi-hourglass-split" : "bi-download") me-2"></i>
+                    @(isExporting ? "Eksporterer..." : "Eksporter Data")
                 </button>
             </div>
         </div>
@@ -315,6 +319,9 @@
     // Filtre
     private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
     private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
+    
+    // Export state
+    private bool isExporting = false;
 
     // Hjælpelister
     private List<string> roles = new();               // Liste over unikke roller (Elev, HR, osv.)
@@ -444,5 +451,34 @@
             1 => parts[0][..1].ToUpper(),
             _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
         };
+    }
+
+    private async Task ExportToExcel()
+    {
+        try
+        {
+            isExporting = true;
+            StateHasChanged();
+
+            // Generate Excel file
+            var excelData = await ExportService.ExportToExcelAsync(allUsers, allPlans, selectedLocation, selectedGoalTitle);
+            
+            // Create filename with timestamp
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm");
+            var filename = $"HR_Rapport_{timestamp}.xlsx";
+            
+            // Download file using JavaScript
+            await JSRuntime.InvokeVoidAsync("downloadFile", filename, Convert.ToBase64String(excelData));
+        }
+        catch (Exception ex)
+        {
+            // Handle error - you might want to show a notification or log the error
+            Console.WriteLine($"Fejl ved eksport: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
     }
 } 

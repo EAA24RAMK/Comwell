@@ -16,27 +16,7 @@
             </h1>
             <p class="page-description">Velkommen tilbage, <strong>@currentUser?.Name</strong>. Her er din samlede oversigt.</p>
         </div>
-        <div class="page-actions">
-            <div class="stat-card total">
-                <div class="stat-icon">
-                    <i class="bi bi-bar-chart-line"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count()</div>
-                    <div class="stat-label">Mål i alt</div>
-                </div>
-            </div>
-            <div class="stat-card completed">
-                <div class="stat-icon">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count(g => g.Status == "Fuldført")</div>
-                    <div class="stat-label">Fuldført</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    </div>     
 
     <!-- Stats Section -->
     <div class="stats-grid">
