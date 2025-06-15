@@ -1,4 +1,5 @@
 @page "/elevplan"
+@attribute [Authorize(Roles = "Elev")]
 @using WebApp.Services
 @using WebApp.Components.StudentPlan
 @using Core.Models
@@ -37,7 +38,7 @@
             
             <div class="stat-card goals">
                 <div class="stat-icon">
-                    <i class="bi bi-target"></i>
+                    <i class="bi bi-bullseye"></i>
                 </div>
                 <div class="stat-info">
                     <div class="stat-number">@plans.Sum(p => p.Goals.Count)</div>

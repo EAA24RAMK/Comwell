@@ -4,6 +4,7 @@
 @inject ILoginService LoginService
 @inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthStateProvider
 
 <!-- Modern Login Page -->
 <div class="login-layout">
@@ -64,16 +65,7 @@
                                class="form-input"/>
                 </div>
 
-                <div class="form-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" class="checkbox-input"/>
-                        <span class="checkbox-custom"></span>
-                        <span class="checkbox-text">Husk mig</span>
-                    </label>
-                    <a href="#" class="forgot-link">
-                        Glemt dit password?
-                    </a>
-                </div>
+
 
                 <button type="submit" class="login-button" disabled="@isLoading">
                     @if (isLoading)
@@ -89,10 +81,7 @@
                 </button>
             </EditForm>
 
-            <!-- Footer -->
-            <div class="login-footer">
-                <p>Har du brug for hjælp? <a href="#" class="support-link">Kontakt support</a></p>
-            </div>
+
         </div>
     </div>
 </div>
@@ -113,7 +102,9 @@
             var user = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
             if (user != null)
             {
-                await LocalStorage.SetItemAsync("loggedInUser", user);
+                // Bruger vores custom AuthenticationStateProvider
+                var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+                await customAuthStateProvider.MarkUserAsAuthenticated(user);
                 NavManager.NavigateTo("/", forceLoad: true);
             }
             else

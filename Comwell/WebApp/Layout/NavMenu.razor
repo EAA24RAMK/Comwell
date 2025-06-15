@@ -3,6 +3,7 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 @inject IUserService UserService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <!-- Floating Island Navigation -->
 <div class="floating-nav">
@@ -239,7 +240,8 @@
 
     private async Task HandleLogout()
     {
-        await LocalStorage.RemoveItemAsync("loggedInUser");
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        await customAuthStateProvider.MarkUserAsLoggedOut();
         isLoggedIn = false;
         showUserMenu = false;
         showMobileMenu = false;

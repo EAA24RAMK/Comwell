@@ -1,4 +1,5 @@
 @page "/elevplaner"
+@attribute [Authorize(Roles = "HR,Køkkenchef,Kok")]
 @using WebApp.Services
 @using WebApp.Components.StudentPlan
 @using Core.Models

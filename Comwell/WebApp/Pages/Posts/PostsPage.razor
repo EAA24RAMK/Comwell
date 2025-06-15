@@ -3,22 +3,9 @@
 @using Core.Models
 @inject IUserService UserService
 @inject IPostService PostService
+@attribute [Authorize]
 
-<!-- Hvis ingen bruger er logget ind -->
-@if (currentUser == null)
-{
-    <div class="dashboard-container">
-        <div class="empty-state">
-            <div class="empty-icon">
-                <i class="bi bi-person-lock"></i>
-            </div>
-            <h4>Login påkrævet</h4>
-            <p>Du skal være logget ind for at bruge opslagstavlen.</p>
-        </div>
-    </div>
-}
-else
-{
+
     <div class="dashboard-container">
         <!-- Page Header -->
         <div class="page-header">
@@ -353,7 +340,6 @@ else
             </div>
         </div>
     }
-}
 
 @code {
     // Bruger- og opslag-relateret data
