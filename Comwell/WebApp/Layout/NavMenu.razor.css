@@ -199,72 +199,106 @@
 
 .brand-link:hover {
     transform: scale(1.02);
-    text-decoration: none;
-    color: inherit;
 }
 
 .brand-icon {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #172C39 0%, #1a2d3a 100%);
-    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 20px;
-    box-shadow: 0 4px 15px rgba(23, 44, 57, 0.3);
+    font-weight: bold;
+    font-size: 18px;
 }
 
 .brand-text {
-    font-size: 24px;
-    font-weight: 700;
-    color: #172C39;
-    letter-spacing: -0.5px;
+    font-weight: 600;
+    font-size: 18px;
+    color: #111827;
 }
 
+/* Updated Navigation Links with Grouped Boxes */
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     flex: 1;
     justify-content: center;
 }
 
+/* Navigation Group Containers - Individual Boxes */
+.nav-group {
+    display: flex;
+    align-items: center;
+    background: rgba(248, 250, 252, 0.8);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.nav-group:hover {
+    background: rgba(241, 245, 249, 0.9);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+/* Individual Navigation Links */
 .nav-link {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 10px 16px;
-    border-radius: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
     text-decoration: none;
-    color: #374151;
+    color: #64748b;
     font-weight: 500;
     font-size: 14px;
     transition: all 0.2s ease;
     white-space: nowrap;
+    line-height: 1.2;
+    min-height: 36px;
 }
 
 .nav-link:hover {
-    background: rgba(23, 44, 57, 0.08);
-    color: #172C39;
-    text-decoration: none;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
     transform: translateY(-1px);
 }
 
 .nav-link.active {
-    background: linear-gradient(135deg, #172C39 0%, #1a2d3a 100%);
+    background: #3b82f6;
     color: white;
-    box-shadow: 0 4px 15px rgba(23, 44, 57, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.nav-link.active:hover {
+    background: #2563eb;
+    color: white;
+    transform: translateY(-1px);
 }
 
 .nav-link i {
     font-size: 16px;
     width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.nav-link:hover i {
+    transform: scale(1.1);
 }
 
 .nav-link span {
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -452,9 +486,9 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 320px;
-    max-width: 85%;
-    height: 100%;
+    width: 100%;
+    max-width: 400px;
+    height: 100vh;
     background: white;
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
     display: flex;
@@ -469,44 +503,53 @@
 }
 
 .mobile-nav-header {
-    padding: 20px;
+    padding: 24px 20px;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: #f8fafc;
+    flex-shrink: 0;
 }
 
 .mobile-brand {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .mobile-brand .brand-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
 }
 
 .mobile-brand span {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
-    color: #172C39;
+    color: #111827;
 }
 
 .mobile-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     background: #e5e7eb;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     color: #6b7280;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    font-size: 20px;
 }
 
 .mobile-close:hover {
@@ -516,222 +559,119 @@
 
 .mobile-nav-links {
     flex: 1;
-    padding: 32px 0;
-    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
 }
 
-/* ORDENTLIGE Mobile Nav Bokse - Rigtige Button-Style Cards */
+/* Mobile Navigation Group Containers - Individual Boxes */
+.mobile-nav-group {
+    display: flex;
+    align-items: center;
+    background: rgba(248, 250, 252, 0.9);
+    border-radius: 16px;
+    padding: 6px;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    margin-bottom: 0;
+}
+
+.mobile-nav-group:hover {
+    background: rgba(241, 245, 249, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
 .mobile-nav-link {
+    padding: 16px 20px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 20px 24px;
-    margin: 0 20px 16px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 2px solid #d1d5db;
-    border-radius: 20px;
-    color: #1f2937 !important;
-    text-decoration: none !important;
-    font-weight: 700;
-    font-size: 17px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
-        0 8px 25px rgba(0, 0, 0, 0.08),
-        0 4px 10px rgba(0, 0, 0, 0.03),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    position: relative;
-    min-height: 72px;
-    backdrop-filter: blur(10px);
+    text-decoration: none;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+    min-height: 60px;
+    width: 100%;
+    background: transparent;
 }
 
 .mobile-nav-link:hover {
-    background: linear-gradient(135deg, #172C39 0%, #1a2d3a 100%);
-    border-color: #172C39;
-    color: white !important;
-    text-decoration: none !important;
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 
-        0 16px 40px rgba(23, 44, 57, 0.2),
-        0 8px 16px rgba(23, 44, 57, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    text-decoration: none;
 }
 
 .mobile-nav-link.active {
-    background: linear-gradient(135deg, #172C39 0%, #0f1419 100%);
-    color: white !important;
-    border-color: #0f1419;
-    box-shadow: 
-        0 12px 32px rgba(23, 44, 57, 0.3),
-        0 6px 16px rgba(23, 44, 57, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.mobile-nav-link.active:hover {
+    background: #2563eb;
+    color: white;
 }
 
 .mobile-nav-link i {
     font-size: 24px;
-    width: 44px;
-    height: 44px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.2s ease;
     flex-shrink: 0;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    border: 2px solid #d1d5db;
-    border-radius: 14px;
-    color: #1f2937 !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .mobile-nav-link:hover i {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white !important;
-    transform: rotate(5deg) scale(1.1);
-    box-shadow: 
-        0 6px 12px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
 }
 
-.mobile-nav-link.active i {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: white !important;
-    box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-/* Fix for span elements in mobile nav links */
 .mobile-nav-link span {
-    color: inherit !important;
-    text-decoration: none !important;
-}
-
-.mobile-nav-link:hover span {
-    color: white !important;
-}
-
-.mobile-nav-link.active span {
-    color: white !important;
-}
-
-/* NUCLEAR OPTION - Override ALL Blazor NavLink and Bootstrap styles */
-nav.mobile-nav-links a.mobile-nav-link,
-nav.mobile-nav-links a.mobile-nav-link:link,
-nav.mobile-nav-links a.mobile-nav-link:visited,
-nav.mobile-nav-links a.mobile-nav-link:focus,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:link,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:visited,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:focus,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link:link,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link:visited {
-    color: #1f2937 !important;
-    text-decoration: none !important;
-}
-
-nav.mobile-nav-links a.mobile-nav-link:hover,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:hover,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link:hover {
-    color: white !important;
-    text-decoration: none !important;
-}
-
-nav.mobile-nav-links a.mobile-nav-link.active,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link.active,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link.active {
-    color: white !important;
-    text-decoration: none !important;
-}
-
-/* Extra nuclear for span elements inside NavLinks */
-nav.mobile-nav-links a.mobile-nav-link span,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link span,
-.mobile-nav-overlay .mobile-nav-content .mobile-nav-links .mobile-nav-link span {
-    color: inherit !important;
-    text-decoration: none !important;
-}
-
-nav.mobile-nav-links a.mobile-nav-link:hover span,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:hover span {
-    color: white !important;
-}
-
-nav.mobile-nav-links a.mobile-nav-link.active span,
-.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link.active span {
-    color: white !important;
-}
-
-/* BLAZOR NAVLINK ULTIMATE DESTROYER - MAX SPECIFICITY */
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link,
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:link,
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:visited,
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:focus {
-    color: #1f2937 !important;
-    text-decoration: none !important;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-}
-
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:hover {
-    color: white !important;
-    text-decoration: none !important;
-    background: linear-gradient(135deg, #172C39 0%, #1a2d3a 100%) !important;
-}
-
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link.active {
-    color: white !important;
-    text-decoration: none !important;
-    background: linear-gradient(135deg, #172C39 0%, #0f1419 100%) !important;
-}
-
-/* Text inside NavLinks - MAXIMUM POWER */
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link span {
-    color: #1f2937 !important;
-    text-decoration: none !important;
-}
-
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link:hover span {
-    color: white !important;
-}
-
-div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-link.active span {
-    color: white !important;
+    font-size: 18px;
+    font-weight: 500;
 }
 
 .mobile-user-section {
-    border-top: 2px solid #d1d5db;
+    border-top: 1px solid #e5e7eb;
     padding: 24px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: #f8fafc;
+    flex-shrink: 0;
 }
 
 .mobile-user-info {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 20px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 2px solid #e5e7eb;
-    border-radius: 18px;
-    margin-bottom: 20px;
-    box-shadow: 
-        0 6px 20px rgba(0, 0, 0, 0.06),
-        0 3px 8px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 16px 20px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .mobile-user-info .user-avatar {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     font-size: 18px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 
-        0 6px 15px rgba(23, 44, 57, 0.2),
-        0 3px 8px rgba(23, 44, 57, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .mobile-user-info .user-details {
@@ -739,66 +679,51 @@ div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-
 }
 
 .mobile-user-info .user-name {
-    font-weight: 700;
-    color: #172C39;
-    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    font-size: 16px;
     margin-bottom: 4px;
-    letter-spacing: -0.3px;
 }
 
 .mobile-user-info .user-role {
     color: #6b7280;
-    font-size: 15px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 14px;
+    font-weight: 500;
 }
 
-/* ORDENTLIGE Mobile Action Buttons */
 .mobile-logout-btn {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 18px 24px;
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    padding: 16px 20px;
+    background: #dc2626;
     color: white;
-    border: 2px solid #dc2626;
-    border-radius: 20px;
-    font-weight: 700;
-    font-size: 17px;
+    border: none;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
-        0 8px 25px rgba(220, 38, 38, 0.25),
-        0 4px 10px rgba(220, 38, 38, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    min-height: 64px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 .mobile-logout-btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 
-        0 16px 40px rgba(220, 38, 38, 0.3),
-        0 8px 16px rgba(220, 38, 38, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    color: white;
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
 }
 
 .mobile-logout-btn i {
-    font-size: 20px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 18px;
 }
 
 .mobile-auth-section {
-    border-top: 2px solid #d1d5db;
+    border-top: 1px solid #e5e7eb;
     padding: 24px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: #f8fafc;
+    flex-shrink: 0;
 }
 
 .mobile-login-btn {
@@ -807,184 +732,184 @@ div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 18px 24px;
-    background: linear-gradient(135deg, #172C39 0%, #1a2d3a 100%);
+    padding: 16px 20px;
+    background: #3b82f6;
     color: white;
-    border: 2px solid #172C39;
-    border-radius: 20px;
     text-decoration: none;
-    font-weight: 700;
-    font-size: 17px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 
-        0 8px 25px rgba(23, 44, 57, 0.25),
-        0 4px 10px rgba(23, 44, 57, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    min-height: 64px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .mobile-login-btn:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 
-        0 16px 40px rgba(23, 44, 57, 0.3),
-        0 8px 16px rgba(23, 44, 57, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    background: #2563eb;
     color: white;
     text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
 }
 
 .mobile-login-btn i {
-    font-size: 20px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 18px;
 }
 
 /* Enhanced Mobile Responsiveness for Navigation */
 @media (max-width: 767px) {
     .floating-nav {
         width: calc(100% - 20px);
-        top: 15px;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 10px;
     }
-    
+
     .nav-container {
-        padding: 12px 16px;
-        border-radius: 12px;
+        padding: 8px 12px;
     }
-    
+
     .nav-links {
         display: none;
     }
-    
+
     .mobile-menu-toggle {
-        display: flex;
+        display: block;
     }
-    
+
     .user-info-desktop {
         display: none;
     }
-    
+
     .brand-text {
-        font-size: 18px;
-        display: none; /* Hide on very small screens */
+        display: none;
     }
-    
+
     .brand-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-    }
-    
-    .mobile-nav-content {
-        width: 100%;
-        max-width: none;
-        border-radius: 0;
-        min-height: 100vh;
-    }
-    
-    .mobile-nav-links {
-        padding: 28px 0;
-        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-    }
-    
-    .mobile-nav-link {
-        padding: 18px 20px;
-        margin: 0 16px 14px;
-        border-radius: 18px;
-        min-height: 68px; /* Better touch target */
+        width: 28px;
+        height: 28px;
         font-size: 16px;
-        gap: 14px;
     }
-    
-    .mobile-nav-link i {
-        font-size: 22px;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-    }
-    
+
     .mobile-user-section,
     .mobile-auth-section {
-        padding: 20px;
-        margin-top: auto;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
     }
-    
+
     .mobile-user-info {
-        padding: 16px;
+        padding: 12px 16px;
         border-radius: 12px;
+        background: rgba(248, 250, 252, 0.8);
+        margin-bottom: 8px;
     }
-    
+
     .mobile-logout-btn,
     .mobile-login-btn {
-        padding: 14px 20px;
-        border-radius: 10px;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
         font-size: 16px;
-        min-height: 52px;
+        font-weight: 500;
     }
 }
 
 @media (max-width: 480px) {
     .floating-nav {
         width: calc(100% - 16px);
-        top: 12px;
+        top: 8px;
     }
-    
+
     .nav-container {
-        padding: 10px 14px;
+        padding: 6px 10px;
     }
-    
+
     .brand-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 16px;
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
     }
-    
+
     .mobile-menu-toggle {
-        width: 40px;
-        height: 40px;
+        padding: 4px;
     }
-    
+
     .mobile-menu-toggle i {
         font-size: 18px;
     }
-    
+
+    .mobile-nav-content {
+        width: 100%;
+        max-width: 100%;
+    }
+
     .mobile-nav-header {
-        padding: 16px 20px;
+        padding: 20px 16px;
     }
-    
+
+    .mobile-brand .brand-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .mobile-brand span {
+        font-size: 18px;
+    }
+
+    .mobile-close {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
     .mobile-nav-links {
-        padding: 0 16px;
+        padding: 20px 16px;
+        gap: 10px;
     }
-    
+
+    .mobile-nav-group {
+        border-radius: 14px;
+        padding: 5px;
+    }
+
     .mobile-nav-link {
         padding: 14px 16px;
-        font-size: 15px;
-        margin-bottom: 6px;
+        font-size: 16px;
+        min-height: 56px;
+        gap: 14px;
     }
-    
+
+    .mobile-nav-link i {
+        font-size: 22px;
+        width: 26px;
+        height: 26px;
+    }
+
+    .mobile-nav-link span {
+        font-size: 16px;
+    }
+
     .mobile-user-section,
     .mobile-auth-section {
-        padding: 16px;
+        margin-top: 16px;
+        padding-top: 16px;
+        padding-left: 16px;
+        padding-right: 16px;
     }
-    
+
     .mobile-user-info {
-        padding: 14px;
+        padding: 10px 12px;
     }
 }
 
 /* Rest of existing responsive code... */
 @media (min-width: 768px) {
     .floating-nav {
-        width: calc(100% - 80px);
-        top: 30px;
+        width: calc(100% - 40px);
+        top: 20px;
     }
     
     .nav-container {
-        padding: 16px 32px;
+        padding: 12px 20px;
     }
     
     .nav-links {
@@ -1000,27 +925,26 @@ div.mobile-nav-overlay div.mobile-nav-content nav.mobile-nav-links a.mobile-nav-
     }
     
     .nav-link {
-        font-size: 15px;
-        padding: 10px 18px;
+        padding: 8px 12px;
     }
     
     .brand-text {
-        font-size: 22px;
-        display: block;
+        display: inline;
     }
 }
 
 @media (min-width: 1024px) {
     .nav-container {
-        padding: 18px 40px;
+        padding: 14px 24px;
     }
     
     .nav-links {
-        gap: 8px;
+        gap: 12px;
     }
     
     .nav-link {
-        padding: 12px 20px;
+        padding: 10px 16px;
+        font-size: 15px;
     }
 }
 
