@@ -26,9 +26,13 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5229") // WebApp URL
-            .AllowAnyMethod()                       // Tillad alle HTTP-metoder (GET, POST, PUT, DELETE osv.)
-            .AllowAnyHeader();                      // Tillad alle headers
+        policy.WithOrigins(
+                "http://localhost:5229",                    // Lokal WebApp URL
+                "https://comwelltp.azurewebsites.net"       // Azure WebApp URL
+            )
+            .AllowAnyMethod()                               // Tillad alle HTTP-metoder (GET, POST, PUT, DELETE osv.)
+            .AllowAnyHeader()                               // Tillad alle headers
+            .AllowCredentials();                            // Tillad cookies/credentials (vigtig for authentication)
     });
 });
 

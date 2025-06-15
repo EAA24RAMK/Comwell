@@ -31,9 +31,29 @@ builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 
 // Konfigurerer HttpClient til at sende requests til backend
-// BaseAddress: Angiver hvilket API vi arbejder imod 
+// BaseAddress: Læser API URL fra appsettings.json baseret på environment
 builder.Services.AddScoped(sp =>
-    new HttpClient { BaseAddress = new Uri("http://localhost:5079/") }
-);
+{
+    var httpClient = new HttpClient();
+    var config = builder.Configuration;
+    
+    // Forsøger at læse fra appsettings.json, fallback til localhost hvis ikke fundet
+    var apiBaseUrl = config["ApiSettings:BaseUrl"];
+    
+    // Hvis ikke fundet i config, brug Azure URL som default i stedet for localhost
+    if (string.IsNullOrEmpty(apiBaseUrl))
+    {
+        apiBaseUrl = "https://comwelltpapi.azurewebsites.net/";
+    }
+    
+    // Validerer at URL'en er gyldig
+    if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var uri))
+    {
+        throw new ArgumentException($"Invalid API base URL: {apiBaseUrl}");
+    }
+    
+    httpClient.BaseAddress = uri;
+    return httpClient;
+});
 
 await builder.Build().RunAsync();
