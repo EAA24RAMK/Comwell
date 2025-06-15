@@ -4,7 +4,7 @@
 @inject ILoginService LoginService
 @inject NavigationManager NavManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
-@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 
 <!-- Modern Login Page -->
 <div class="login-layout">
@@ -65,16 +65,7 @@
                                class="form-input"/>
                 </div>
 
-                <div class="form-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" class="checkbox-input" @bind="rememberMe"/>
-                        <span class="checkbox-custom"></span>
-                        <span class="checkbox-text">Husk mig</span>
-                    </label>
-                    <a href="#" class="forgot-link">
-                        Glemt dit password?
-                    </a>
-                </div>
+
 
                 <button type="submit" class="login-button" disabled="@isLoading">
                     @if (isLoading)
@@ -90,10 +81,7 @@
                 </button>
             </EditForm>
 
-            <!-- Footer -->
-            <div class="login-footer">
-                <p>Har du brug for hjælp? <a href="#" class="support-link">Kontakt support</a></p>
-            </div>
+
         </div>
     </div>
 </div>
@@ -102,26 +90,7 @@
     private Login loginModel = new();
     private string ErrorMessage = "";
     private bool isLoading = false;
-    private bool rememberMe = false;
     
-    protected override async Task OnInitializedAsync()
-    {
-        // Hvis brugeren allerede er logget ind (i localStorage eller sessionStorage), redirect til forsiden
-        var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
-        if (user == null)
-        {
-            var userJson = await JSRuntime.InvokeAsync<string>("sessionStorageInterop.getItem", "loggedInUser");
-            if (!string.IsNullOrEmpty(userJson))
-            {
-                user = System.Text.Json.JsonSerializer.Deserialize<User>(userJson);
-            }
-        }
-        if (user != null)
-        {
-            NavManager.NavigateTo("/", forceLoad: true);
-        }
-    }
-
     private async Task HandleLogin()
     {
         isLoading = true;
@@ -133,20 +102,9 @@
             var user = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
             if (user != null)
             {
-                if (rememberMe)
-                {
-                    await LocalStorage.SetItemAsync("loggedInUser", user);
-                    // Fjern evt. fra sessionStorage
-                    await JSRuntime.InvokeVoidAsync("sessionStorageInterop.removeItem", "loggedInUser");
-                }
-                else
-                {
-                    // Gem i sessionStorage (midlertidigt)
-                    var userJson = System.Text.Json.JsonSerializer.Serialize(user);
-                    await JSRuntime.InvokeVoidAsync("sessionStorageInterop.setItem", "loggedInUser", userJson);
-                    // Fjern evt. fra localStorage
-                    await LocalStorage.RemoveItemAsync("loggedInUser");
-                }
+                // Bruger vores custom AuthenticationStateProvider
+                var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+                await customAuthStateProvider.MarkUserAsAuthenticated(user);
                 NavManager.NavigateTo("/", forceLoad: true);
             }
             else

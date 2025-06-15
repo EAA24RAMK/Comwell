@@ -3,7 +3,7 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavManager
 @inject IUserService UserService
-@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 
 <!-- Floating Island Navigation -->
 <div class="floating-nav">
@@ -12,66 +12,88 @@
         <div class="nav-brand">
             <a href="" class="brand-link">
                 <div class="brand-icon">C</div>
-                <span class="brand-text">Comwell</span>
+                <span class="brand-text">ComUnity</span>
             </a>
         </div>
 
         <!-- Desktop Navigation Links -->
         <nav class="nav-links" id="navLinks">
-            <NavLink href="" Match="NavLinkMatch.All" class="nav-link" @onclick="HandleLinkClick">
-                <i class="bi bi-house-door"></i>
-                <span>Oversigt</span>
-            </NavLink>
-
-
+            <!-- Oversigt -->
+            <div class="nav-group">
+                <NavLink href="" Match="NavLinkMatch.All" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-house-door"></i>
+                    <span>Oversigt</span>
+                </NavLink>
+            </div>
 
             @if (currentUser != null)
             {
                 if (currentUser.Role == "Elev")
                 {
-                    <NavLink href="elevplan" class="nav-link" @onclick="HandleLinkClick">
-                        <i class="bi bi-list-ul"></i>
-                        <span>Elevplan</span>
-                    </NavLink>
+                    <!-- Elevplan -->
+                    <div class="nav-group">
+                        <NavLink href="elevplan" class="nav-link" @onclick="HandleLinkClick">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Elevplan</span>
+                        </NavLink>
+                    </div>
                 }
                 else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
                 {
-                    <NavLink href="elevplaner" class="nav-link" @onclick="HandleLinkClick">
-                        <i class="bi bi-list-ul"></i>
-                        <span>Elevplaner</span>
-                    </NavLink>
+                    <!-- Elevplaner -->
+                    <div class="nav-group">
+                        <NavLink href="elevplaner" class="nav-link" @onclick="HandleLinkClick">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Elevplaner</span>
+                        </NavLink>
+                    </div>
                 }
             }
 
             @if (currentUser != null && currentUser.Role != "Elev")
             {
-                <NavLink href="users" class="nav-link" @onclick="HandleLinkClick">
-                    <i class="bi bi-people"></i>
-                    <span>Brugere</span>
-                </NavLink>
+                <!-- Brugere -->
+                <div class="nav-group">
+                    <NavLink href="users" class="nav-link" @onclick="HandleLinkClick">
+                        <i class="bi bi-people"></i>
+                        <span>Brugere</span>
+                    </NavLink>
+                </div>
             }
 
-            <NavLink href="learningmaterials" class="nav-link" @onclick="HandleLinkClick">
-                <i class="bi bi-journal-bookmark"></i>
-                <span>Læringsmateriale</span>
-            </NavLink>
+            <!-- Læringsmateriale -->
+            <div class="nav-group">
+                <NavLink href="learningmaterials" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-journal-bookmark"></i>
+                    <span>Læringsmateriale</span>
+                </NavLink>
+            </div>
 
-            <NavLink href="posts" class="nav-link" @onclick="HandleLinkClick">
-                <i class="bi bi-card-text"></i>
-                <span>Opslagstavle</span>
-            </NavLink>
+            <!-- Opslagstavle -->
+            <div class="nav-group">
+                <NavLink href="posts" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-card-text"></i>
+                    <span>Opslagstavle</span>
+                </NavLink>
+            </div>
 
-            <NavLink href="quiz" class="nav-link" @onclick="HandleLinkClick">
-                <i class="bi bi-patch-question"></i>
-                <span>Quiz</span>
-            </NavLink>
+            <!-- Quiz -->
+            <div class="nav-group">
+                <NavLink href="quiz" class="nav-link" @onclick="HandleLinkClick">
+                    <i class="bi bi-patch-question"></i>
+                    <span>Quiz</span>
+                </NavLink>
+            </div>
 
             @if (currentUser != null && currentUser.Role != "Elev")
             {
-                <NavLink href="rapporter" class="nav-link" @onclick="HandleLinkClick">
-                    <i class="bi bi-bar-chart"></i>
-                    <span>Rapporter</span>
-                </NavLink>
+                <!-- Rapporter -->
+                <div class="nav-group">
+                    <NavLink href="rapporter" class="nav-link" @onclick="HandleLinkClick">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Rapporter</span>
+                    </NavLink>
+                </div>
             }
         </nav>
 
@@ -114,9 +136,7 @@
 
         <!-- Mobile Menu Toggle -->
         <button class="mobile-menu-toggle" @onclick="ToggleMobileMenu" aria-label="Toggle navigation">
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
-            <span class="hamburger-line"></span>
+            <i class="bi bi-list"></i>
         </button>
     </div>
 
@@ -136,60 +156,82 @@
                 </div>
 
                 <nav class="mobile-nav-links">
-                    <NavLink href="" Match="NavLinkMatch.All" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                        <i class="bi bi-house-door"></i>
-                        <span>Oversigt</span>
-                    </NavLink>
-
-
+                    <!-- Oversigt -->
+                    <div class="mobile-nav-group">
+                        <NavLink href="" Match="NavLinkMatch.All" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-house-door"></i>
+                            <span>Oversigt</span>
+                        </NavLink>
+                    </div>
 
                     @if (currentUser != null)
                     {
                         if (currentUser.Role == "Elev")
                         {
-                            <NavLink href="elevplan" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                                <i class="bi bi-list-ul"></i>
-                                <span>Elevplan</span>
-                            </NavLink>
+                            <!-- Elevplan -->
+                            <div class="mobile-nav-group">
+                                <NavLink href="elevplan" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                    <i class="bi bi-list-ul"></i>
+                                    <span>Elevplan</span>
+                                </NavLink>
+                            </div>
                         }
                         else if (currentUser.Role == "HR" || currentUser.Role == "Køkkenchef" || currentUser.Role == "Kok")
                         {
-                            <NavLink href="elevplaner" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                                <i class="bi bi-list-ul"></i>
-                                <span>Elevplaner</span>
-                            </NavLink>
+                            <!-- Elevplaner -->
+                            <div class="mobile-nav-group">
+                                <NavLink href="elevplaner" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                    <i class="bi bi-list-ul"></i>
+                                    <span>Elevplaner</span>
+                                </NavLink>
+                            </div>
                         }
                     }
 
                     @if (currentUser != null && currentUser.Role != "Elev")
                     {
-                        <NavLink href="users" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                            <i class="bi bi-people"></i>
-                            <span>Brugere</span>
-                        </NavLink>
+                        <!-- Brugere -->
+                        <div class="mobile-nav-group">
+                            <NavLink href="users" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                <i class="bi bi-people"></i>
+                                <span>Brugere</span>
+                            </NavLink>
+                        </div>
                     }
 
-                    <NavLink href="learningmaterials" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                        <i class="bi bi-journal-bookmark"></i>
-                        <span>Læringsmateriale</span>
-                    </NavLink>
+                    <!-- Læringsmateriale -->
+                    <div class="mobile-nav-group">
+                        <NavLink href="learningmaterials" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span>Læringsmateriale</span>
+                        </NavLink>
+                    </div>
 
-                    <NavLink href="posts" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                        <i class="bi bi-card-text"></i>
-                        <span>Opslagstavle</span>
-                    </NavLink>
+                    <!-- Opslagstavle -->
+                    <div class="mobile-nav-group">
+                        <NavLink href="posts" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-card-text"></i>
+                            <span>Opslagstavle</span>
+                        </NavLink>
+                    </div>
 
-                    <NavLink href="quiz" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                        <i class="bi bi-patch-question"></i>
-                        <span>Quiz</span>
-                    </NavLink>
+                    <!-- Quiz -->
+                    <div class="mobile-nav-group">
+                        <NavLink href="quiz" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                            <i class="bi bi-patch-question"></i>
+                            <span>Quiz</span>
+                        </NavLink>
+                    </div>
 
                     @if (currentUser != null && currentUser.Role != "Elev")
                     {
-                        <NavLink href="rapporter" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
-                            <i class="bi bi-bar-chart"></i>
-                            <span>Rapporter</span>
-                        </NavLink>
+                        <!-- Rapporter -->
+                        <div class="mobile-nav-group">
+                            <NavLink href="rapporter" class="mobile-nav-link" @onclick="HandleMobileLinkClick">
+                                <i class="bi bi-bar-chart"></i>
+                                <span>Rapporter</span>
+                            </NavLink>
+                        </div>
                     }
                 </nav>
 
@@ -234,22 +276,14 @@
     protected override async Task OnInitializedAsync()
     {
         var user = await LocalStorage.GetItemAsync<User>("loggedInUser");
-        if (user == null)
-        {
-            var userJson = await JSRuntime.InvokeAsync<string>("sessionStorageInterop.getItem", "loggedInUser");
-            if (!string.IsNullOrEmpty(userJson))
-            {
-                user = System.Text.Json.JsonSerializer.Deserialize<User>(userJson);
-            }
-        }
         isLoggedIn = user != null;
-        currentUser = user;
+        currentUser = await UserService.GetCurrentUserAsync();
     }
 
     private async Task HandleLogout()
     {
-        await LocalStorage.RemoveItemAsync("loggedInUser");
-        await JSRuntime.InvokeVoidAsync("sessionStorageInterop.removeItem", "loggedInUser");
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        await customAuthStateProvider.MarkUserAsLoggedOut();
         isLoggedIn = false;
         showUserMenu = false;
         showMobileMenu = false;

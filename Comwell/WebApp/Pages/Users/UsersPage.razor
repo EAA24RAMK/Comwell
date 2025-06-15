@@ -3,6 +3,8 @@
 @using WebApp.Services
 @inject IUserService UserService
 @inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "HR,Køkkenchef,Kok")]
 
 <!-- Modern Users Dashboard -->
 <div class="dashboard-container">
@@ -19,16 +21,28 @@
         @if (currentUser?.Role == "HR")
         {
             <div class="page-actions">
-                <button class="btn-create" @onclick="CreateUser">
+                <button type="button" class="user-create-button" @onclick="() => OpenCreateUserModal()">
                     <i class="bi bi-person-plus me-2"></i>
-                    Tilføj bruger
+                    Opret bruger
                 </button>
             </div>
         }
     </div>
 
+    <!-- Error Message Section -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            @errorMessage
+        </div>
+    }
+    
+
+
     <!-- Stats Section -->
     <div class="stats-grid">
+        
         @foreach (var role in Roles)
         {
             var count = users.Count(u => u.Role == role);
@@ -201,14 +215,14 @@
 <!-- Modal for Opret Bruger -->
 @if (showCreateModal)
 {
-    <div class="modal-overlay" @onclick="CloseCreateModal">
+    <div class="modal-overlay" @onclick="CloseUserModal">
         <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h4 class="modal-title">
                     <i class="bi bi-person-plus"></i>
                     Opret ny bruger
                 </h4>
-                <button class="modal-close" @onclick="CloseCreateModal">
+                <button class="modal-close" @onclick="CloseUserModal">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -300,8 +314,8 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn-cancel" @onclick="CloseCreateModal">Annuller</button>
-                    <button type="button" class="btn-primary" @onclick="SaveUserAsync">
+                    <button type="button" class="btn-cancel" @onclick="CloseUserModal">Annuller</button>
+                    <button type="button" class="btn-primary" @onclick="SaveUserAsync" disabled="@(!IsFormValid)">
                         <i class="bi bi-check-lg"></i>
                         Gem bruger
                     </button>
@@ -324,12 +338,21 @@
     
     // UI
     private int? activeActionMenuUserId; // Holder styr på hvilken bruger man via (⋮) vil slette eller gøre Inaktiv/Aktiv
-    private bool showCreateModal; // Viser/skjuler opret bruger-modal
+    private bool showCreateModal = false; // Viser/skjuler opret bruger-modal
     
     // Tilføj bruger
     private User newUser = new(); // Den bruger der oprettes
     private string errorMessage = ""; // Fejlbesked
     
+    // Form validation
+    private bool IsFormValid => 
+        !string.IsNullOrWhiteSpace(newUser.Name) && 
+        !string.IsNullOrWhiteSpace(newUser.Email) && 
+        !string.IsNullOrWhiteSpace(newUser.Password) && 
+        !string.IsNullOrWhiteSpace(newUser.Role) && 
+        !string.IsNullOrWhiteSpace(newUser.Status) &&
+        (newUser.Role != "Elev" || !string.IsNullOrWhiteSpace(newUser.SchoolType));
+
     // Returnerer en liste over brugere filtreret ud fra søgefelt, rolle og hotel
     private IEnumerable<User> FilteredUsers =>
         users.Where(u =>
@@ -341,12 +364,6 @@
     protected override async Task OnInitializedAsync()
     {
         currentUser = await UserService.GetCurrentUserAsync();
-        if (currentUser?.Role == "Elev")
-        {
-            Nav.NavigateTo("/");
-            return;
-        }
-
         users = await UserService.GetAllUsersAsync();
         hotels = users
             .Select(u => u.Hotel) // Tager alle brugers hotel
@@ -354,31 +371,117 @@
             .Distinct() // Sørger for at hvert hotel kun vises en gang
             .OrderBy(h => h) // Sortere listen i alfabetisk rækkefølge
             .ToList(); // Laver det om til en liste, som gemmes i hotels
-    }
-
+        }
+    
     // Formål: Åbner modal-vinduet til oprettelse af en ny bruger.
     private void CreateUser()
     {
         showCreateModal = true;
-        newUser = new();
+        newUser = new User();
         errorMessage = "";
+        StateHasChanged();
+    }
+    
+    // Ny metode: Åbner bruger modal med frisk data
+    private void OpenCreateUserModal()
+    {
+        showCreateModal = true;
+        newUser = new User
+        {
+            Name = "",
+            Email = "",
+            Password = "",
+            Role = "",
+            Hotel = "",
+            Status = "",
+            SchoolType = ""
+        };
+        errorMessage = "";
+        StateHasChanged();
     }
     
     // Formål: Lukker modal-vinduet uden at gemme noget.
-    private void CloseCreateModal() => showCreateModal = false;
+    private void CloseCreateModal()
+    {
+        showCreateModal = false;
+        StateHasChanged();
+    }
+    
+    // Ny metode: Lukker modal og renser data
+    private void CloseUserModal()
+    {
+        showCreateModal = false;
+        newUser = new User();
+        errorMessage = "";
+        StateHasChanged();
+    }
 
     // Formål: Gemmer en ny bruger i databasen.
     private async Task SaveUserAsync()
     {
-        var result = await UserService.CreateUserAsync(newUser);
-        if (result == null) 
+        // Validering
+        if (string.IsNullOrWhiteSpace(newUser.Name))
         {
-            errorMessage = "Noget gik galt under oprettelsen";
+            errorMessage = "Indtast venligst et navn.";
             return;
         }
         
-        users = await UserService.GetAllUsersAsync();
-        showCreateModal = false;
+        if (string.IsNullOrWhiteSpace(newUser.Email))
+        {
+            errorMessage = "Indtast venligst en email.";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(newUser.Password))
+        {
+            errorMessage = "Indtast venligst en adgangskode.";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(newUser.Role))
+        {
+            errorMessage = "Vælg venligst en rolle.";
+            return;
+        }
+        
+        if (string.IsNullOrWhiteSpace(newUser.Status))
+        {
+            errorMessage = "Vælg venligst en status.";
+            return;
+        }
+        
+        if (newUser.Role == "Elev" && string.IsNullOrWhiteSpace(newUser.SchoolType))
+        {
+            errorMessage = "Vælg venligst en skoletype for elever.";
+            return;
+        }
+
+        try
+        {
+            var result = await UserService.CreateUserAsync(newUser);
+            if (result == null) 
+            {
+                errorMessage = "Noget gik galt under oprettelsen. Prøv venligst igen.";
+                return;
+            }
+            
+            users = await UserService.GetAllUsersAsync();
+            showCreateModal = false;
+            
+            // Restore body scroll
+            try 
+            {
+                await JSRuntime.InvokeVoidAsync("preventBodyScroll", false);
+            }
+            catch
+            {
+                // Continue if JavaScript fails
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fejl ved oprettelse af bruger: {ex.Message}";
+        }
     }
 
     // Formål: Sletter en bruger.
@@ -438,3 +541,13 @@
         _ => "bi bi-person-fill"
     };
 }
+
+<script>
+    window.preventBodyScroll = (prevent) => {
+        if (prevent) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    };
+</script>

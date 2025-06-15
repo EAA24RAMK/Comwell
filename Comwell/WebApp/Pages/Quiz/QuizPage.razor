@@ -1,28 +1,12 @@
 @page "/quiz"
+@attribute [Authorize]
 @using WebApp.Services
 @using Core.Models
 @inject IUserService UserService
 @inject IQuizService QuizService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-@if (currentUser == null)
-{
-    <div class="dashboard-container">
-        <div class="empty-state">
-            <div class="empty-icon">
-                <i class="bi bi-lock"></i>
-            </div>
-            <h4>Adgang krævet</h4>
-            <p>Du skal være logget ind for at bruge quiz-funktionen.</p>
-            <a href="/login" class="btn-create">
-                <i class="bi bi-box-arrow-in-right me-2"></i>
-                Log ind
-            </a>
-        </div>
-    </div>
-}
-else
-{
     <div class="dashboard-container">
         <!-- Page Header -->
         <div class="page-header">
@@ -37,7 +21,7 @@ else
             @if (CanCreateQuiz)
             {
                 <div class="page-actions">
-                    <button class="btn-create" @onclick="NavigateToCreateQuiz">
+                    <button class="btn-create" @onclick="OpenCreateQuizModal">
                         <i class="bi bi-plus-circle me-2"></i>
                         Opret Quiz
                     </button>
@@ -201,7 +185,7 @@ else
                         <p>Der er ingen quizzes at tage endnu.</p>
                         @if (CanCreateQuiz)
                         {
-                            <button class="btn-create" @onclick="NavigateToCreateQuiz">
+                            <button class="btn-create" @onclick="OpenCreateQuizModal">
                                 <i class="bi bi-plus-circle me-2"></i>
                                 Opret første quiz
                             </button>
@@ -378,7 +362,195 @@ else
             }
         </div>
     </div>
+
+
+<!-- Modal for Opret Quiz -->
+@if (showCreateQuizModal)
+{
+    <div class="modal-overlay" @onclick="CloseCreateQuizModal">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h4 class="modal-title">
+                    <i class="bi bi-plus-circle"></i>
+                    Opret ny quiz
+                </h4>
+                <button class="modal-close" @onclick="CloseCreateQuizModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Viser feedbackbesked hvis der er en -->
+                @if (!string.IsNullOrEmpty(feedbackMessage))
+                {
+                    <div class="alert alert-warning">@feedbackMessage</div>
+                }
+
+                <!-- Formular til oprettelse af quiz -->
+                <EditForm Model="quizModel" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="validation-summary" />
+
+                    <!-- Quiz grundoplysninger -->
+                    <div class="quiz-basic-info">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Grundoplysninger
+                        </h5>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Titel:</label>
+                                <input @bind="quizModel.Title" class="form-input" placeholder="Indtast quiz titel" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Beskrivelse:</label>
+                                <textarea @bind="quizModel.Description" class="form-input" rows="3" placeholder="Indtast quiz beskrivelse"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label class="form-label">Sværhedsgrad:</label>
+                                <select @bind="quizModel.Difficulty" class="form-select">
+                                    <option value="Easy">Let</option>
+                                    <option value="Medium">Mellem</option>
+                                    <option value="Hard">Svær</option>
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label class="form-label">Tidsbegrænsning (minutter):</label>
+                                <input @bind="quizModel.TimeLimitMinutes" type="number" class="form-input" min="1" max="60" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spørgsmål sektion -->
+                    <div class="quiz-questions-section">
+                        <div class="questions-header">
+                            <h5 class="form-section-title">
+                                <i class="bi bi-patch-question me-2"></i>
+                                Spørgsmål (@quizModel.Questions.Count)
+                            </h5>
+                            <button type="button" class="btn-add-question" @onclick="AddQuestion">
+                                <i class="bi bi-plus me-1"></i>
+                                Tilføj spørgsmål
+                            </button>
+                        </div>
+
+                        @if (quizModel.Questions.Any())
+                        {
+                            @for (int questionIndex = 0; questionIndex < quizModel.Questions.Count; questionIndex++)
+                            {
+                                var question = quizModel.Questions[questionIndex];
+                                var qIndex = questionIndex; // Capture for lambda
+                                
+                                <div class="question-card">
+                                    <div class="question-header">
+                                        <h6 class="question-title">Spørgsmål @(qIndex + 1)</h6>
+                                        <button type="button" class="btn-remove-question" @onclick="() => RemoveQuestion(qIndex)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="question-content">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label class="form-label">Spørgsmålstekst:</label>
+                                                <input @bind="question.QuestionText" class="form-input" placeholder="Indtast spørgsmål" />
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group half">
+                                                <label class="form-label">Type:</label>
+                                                <select @bind="question.QuestionType" @bind:after="() => OnQuestionTypeChanged(qIndex)" class="form-select">
+                                                    <option value="MultipleChoice">Multiple Choice</option>
+                                                    <option value="TrueFalse">Sand/Falsk</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group half">
+                                                <label class="form-label">Point:</label>
+                                                <input @bind="question.Points" type="number" class="form-input" min="1" max="50" />
+                                            </div>
+                                        </div>
+
+                                        <!-- Svar sektion -->
+                                        <div class="answers-section">
+                                            <div class="answers-header">
+                                                <label class="form-label">Svarmuligheder:</label>
+                                                @if (question.QuestionType == "MultipleChoice" && question.Answers.Count < 6)
+                                                {
+                                                    <button type="button" class="btn-add-answer" @onclick="() => AddAnswer(qIndex)">
+                                                        <i class="bi bi-plus me-1"></i>
+                                                        Tilføj svar
+                                                    </button>
+                                                }
+                                            </div>
+
+                                            @for (int answerIndex = 0; answerIndex < question.Answers.Count; answerIndex++)
+                                            {
+                                                var answer = question.Answers[answerIndex];
+                                                var aIndex = answerIndex; // Capture for lambda
+                                                
+                                                <div class="answer-row">
+                                                    <div class="answer-correct">
+                                                        <input type="radio" 
+                                                               name="correct-@qIndex" 
+                                                               checked="@answer.IsCorrect" 
+                                                               @onchange="() => SetCorrectAnswer(qIndex, aIndex)" />
+                                                        <label class="correct-label">Korrekt</label>
+                                                    </div>
+                                                    <div class="answer-input">
+                                                        <input @bind="answer.AnswerText" class="form-input" placeholder="Indtast svar" />
+                                                    </div>
+                                                    @if (question.QuestionType == "MultipleChoice" && question.Answers.Count > 2)
+                                                    {
+                                                        <button type="button" class="btn-remove-answer" @onclick="() => RemoveAnswer(qIndex, aIndex)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="no-questions-message">
+                                <i class="bi bi-patch-question text-muted"></i>
+                                <p>Ingen spørgsmål tilføjet endnu. Klik på "Tilføj spørgsmål" for at komme i gang.</p>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" @onclick="CloseCreateQuizModal">Annuller</button>
+                        <button type="submit" class="btn-primary" disabled="@(!IsFormValid)">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Gem Quiz
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
 }
+
+<script>
+    window.preventBodyScroll = (prevent) => {
+        if (prevent) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    };
+</script>
 
 @code {
     private List<Quiz> quizzes = new();
@@ -390,7 +562,26 @@ else
     private User? currentUser;
     private string activeTab = "quizzes";
     
+    // Modal – styrer opret quiz modal
+    private bool showCreateQuizModal = false;
+    private string feedbackMessage = "";
+    private Quiz quizModel = new() { 
+        Difficulty = "Medium", 
+        TimeLimitMinutes = 10,
+        IsActive = true,
+        Questions = new List<QuizQuestion>()
+    };
+    
     private bool CanCreateQuiz => currentUser?.Role == "HR" || currentUser?.Role == "Køkkenchef" || currentUser?.Role == "Kok";
+
+    private bool IsFormValid => 
+        !string.IsNullOrWhiteSpace(quizModel.Title) && 
+        !string.IsNullOrWhiteSpace(quizModel.Description) && 
+        quizModel.Questions.Count > 0 &&
+        quizModel.Questions.All(q => !string.IsNullOrWhiteSpace(q.QuestionText) && 
+                                     q.Answers.Count >= 2 && 
+                                     q.Answers.Any(a => a.IsCorrect) &&
+                                     q.Answers.All(a => !string.IsNullOrWhiteSpace(a.AnswerText)));
 
     protected override async Task OnInitializedAsync()
     {
@@ -425,9 +616,149 @@ else
         }
     }
     
-    private void NavigateToCreateQuiz()
+    // Modal metoder for Opret Quiz
+    private async Task OpenCreateQuizModal()
     {
-        Navigation.NavigateTo("/quiz/create");
+        showCreateQuizModal = true;
+        feedbackMessage = "";
+        quizModel = new Quiz { 
+            Difficulty = "Medium", 
+            TimeLimitMinutes = 10,
+            IsActive = true,
+            Questions = new List<QuizQuestion>()
+        };
+        
+        // Prevent body scroll
+        await JSRuntime.InvokeVoidAsync("preventBodyScroll", true);
+    }
+
+    private async Task CloseCreateQuizModal()
+    {
+        showCreateQuizModal = false;
+        feedbackMessage = "";
+        quizModel = new Quiz { 
+            Difficulty = "Medium", 
+            TimeLimitMinutes = 10,
+            IsActive = true,
+            Questions = new List<QuizQuestion>()
+        };
+        
+        // Restore body scroll
+        await JSRuntime.InvokeVoidAsync("preventBodyScroll", false);
+    }
+
+    private void AddQuestion()
+    {
+        var question = new QuizQuestion
+        {
+            QuestionType = "MultipleChoice",
+            Points = 10,
+            Answers = new List<QuizAnswer>
+            {
+                new QuizAnswer { AnswerText = "", IsCorrect = true },
+                new QuizAnswer { AnswerText = "", IsCorrect = false },
+                new QuizAnswer { AnswerText = "", IsCorrect = false },
+                new QuizAnswer { AnswerText = "", IsCorrect = false }
+            }
+        };
+        quizModel.Questions.Add(question);
+    }
+
+    private void RemoveQuestion(int questionIndex)
+    {
+        if (quizModel.Questions.Count > questionIndex)
+        {
+            quizModel.Questions.RemoveAt(questionIndex);
+        }
+    }
+
+    private void OnQuestionTypeChanged(int questionIndex)
+    {
+        var question = quizModel.Questions[questionIndex];
+        
+        if (question.QuestionType == "TrueFalse")
+        {
+            question.Answers.Clear();
+            question.Answers.Add(new QuizAnswer { AnswerText = "Ja", IsCorrect = true });
+            question.Answers.Add(new QuizAnswer { AnswerText = "Nej", IsCorrect = false });
+        }
+        else if (question.QuestionType == "MultipleChoice" && question.Answers.Count < 2)
+        {
+            question.Answers.Clear();
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = true });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+        }
+    }
+
+    private void AddAnswer(int questionIndex)
+    {
+        var question = quizModel.Questions[questionIndex];
+        if (question.Answers.Count < 6)
+        {
+            question.Answers.Add(new QuizAnswer { AnswerText = "", IsCorrect = false });
+        }
+    }
+
+    private void RemoveAnswer(int questionIndex, int answerIndex)
+    {
+        var question = quizModel.Questions[questionIndex];
+        if (question.Answers.Count > 2)
+        {
+            question.Answers.RemoveAt(answerIndex);
+            
+            // Ensure at least one answer is correct
+            if (!question.Answers.Any(a => a.IsCorrect) && question.Answers.Any())
+            {
+                question.Answers[0].IsCorrect = true;
+            }
+        }
+    }
+
+    private void SetCorrectAnswer(int questionIndex, int answerIndex)
+    {
+        var question = quizModel.Questions[questionIndex];
+        for (int i = 0; i < question.Answers.Count; i++)
+        {
+            question.Answers[i].IsCorrect = i == answerIndex;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (!IsFormValid)
+        {
+            if (string.IsNullOrWhiteSpace(quizModel.Title))
+                feedbackMessage = "Indtast venligst en titel for quizzen.";
+            else if (string.IsNullOrWhiteSpace(quizModel.Description))
+                feedbackMessage = "Indtast venligst en beskrivelse for quizzen.";
+            else if (quizModel.Questions.Count == 0)
+                feedbackMessage = "Tilføj venligst mindst ét spørgsmål.";
+            else if (quizModel.Questions.Any(q => string.IsNullOrWhiteSpace(q.QuestionText)))
+                feedbackMessage = "Alle spørgsmål skal have en tekst.";
+            else if (quizModel.Questions.Any(q => q.Answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText))))
+                feedbackMessage = "Alle svar skal have en tekst.";
+            else if (quizModel.Questions.Any(q => !q.Answers.Any(a => a.IsCorrect)))
+                feedbackMessage = "Hvert spørgsmål skal have mindst ét korrekt svar.";
+            return;
+        }
+
+        try
+        {
+            // Sæt default værdier
+            quizModel.CreatedByUserId = currentUser?.Id ?? 1;
+            quizModel.CreatedAt = DateTime.Now;
+            
+            // Opret komplet quiz med spørgsmål og svar
+            await QuizService.CreateQuizAsync(quizModel);
+            await LoadData();
+            CloseCreateQuizModal();
+        }
+        catch (Exception ex)
+        {
+            feedbackMessage = $"Fejl ved oprettelse af quiz: {ex.Message}";
+        }
     }
 
     private static string GetInitials(string? fullName)

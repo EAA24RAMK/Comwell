@@ -1,4 +1,5 @@
 @page "/elevplaner"
+@attribute [Authorize(Roles = "HR,Køkkenchef,Kok")]
 @using WebApp.Services
 @using WebApp.Components.StudentPlan
 @using Core.Models
@@ -7,6 +8,7 @@
 @inject ITemplateService TemplateService
 @inject ILearningMaterialService MaterialService
 @inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
 
 <!-- Modern StudentPlan Dashboard -->
 <div class="dashboard-container">
@@ -432,7 +434,10 @@
 
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" @onclick="CloseCreatePlanModal">Annuller</button>
-                        <button type="submit" class="btn-primary">Gem plan</button>
+                        <button type="submit" class="btn-primary" disabled="@(!IsFormValid)">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Gem plan
+                        </button>
                     </div>
                 </EditForm>
             </div>
@@ -741,18 +746,24 @@
     };
 
     // Modal metoder for Opret Plan
-    private void OpenCreatePlanModal()
+    private async Task OpenCreatePlanModal()
     {
         showCreatePlanModal = true;
         feedbackMessage = "";
         planModel = new StudentPlan { PeriodStart = DateTime.Today };
+        
+        // Prevent body scroll
+        await JSRuntime.InvokeVoidAsync("preventBodyScroll", true);
     }
 
-    private void CloseCreatePlanModal()
+    private async Task CloseCreatePlanModal()
     {
         showCreatePlanModal = false;
         feedbackMessage = "";
         planModel = new StudentPlan { PeriodStart = DateTime.Today };
+        
+        // Restore body scroll
+        await JSRuntime.InvokeVoidAsync("preventBodyScroll", false);
     }
 
     // Når en skabelon vælges
@@ -800,15 +811,12 @@
     // Håndterer form submit for ny plan
     private async Task HandleSubmit()
     {
-        if (planModel.StudentId <= 0)
+        if (!IsFormValid)
         {
-            feedbackMessage = "Vælg venligst en elev.";
-            return;
-        }
-
-        if (planModel.TemplateId <= 0)
-        {
-            feedbackMessage = "Vælg venligst en skabelon.";
+            if (planModel.StudentId <= 0)
+                feedbackMessage = "Vælg venligst en elev.";
+            else if (planModel.TemplateId <= 0)
+                feedbackMessage = "Vælg venligst en skabelon.";
             return;
         }
 
@@ -844,12 +852,25 @@
 
             await StudentPlanService.CreateStudentPlanAsync(planModel);
             await LoadData();
-            CloseCreatePlanModal();
+            await CloseCreatePlanModal();
         }
         catch (Exception ex)
         {
             feedbackMessage = $"Fejl ved oprettelse af plan: {ex.Message}";
         }
     }
+    
+    // Form validation
+    private bool IsFormValid => planModel.StudentId > 0 && planModel.TemplateId > 0;
 }
+
+<script>
+    window.preventBodyScroll = (prevent) => {
+        if (prevent) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    };
+</script>
 

@@ -1,0 +1,72 @@
+{
+  "name": "Comwell Læringsplatform",
+  "short_name": "Comwell",
+  "description": "Læringsplatform for køkkenelever og personale hos Comwell",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1e40af",
+  "background_color": "#f8fafc",
+  "categories": ["education", "productivity"],
+  "lang": "da",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Læringsmateriale",
+      "short_name": "Materiale",
+      "description": "Gå direkte til læringsmaterialer",
+      "url": "/learningmaterials",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Elevplan",
+      "short_name": "Plan",
+      "description": "Se din elevplan",
+      "url": "/elevplan",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Quiz",
+      "short_name": "Quiz",
+      "description": "Tag en quiz",
+      "url": "/quiz",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+} 

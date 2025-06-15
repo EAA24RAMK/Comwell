@@ -3,237 +3,195 @@
 @inject WebApp.Services.IStudentPlanService StudentPlanService
 @inject WebApp.Services.IPostService PostService
 @using Core.Models
+@attribute [Authorize]
 
-@if (!isLoggedIn)
-{
-    <!-- Not logged in state -->
-    <div class="welcome-hero">
-        <div class="hero-content">
-            <div class="hero-icon">
-                <i class="bi bi-mortarboard"></i>
+<!-- Dashboard for logged in users -->
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <i class="bi bi-house-door me-3"></i>
+                Oversigt
+            </h1>
+            <p class="page-description">Velkommen tilbage, <strong>@currentUser?.Name</strong>. Her er din samlede oversigt.</p>
+        </div>
+    </div>     
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">
+                <i class="bi bi-bar-chart-line"></i>
             </div>
-            <h1 class="hero-title">Velkommen til Comwell Træningsportal</h1>
-            <p class="hero-subtitle">Log venligst ind for at tilgå din personlige læringsportal</p>
-            <div class="hero-action">
-                <a href="/login" class="login-cta">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Log ind
-                </a>
+            <div class="stat-info">
+                <div class="stat-number">@goals.Count()</div>
+                <div class="stat-label">Mål i alt</div>
+            </div>
+        </div>
+
+        <div class="stat-card completed">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@goals.Count(g => g.Status == "Fuldført")</div>
+                <div class="stat-label">Fuldført</div>
+            </div>
+        </div>
+
+        <div class="stat-card in-progress">
+            <div class="stat-icon">
+                <i class="bi bi-arrow-clockwise"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@goals.Count(g => g.Status == "I gang")</div>
+                <div class="stat-label">I gang</div>
+            </div>
+        </div>
+
+        <div class="stat-card attention">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-number">@goals.Count(g => g.Status == "Vær opmærksom på")</div>
+                <div class="stat-label">Vær opmærksom på</div>
             </div>
         </div>
     </div>
-}
-else
-{
-    <!-- Logged in dashboard -->
-    <div class="dashboard-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="page-title-section">
-                <h1 class="page-title">
-                    <i class="bi bi-house-door me-3"></i>
-                    Oversigt
-                </h1>
-                <p class="page-description">Velkommen tilbage, <strong>@currentUser?.Name</strong>. Her er din samlede oversigt.</p>
-            </div>
-            <div class="page-actions">
-                <div class="stat-card total">
-                    <div class="stat-icon">
-                        <i class="bi bi-bar-chart-line"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">@goals.Count()</div>
-                        <div class="stat-label">Mål i alt</div>
-                    </div>
-                </div>
-                <div class="stat-card completed">
-                    <div class="stat-icon">
-                        <i class="bi bi-check-circle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <div class="stat-number">@goals.Count(g => g.Status == "Fuldført")</div>
-                        <div class="stat-label">Fuldført</div>
-                    </div>
-                </div>
-            </div>
+
+    <!-- Content Section for Posts -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="bi bi-chat-left-text me-2"></i>
+                Seneste opslag
+            </h3>
         </div>
 
-        <!-- Stats Section -->
-        <div class="stats-grid">
-            <div class="stat-card total">
-                <div class="stat-icon">
-                    <i class="bi bi-bar-chart-line"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count()</div>
-                    <div class="stat-label">Mål i alt</div>
-                </div>
-            </div>
-
-            <div class="stat-card completed">
-                <div class="stat-icon">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count(g => g.Status == "Fuldført")</div>
-                    <div class="stat-label">Fuldført</div>
-                </div>
-            </div>
-
-            <div class="stat-card in-progress">
-                <div class="stat-icon">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count(g => g.Status == "I gang")</div>
-                    <div class="stat-label">I gang</div>
-                </div>
-            </div>
-
-            <div class="stat-card attention">
-                <div class="stat-icon">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <div class="stat-info">
-                    <div class="stat-number">@goals.Count(g => g.Status == "Vær opmærksom på")</div>
-                    <div class="stat-label">Vær opmærksom på</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Content Section for Posts -->
-        <div class="content-section">
-            <div class="section-header">
-                <h3 class="section-title">
-                    <i class="bi bi-chat-left-text me-2"></i>
-                    Seneste opslag
-                </h3>
-            </div>
-
-            <div class="posts-list">
-                @if (recentPosts.Any())
+        <div class="posts-list">
+            @if (recentPosts.Any())
+            {
+                @foreach (var post in recentPosts)
                 {
-                    @foreach (var post in recentPosts)
-                    {
-                        <div class="post-item">
-                            <div class="post-icon">
-                                <i class="bi bi-file-text"></i>
-                            </div>
-                            <div class="post-content">
-                                <div class="post-title">@post.Title</div>
-                                <div class="post-snippet">
-                                    @post.Content?.Substring(0, Math.Min(100, post.Content.Length))@(post.Content?.Length > 100 ? "..." : "")
-                                </div>
-                            </div>
-                            <div class="post-action">
-                                <a href="/posts" class="btn-access">
-                                    <i class="bi bi-arrow-right me-2"></i>
-                                    Se alle
-                                </a>
+                    <div class="post-item">
+                        <div class="post-icon">
+                            <i class="bi bi-file-text"></i>
+                        </div>
+                        <div class="post-content">
+                            <div class="post-title">@post.Title</div>
+                            <div class="post-snippet">
+                                @post.Content?.Substring(0, Math.Min(100, post.Content.Length))@(post.Content?.Length > 100 ? "..." : "")
                             </div>
                         </div>
-                    }
-                }
-                else
-                {
-                    <div class="empty-state">
-                        <div class="empty-icon">
-                            <i class="bi bi-chat-left-text"></i>
+                        <div class="post-action">
+                            <a href="/posts" class="btn-access">
+                                <i class="bi bi-arrow-right me-2"></i>
+                                Se alle
+                            </a>
                         </div>
-                        <h4>Ingen opslag fundet</h4>
-                        <p>Der er ikke oprettet nogle opslag endnu.</p>
                     </div>
                 }
-            </div>
-        </div>
-
-        <!-- Content Section for Links -->
-        <div class="content-section">
-            <div class="section-header">
-                <h3 class="section-title">
-                    <i class="bi bi-box-arrow-up-right me-2"></i>
-                    Andre læringsportaler
-                </h3>
-            </div>
-
-            <div class="materials-grid">
-                <a href="#" class="material-card">
-                    <div class="material-header">
-                        <div class="material-type-icon">
-                            <i class="bi bi-journal-code"></i>
-                        </div>
-                        <div class="material-info">
-                            <h5 class="material-title">Læringsportal A</h5>
-                            <div class="material-metadata">
-                                <span class="material-subtask">
-                                    <i class="bi bi-tag me-1"></i>
-                                    Eksterne kurser og materialer
-                                </span>
-                            </div>
-                        </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-chat-left-text"></i>
                     </div>
-                    <div class="material-footer">
-                        <div class="btn-access">
-                            <i class="bi bi-box-arrow-up-right me-2"></i>
-                            Åbn portal
-                        </div>
-                    </div>
-                </a>
-
-                <a href="#" class="material-card">
-                    <div class="material-header">
-                        <div class="material-type-icon">
-                            <i class="bi bi-globe2"></i>
-                        </div>
-                        <div class="material-info">
-                            <h5 class="material-title">Læringsportal B</h5>
-                            <div class="material-metadata">
-                                <span class="material-subtask">
-                                    <i class="bi bi-tag me-1"></i>
-                                    Online træningsmoduler
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="material-footer">
-                        <div class="btn-access">
-                            <i class="bi bi-box-arrow-up-right me-2"></i>
-                            Åbn portal
-                        </div>
-                    </div>
-                </a>
-
-                <a href="#" class="material-card">
-                    <div class="material-header">
-                        <div class="material-type-icon">
-                            <i class="bi bi-mortarboard"></i>
-                        </div>
-                        <div class="material-info">
-                            <h5 class="material-title">Læringsportal C</h5>
-                            <div class="material-metadata">
-                                <span class="material-subtask">
-                                    <i class="bi bi-tag me-1"></i>
-                                    Certificeringer og examiner
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="material-footer">
-                        <div class="btn-access">
-                            <i class="bi bi-box-arrow-up-right me-2"></i>
-                            Åbn portal
-                        </div>
-                    </div>
-                </a>
-            </div>
+                    <h4>Ingen opslag fundet</h4>
+                    <p>Der er ikke oprettet nogle opslag endnu.</p>
+                </div>
+            }
         </div>
     </div>
-}
+
+    <!-- Content Section for Links -->
+    <div class="content-section">
+        <div class="section-header">
+            <h3 class="section-title">
+                <i class="bi bi-box-arrow-up-right me-2"></i>
+                Andre læringsportaler
+            </h3>
+        </div>
+
+        <div class="materials-grid">
+            <a href="#" class="material-card">
+                <div class="material-header">
+                    <div class="material-type-icon">
+                        <i class="bi bi-journal-code"></i>
+                    </div>
+                    <div class="material-info">
+                        <h5 class="material-title">Læringsportal A</h5>
+                        <div class="material-metadata">
+                            <span class="material-subtask">
+                                <i class="bi bi-tag me-1"></i>
+                                Eksterne kurser og materialer
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="material-footer">
+                    <div class="btn-access">
+                        <i class="bi bi-box-arrow-up-right me-2"></i>
+                        Åbn portal
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="material-card">
+                <div class="material-header">
+                    <div class="material-type-icon">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                    <div class="material-info">
+                        <h5 class="material-title">Læringsportal B</h5>
+                        <div class="material-metadata">
+                            <span class="material-subtask">
+                                <i class="bi bi-tag me-1"></i>
+                                Online træningsmoduler
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="material-footer">
+                    <div class="btn-access">
+                        <i class="bi bi-box-arrow-up-right me-2"></i>
+                        Åbn portal
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="material-card">
+                <div class="material-header">
+                    <div class="material-type-icon">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <div class="material-info">
+                        <h5 class="material-title">Læringsportal C</h5>
+                        <div class="material-metadata">
+                            <span class="material-subtask">
+                                <i class="bi bi-tag me-1"></i>
+                                Certificeringer og examiner
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="material-footer">
+                    <div class="btn-access">
+                        <i class="bi bi-box-arrow-up-right me-2"></i>
+                        Åbn portal
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
 
 @code {
     private User? currentUser;
     private List<Goal> goals = new();
-    private bool isLoggedIn = false;
     private List<Post> recentPosts = new();
 
     protected override async Task OnInitializedAsync()
@@ -247,7 +205,6 @@ else
     {
         if (currentUser != null)
         {
-            isLoggedIn = true;
             var plans = await StudentPlanService.GetPlansByUserAsync(currentUser);
             var allGoals = plans.SelectMany(p => p.Goals).ToList();
 
