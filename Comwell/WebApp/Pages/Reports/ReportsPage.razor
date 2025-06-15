@@ -5,6 +5,7 @@
 @inject IJSRuntime JSRuntime
 @using Core.Models
 @using WebApp.Services
+@using WebApp.Components.Reports
 @using WebApp.Services.Export
 @using Microsoft.JSInterop
 
@@ -53,13 +54,23 @@
                     <i class="bi bi-geo-alt me-2"></i>
                     Filtrér efter lokation
                 </label>
-                <select class="control-select" @bind="selectedLocation">
-                    <option value="">📍 Alle lokationer</option>
-                    @foreach (var location in locations)
-                    {
-                        <option value="@location">🏨 @location</option>
-                    }
-                </select>
+
+                <MultiSelectDropdownComponent 
+                    Options="locations" 
+                    SelectedItems="SelectedLocations" 
+                    SelectedItemsChanged="OnLocationSelectionChanged" />
+            </div>
+            
+            <div class="control-item">
+                <label class="control-label">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    Filtrér efter periode
+                </label>
+                <SingleSelectDropdownComponent
+                    Options="periodOptions"
+                    SelectedOption="@selectedPeriod"
+                    SelectedOptionChanged="@(value => selectedPeriod = value)" />
+
             </div>
             
             <div class="control-item">
@@ -67,13 +78,10 @@
                     <i class="bi bi-target me-2"></i>
                     Analyser specifikt mål (kun elever)
                 </label>
-                <select class="control-select" @bind="selectedGoalTitle">
-                    <option value="">🎯 Alle mål</option>
-                    @foreach (var title in goalTitles)
-                    {
-                        <option value="@title">📋 @title</option>
-                    }
-                </select>
+                <SingleSelectDropdownComponent
+                    Options="goalOptions"
+                    SelectedOption="@selectedGoalTitle"
+                    SelectedOptionChanged="@(value => selectedGoalTitle = value)" />
             </div>
         </div>
     </div>
@@ -152,6 +160,77 @@
                     </div>
                 }
             }
+        </div>
+    </div>
+    
+    <!-- Statistik og Visualisering -->
+    <div class="summary-section">
+        <div class="summary-header">
+            <h3 class="summary-title">
+                <i class="bi bi-pie-chart-fill me-2"></i>
+                Statistik og visualisering
+            </h3>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(selectedLocation) || 
+             !string.IsNullOrWhiteSpace(selectedPeriod) || 
+             !string.IsNullOrWhiteSpace(selectedGoalTitle))
+        {
+            <div class="diagram-filters">
+                <span class="filter-title">Filtreret visning:</span>
+                @if (SelectedLocations.Any()) {
+                    @foreach (var loc in SelectedLocations)
+                    {
+                        <span class="filter-badge">📍 @loc</span>
+                    }
+                }
+                @if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Alle perioder" && selectedPeriod != "📆 Alle perioder") {
+                    <span class="filter-badge">📆 @selectedPeriod</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "Alle mål" && selectedGoalTitle != "🎯 Alle mål") {
+                    <span class="filter-badge">🎯 @selectedGoalTitle</span>
+                }
+            </div>
+        }
+
+        <div class="summary-grid">
+            <div class="summary-card chart-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="bi bi-pie-chart"></i>
+                    </div>
+                    <div class="card-meta">
+                        <h4>Målstatus</h4>
+                        <p>Viser antal mål pr. status</p>
+                    </div>
+                </div>
+
+                <div class="card-value">
+                    <GoalChartComponent
+                        Completed="@GoalsCompleted"
+                        InProgress="@GoalsInProgress"
+                        Attention="@GoalsNeedsAttention" 
+                        NotStarted="@GoalsNotStarted"/>
+                </div>
+            </div>
+            
+            <div class="summary-card chart-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="bi bi-bar-chart-fill"></i>
+                    </div>
+                    <div class="card-meta">
+                        <h4>Sammenligning af lokationer</h4>
+                        <p>Viser målopfyldelse i % for udvalgte hoteller</p>
+                    </div>
+                </div>
+
+                <div class="card-value">
+                    <LocationComparisonChart
+                        Labels="@LocationLabels"
+                        Percentages="@CompletionPercentages" />
+                </div>
+            </div>
         </div>
     </div>
 
@@ -315,9 +394,14 @@
 @code {
     private List<User> allUsers = new();             // Liste over alle brugere (elever, HR, kokke, køkkenchefer)
     private List<StudentPlan> allPlans = new();       // Liste over alle elevplaner i systemet
+    private List<Template> allTemplates = new(); // Liste over alle templates
 
     // Filtre
     private string selectedLocation = "";            // Valgt lokation (hotel) til filtrering
+    private string selectedPeriod = "";
+    private string selectedGoalTitle = "";
+
+    
     private string selectedGoalTitle = "";           // Valgt mål (goal) til filtrering af elever
     
     // Export state
@@ -328,16 +412,99 @@
     private List<string> locations = new();           // Liste over unikke lokationer (hoteller)
     private List<string> goalTitles = new();          // Liste over unikke mål (goal-titler)
 
-    // Filtreret brugerliste baseret på valgt lokation
-    private List<User> filteredUsers => string.IsNullOrWhiteSpace(selectedLocation)
-        ? allUsers
-        : allUsers.Where(u => u.Hotel == selectedLocation).ToList();
+    // Bruges overalt – filtrerer elever på periode, men lader andre roller være
+    private List<User> filteredUsers => allUsers.Where(u =>
+    {
+        // Lokation
+        if (SelectedLocations.Any() && !SelectedLocations.Contains(u.Hotel))
+            return false;
+
+        if (u.Role == "Elev")
+        {
+            var plan = allPlans.FirstOrDefault(p => p.StudentId == u.Id);
+            var template = allTemplates.FirstOrDefault(t => t.Id == plan?.TemplateId);
+
+            // Praktikperiode filter
+            if (!string.IsNullOrWhiteSpace(selectedPeriod) && selectedPeriod != "Alle perioder" && template?.Title != selectedPeriod)
+                return false;
+
+            // Mål-filter (fjerner emoji før sammenligning)
+            if (!string.IsNullOrWhiteSpace(selectedGoalTitle) && selectedGoalTitle != "🎯 Alle mål" && selectedGoalTitle != "Alle mål")
+            {
+                var cleanTitle = selectedGoalTitle.Replace("📋 ", "");
+                var hasGoal = plan?.Goals?.Any(g => g.Title == cleanTitle) ?? false;
+                if (!hasGoal)
+                    return false;
+            }
+        }
+
+        return true;
+    }).ToList();
+
+    private List<string> LocationLabels =>
+        (SelectedLocations.Any() ? SelectedLocations : locations
+            .Where(l => l != "HR"))
+        .Take(5)
+        .ToList();
+
+    private List<double> CompletionPercentages => LocationLabels
+        .Select(location =>
+        {
+            // Først: prøv filtrerede elever
+            var students = filteredStudents
+                .Where(s => s.Hotel == location)
+                .ToList();
+
+            // Hvis der ikke er nogen pga. tomme filtre, prøv alle elever på lokationen
+            if (!students.Any())
+            {
+                students = allUsers
+                    .Where(u => u.Role == "Elev" && u.Hotel == location)
+                    .ToList();
+            }
+
+            if (!students.Any()) return 0;
+
+            var completions = students.Select(student =>
+            {
+                var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
+                var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
+
+                // Brug neutral sammenligning her – ikke selectedGoalTitle, som kan være tom/ukendt
+                var cleanGoalTitle = selectedGoalTitle?.Replace("🎯", "").Replace("📋", "").Trim();
+
+                if (string.IsNullOrWhiteSpace(cleanGoalTitle) || cleanGoalTitle == "Alle mål")
+                {
+                    int total = allGoals.Count;
+                    int done = allGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+                    return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                }
+                else
+                {
+                    var selectedGoals = allGoals.Where(g => g.Title == cleanGoalTitle).ToList();
+                    int total = selectedGoals.Count;
+                    int done = selectedGoals.Count(g => g.Subtasks.All(s => s.Status == "Fuldført"));
+                    return total > 0 ? (int)Math.Round(done * 100.0 / total) : 0;
+                }
+            }).ToList();
+
+            return completions.Any() ? Math.Round(completions.Average(), 2) : 0;
+        })
+        .ToList();
+    
+    // Bruges til gennemsnitsprogression i elevkortet
+    private List<User> filteredStudents => filteredUsers.Where(u => u.Role == "Elev").ToList();
+    
+    private List<StudentPlan> FilteredStudentPlans => allPlans
+        .Where(plan => filteredStudents.Any(s => s.Id == plan.StudentId))
+        .ToList();
 
     // Initialisering ved sideindlæsning
     protected override async Task OnInitializedAsync()
     {
         allUsers = await UserService.GetAllUsersAsync();
         allPlans = await StudentPlanService.GetAllPlansAsync();
+        allTemplates = await TemplateService.GetAllTemplatesAsync();
 
         // Find unikke roller, sorter så "Elev" står først
         roles = allUsers
@@ -370,7 +537,7 @@
         if (role != "Elev") return 0;
         
         // Hvis intet specifikt mål (goalTitle) er valgt
-        if (string.IsNullOrWhiteSpace(goalTitle))
+        if (string.IsNullOrWhiteSpace(goalTitle) || goalTitle == "🎯 Alle mål" || goalTitle == "Alle mål")
         {
             // Beregn procent: (Antal fuldførte mål / Total mål) * 100
             int total = goals.Count;
@@ -415,10 +582,9 @@
 
     private int CalculateAverageCompletion()
     {
-        var students = filteredUsers.Where(u => u.Role == "Elev").ToList();
-        if (!students.Any()) return 0;
+        if (!filteredStudents.Any()) return 0;
 
-        var completions = students.Select(student =>
+        var completions = filteredStudents.Select(student =>
         {
             var userPlans = allPlans.Where(p => p.StudentId == student.Id).ToList();
             var allGoals = userPlans.SelectMany(p => p.Goals).ToList();
@@ -452,33 +618,94 @@
             _ => $"{parts[0][..1]}{parts[^1][..1]}".ToUpper()
         };
     }
-
-    private async Task ExportToExcel()
+    
+    private string GetCurrentPeriod(int studentId)
     {
-        try
-        {
-            isExporting = true;
-            StateHasChanged();
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        if (plan == null) return "Ingen plan";
 
-            // Generate Excel file
-            var excelData = await ExportService.ExportToExcelAsync(allUsers, allPlans, selectedLocation, selectedGoalTitle);
-            
-            // Create filename with timestamp
-            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm");
-            var filename = $"HR_Rapport_{timestamp}.xlsx";
-            
-            // Download file using JavaScript
-            await JSRuntime.InvokeVoidAsync("downloadFile", filename, Convert.ToBase64String(excelData));
-        }
-        catch (Exception ex)
-        {
-            // Handle error - you might want to show a notification or log the error
-            Console.WriteLine($"Fejl ved eksport: {ex.Message}");
-        }
-        finally
-        {
-            isExporting = false;
-            StateHasChanged();
-        }
+        var template = allTemplates.FirstOrDefault(t => t.Id == plan.TemplateId);
+        return template?.Title ?? "Ingen praktikperiode";
     }
+    
+    private bool IsPracticeApproved(int studentId)
+    {
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        return plan?.IsApprovedByChef ?? false;
+    }
+
+    private bool IsSchoolApproved(int studentId)
+    {
+        var plan = allPlans.FirstOrDefault(p => p.StudentId == studentId);
+        return plan?.SchoolPeriods.Any(sp => sp.IsApproved) ?? false;
+    }
+    
+    private List<Goal> GetFilteredGoals()
+    {
+        var goals = new List<Goal>();
+
+        foreach (var plan in FilteredStudentPlans)
+        {
+            if (plan.Goals == null) continue;
+
+            foreach (var goal in plan.Goals)
+            {
+                var selectedGoalTitleClean = selectedGoalTitle.Replace("📋 ", "").Trim();
+
+                if (!string.IsNullOrWhiteSpace(selectedGoalTitleClean) && selectedGoalTitleClean != "Alle mål" && goal.Title != selectedGoalTitleClean)
+                    continue;
+
+                goals.Add(goal);
+            }
+        }
+
+        return goals;
+    }
+
+    private int GoalsCompleted => GetFilteredGoals().Count(g =>
+        g.Subtasks.All(s => s.Status == "Fuldført"));
+
+    private int GoalsNotStarted => GetFilteredGoals().Count(g =>
+        g.Subtasks.All(s => s.Status == "Ikke startet"));
+
+    private int GoalsNeedsAttention => GetFilteredGoals().Count(g =>
+        !g.Subtasks.All(s => s.Status == "Fuldført") &&
+        g.Deadline != default &&
+        (g.Deadline - DateTime.Now).TotalDays <= 5);
+
+    private int GoalsInProgress => GetFilteredGoals().Count(g =>
+        !g.Subtasks.All(s => s.Status == "Fuldført") &&
+        (g.Deadline == default || (g.Deadline - DateTime.Now).TotalDays > 5) &&
+        g.Subtasks.Any(s => s.Status == "I gang" || s.Status == "Fuldført"));
+   
+    private List<string> SelectedLocations = new();
+    
+    private void OnLocationSelectionChanged(List<string> newSelection)
+    {
+        Console.WriteLine("Ny lokation valgt: " + string.Join(", ", newSelection));
+        SelectedLocations = newSelection;
+        StateHasChanged();
+    }
+
+    private List<string> periodOptions = new()
+    {
+        "Alle perioder",
+        "1. praktikperiode",
+        "2. praktikperiode",
+        "3. praktikperiode",
+        "Afslutning"
+    };
+    
+    private List<string> goalOptions =>
+        allPlans
+            .Where(p =>
+                allUsers.Any(u => u.Id == p.StudentId && u.Role == "Elev") &&
+                (string.IsNullOrWhiteSpace(selectedPeriod) || selectedPeriod == "Alle perioder" ||
+                 allTemplates.FirstOrDefault(t => t.Id == p.TemplateId)?.Title == selectedPeriod.Replace("📆 ", "").Trim()))
+            .SelectMany(p => p.Goals)
+            .Select(g => g.Title)
+            .Distinct()
+            .OrderBy(t => t)
+            .Prepend("Alle mål")
+            .ToList();
 } 
